@@ -78,13 +78,10 @@ public partial class GamesViewModel(
                         card.CoverPath = string.Empty;
                         card.CoverImage = null;
                         card.CoverMissing = false;
-                        card.HeroCoverPath = string.Empty;
-                        card.ResetLoadState();
                     }
 
-                    // Re-kickoff para a página visível (e para os jogos visíveis)
-                    // já que o reset acima só dispara LoadRequested para cards
-                    // marcados como in-viewport (irrelevante com virtualização).
+                    // Re-kickoff para a página visível: após o reset, capas que
+                    // existiam voltam a faltar e disparam nova carga.
                     KickoffMissingCoverLoads(Games);
                 });
             });
@@ -129,12 +126,6 @@ public partial class GamesViewModel(
                         }
                     }
                 }
-            }
-
-            foreach (var card in cards)
-            {
-                card.LoadRequested -= OnCardLoadRequested;
-                card.LoadRequested += OnCardLoadRequested;
             }
 
             // Fase 1: resolve cache local imediatamente (sem rede)
@@ -213,13 +204,6 @@ public partial class GamesViewModel(
                 StringComparison.OrdinalIgnoreCase));
 
         VisibleFilterAccounts = new ObservableCollection<SteamAccount>(filtered);
-    }
-
-    private async void OnCardLoadRequested(object? sender, EventArgs e)
-    {
-        if (sender is not GameCardViewModel c) return;
-        c.MarkLoadRequested();
-        await LoadGameDataAsync(c, CancellationToken.None);
     }
 
     private async Task RetryMissingCoversAsync()
@@ -481,13 +465,8 @@ public partial class GamesViewModel(
     {
         foreach (var card in cards)
         {
-            if (string.IsNullOrEmpty(card.CoverPath)
-                && !card.CoverMissing
-                && !card.HasLoadBeenRequested)
-            {
-                card.MarkLoadRequested();
+            if (string.IsNullOrEmpty(card.CoverPath) && !card.CoverMissing)
                 _ = LoadGameDataAsync(card, CancellationToken.None);
-            }
         }
     }
 
