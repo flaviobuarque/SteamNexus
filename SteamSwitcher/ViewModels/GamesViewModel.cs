@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.Input;
 using SteamSwitcher.Core;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
-using SteamSwitcher.Core.Helpers;
 using System.Collections.ObjectModel;
 using System.IO;
 using Wpf.Ui;
