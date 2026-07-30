@@ -10,6 +10,7 @@
 		<UseWPF>true</UseWPF>
 
 		<ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<StartupObject>SteamSwitcher.App</StartupObject>
 
 		<!-- Configurações de publicação -->
