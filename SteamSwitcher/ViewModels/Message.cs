@@ -1,0 +1,4 @@
+﻿namespace SteamSwitcher.ViewModels;
+
+public record CacheCleared;
+public record SteamGridDbKeyChanged;

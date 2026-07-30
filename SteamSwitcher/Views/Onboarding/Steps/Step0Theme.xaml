@@ -1,0 +1,142 @@
+<UserControl
+    x:Class="SteamSwitcher.Views.Onboarding.Steps.Step0Theme"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf">
+
+    <StackPanel
+        VerticalAlignment="Center"
+        HorizontalAlignment="Center"
+        MaxWidth="480">
+
+        <TextBlock
+            Text="Escolha um tema"
+            FontSize="26"
+            FontWeight="SemiBold"
+            HorizontalAlignment="Center"
+            Margin="0,0,0,8" />
+
+        <TextBlock
+            Text="Você pode alterar isso depois nas configurações."
+            FontSize="13"
+            Opacity="0.5"
+            HorizontalAlignment="Center"
+            Margin="0,0,0,32" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+
+			<!-- Sistema -->
+			<Border
+				x:Name="CardSystem"
+				Width="130" Height="150"
+				CornerRadius="12"
+				Margin="8,0"
+				Cursor="Hand"
+				MouseLeftButtonUp="CardSystem_Click">
+				<Border.Style>
+					<Style TargetType="Border">
+						<Setter Property="Background" Value="{ui:ThemeResource ControlFillColorDefaultBrush}" />
+						<Setter Property="BorderThickness" Value="2" />
+						<Setter Property="BorderBrush" Value="{ui:ThemeResource ControlStrokeColorDefaultBrush}" />
+						<Style.Triggers>
+							<DataTrigger Binding="{Binding SelectedTheme}" Value="System">
+								<Setter Property="BorderBrush"
+									Value="{ui:ThemeResource SystemAccentColorPrimaryBrush}" />
+							</DataTrigger>
+						</Style.Triggers>
+					</Style>
+				</Border.Style>
+				<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+					<ic:SymbolIcon
+						Symbol="Desktop"
+						IconVariant="Filled"
+						FontSize="36"
+						HorizontalAlignment="Center"
+						Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+					<TextBlock
+						Text="Sistema"
+						FontSize="13"
+						FontWeight="SemiBold"
+						HorizontalAlignment="Center"
+						Margin="0,10,0,0"
+						Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+				</StackPanel>
+			</Border>
+
+            <!-- Dark -->
+			<Border
+				x:Name="CardDark"
+				Width="130" Height="150"
+				CornerRadius="12"
+				Margin="8,0"
+				Cursor="Hand"
+				MouseLeftButtonUp="CardDark_Click">
+				<Border.Style>
+					<Style TargetType="Border">
+						<Setter Property="Background" Value="#1e1e1e" />
+						<Setter Property="BorderThickness" Value="2" />
+						<Setter Property="BorderBrush" Value="#3a3a3a" />
+						<Style.Triggers>
+							<DataTrigger Binding="{Binding SelectedTheme}" Value="Dark">
+								<Setter Property="BorderBrush"
+									Value="{ui:ThemeResource SystemAccentColorPrimaryBrush}" />
+							</DataTrigger>
+						</Style.Triggers>
+					</Style>
+				</Border.Style>
+				<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+							TextElement.Foreground="White">
+					<ic:SymbolIcon
+						Symbol="WeatherMoon"
+						IconVariant="Filled"
+						FontSize="36"
+						HorizontalAlignment="Center" />
+					<TextBlock
+						Text="Escuro"
+						FontSize="13"
+						FontWeight="SemiBold"
+						HorizontalAlignment="Center"
+						Margin="0,10,0,0" />
+				</StackPanel>
+			</Border>
+
+			<!-- Light -->
+			<Border
+				x:Name="CardLight"
+				Width="130" Height="150"
+				CornerRadius="12"
+				Margin="8,0"
+				Cursor="Hand"
+				MouseLeftButtonUp="CardLight_Click">
+				<Border.Style>
+					<Style TargetType="Border">
+						<Setter Property="Background" Value="#f3f3f3" />
+						<Setter Property="BorderThickness" Value="2" />
+						<Setter Property="BorderBrush" Value="#cccccc" />
+						<Style.Triggers>
+							<DataTrigger Binding="{Binding SelectedTheme}" Value="Light">
+								<Setter Property="BorderBrush"
+									Value="{ui:ThemeResource SystemAccentColorPrimaryBrush}" />
+							</DataTrigger>
+						</Style.Triggers>
+					</Style>
+				</Border.Style>
+				<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+							TextElement.Foreground="#1a1a1a">
+					<ic:SymbolIcon
+						Symbol="WeatherSunny"
+						IconVariant="Filled"
+						FontSize="36"
+						HorizontalAlignment="Center" />
+					<TextBlock
+						Text="Claro"
+						FontSize="13"
+						FontWeight="SemiBold"
+						HorizontalAlignment="Center"
+						Margin="0,10,0,0" />
+				</StackPanel>
+			</Border>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

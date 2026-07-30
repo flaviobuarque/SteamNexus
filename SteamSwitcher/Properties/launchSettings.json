@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SteamSwitcher": {
+      "commandName": "Project",
+      "commandLineArgs": "--demo-accounts 400"
+    }
+  }
+}

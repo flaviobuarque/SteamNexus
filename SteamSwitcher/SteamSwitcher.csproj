@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<LangVersion>latest</LangVersion>
+
+		<UseWPF>true</UseWPF>
+
+		<ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+		<StartupObject>SteamSwitcher.App</StartupObject>
+
+		<!-- Configurações de publicação -->
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<SelfContained>true</SelfContained>
+		<PublishSingleFile>false</PublishSingleFile>
+		<EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
+		<PublishReadyToRun>false</PublishReadyToRun>
+		<IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+	</PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="WPF-UI" Version="4.*" />
+        <PackageReference Include="WPF-UI.Tray" Version="4.*" />
+        <PackageReference Include="WPF-UI.DependencyInjection" Version="4.*" />
+        <PackageReference Include="FluentIcons.Wpf" Version="2.*" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.*" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\SteamSwitcher.Core\SteamSwitcher.Core.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <Page Update="Views\Pages\AccountsPage.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <XamlRuntime>Wpf</XamlRuntime>
+        <SubType>Designer</SubType>
+      </Page>
+    </ItemGroup>
+	<ItemGroup>
+		<Resource Include="Assets\icon.ico" />
+		<Resource Include="Assets\logo.png" />
+	</ItemGroup>
+</Project>

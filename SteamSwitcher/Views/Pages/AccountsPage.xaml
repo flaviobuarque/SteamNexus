@@ -1,0 +1,267 @@
+﻿<Page
+    x:Class="SteamSwitcher.Views.Pages.AccountsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+    xmlns:vm="clr-namespace:SteamSwitcher.ViewModels"
+    xmlns:converters="clr-namespace:SteamSwitcher.Converters"
+    xmlns:local="clr-namespace:SteamSwitcher.Views.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DataContext="{d:DesignInstance vm:AccountsViewModel, IsDesignTimeCreatable=False}">
+
+    <Page.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+        <converters:PathToImageSourceConverter x:Key="PathToImageSource" />
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar fixa -->
+        <Border
+            Grid.Row="0"
+            x:Name="Toolbar"
+            Padding="20,12,20,12"
+            BorderThickness="0,0,0,1"
+            BorderBrush="{DynamicResource AppBorderBrush}"
+            Background="{DynamicResource AppChromeBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Toggle Grid / Lista -->
+                <ui:TextBox
+                    Margin="16,0"
+                    VerticalAlignment="Center"
+                    PlaceholderText="Buscar por nome ou usuário..."
+                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}">
+                    <ui:TextBox.Icon>
+                        <ui:SymbolIcon Symbol="Search24" />
+                    </ui:TextBox.Icon>
+                </ui:TextBox>
+                
+                <Grid Grid.Column="1"
+                    RenderTransformOrigin="0.5,0.5">
+
+                    <Grid.RenderTransform>
+                        <ScaleTransform x:Name="AddButtonScale"
+                        ScaleX="1"
+                        ScaleY="1"/>
+                    </Grid.RenderTransform>
+
+                    <Grid.Triggers>
+
+                        <!-- Hover In -->
+                        <EventTrigger RoutedEvent="MouseEnter">
+                            <BeginStoryboard>
+                                <Storyboard>
+
+                                    <DoubleAnimation
+                        Storyboard.TargetName="AddButtonScale"
+                        Storyboard.TargetProperty="ScaleX"
+                        To="1.02"
+Duration="0:0:0.15">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+
+                                    <DoubleAnimation
+                        Storyboard.TargetName="AddButtonScale"
+                        Storyboard.TargetProperty="ScaleY"
+                        To="1.02"
+Duration="0:0:0.15">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <!-- Hover Out -->
+                        <EventTrigger RoutedEvent="MouseLeave">
+                            <BeginStoryboard>
+                                <Storyboard>
+
+                                    <DoubleAnimation
+                        Storyboard.TargetName="AddButtonScale"
+                        Storyboard.TargetProperty="ScaleX"
+                        To="1"
+                        Duration="0:0:0.18">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+
+                                    <DoubleAnimation
+                        Storyboard.TargetName="AddButtonScale"
+                        Storyboard.TargetProperty="ScaleY"
+                        To="1"
+                        Duration="0:0:0.18">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                    </Grid.Triggers>
+
+                    <ui:Button
+                        Content="Adicionar"
+                        Cursor="Hand"
+                        Command="{Binding AddAccountCommand}">
+
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="PersonAdd24" />
+                        </ui:Button.Icon>
+
+                        <ui:Button.Style>
+                            <Style TargetType="ui:Button"
+                   BasedOn="{StaticResource {x:Type ui:Button}}">
+                                <Setter Property="Background"
+                        Value="{DynamicResource AppAccentBrush}" />
+
+                                <Setter Property="MouseOverBackground"
+                        Value="{DynamicResource AppAccentAltBrush}" />
+
+                                <Setter Property="PressedBackground"
+                        Value="#2F7AD0" />
+
+                                <Setter Property="Foreground"
+                        Value="White" />
+                            </Style>
+                        </ui:Button.Style>
+
+                    </ui:Button>
+
+                </Grid>
+
+            </Grid>
+        </Border>
+
+        <!-- Conteúdo -->
+        <Grid Grid.Row="1" ClipToBounds="True">
+            <!-- Loading skeleton -->
+            <ItemsControl
+                Padding="20"
+                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.Items>
+                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
+                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
+                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
+                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
+                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
+                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
+                </ItemsControl.Items>
+            </ItemsControl>
+
+            <!-- Grid View -->
+            <ScrollViewer
+    x:Name="GridScrollViewer"
+    Padding="20"
+    VerticalScrollBarVisibility="Auto"
+    HorizontalScrollBarVisibility="Disabled"
+    Focusable="False"
+    ClipToBounds="True"
+    Visibility="{Binding IsGridView, Converter={StaticResource BoolToVisibility}}">
+
+                <ItemsControl ItemsSource="{Binding Accounts}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:AccountCardViewModel}">
+                            <local:AccountGridCard
+                    Margin="0,0,16,16"
+                    DataContext="{Binding}"
+                    SwitchCommand="{Binding DataContext.SwitchAccountCommand,
+                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    EditCommand="{Binding DataContext.EditAccountCommand,
+                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    CopySteamIdCommand="{Binding DataContext.CopySteamIdCommand,
+                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    ForgetCommand="{Binding DataContext.ForgetAccountCommand,
+                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    CancelForgetCommand="{Binding DataContext.CancelForgetAccountCommand,
+                        RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Lista View -->
+            <ScrollViewer
+    x:Name="ListScrollViewer"
+    Padding="20"
+    VerticalScrollBarVisibility="Auto"
+    HorizontalScrollBarVisibility="Disabled"
+    Focusable="False"
+    ClipToBounds="True"
+    Visibility="{Binding IsGridView, Converter={StaticResource InverseBoolToVisibility}}">
+
+                <ItemsControl ItemsSource="{Binding Accounts}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:AccountCardViewModel}">
+                            <local:AccountListRow
+                    Margin="0,0,0,6"
+                    DataContext="{Binding}"
+                    SwitchCommand="{Binding DataContext.SwitchAccountCommand,
+                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    EditCommand="{Binding DataContext.EditAccountCommand,
+                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    CopySteamIdCommand="{Binding DataContext.CopySteamIdCommand,
+                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    ForgetCommand="{Binding DataContext.ForgetAccountCommand,
+                        RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Empty state -->
+            <StackPanel
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Visibility="{Binding HasNoAccounts, Converter={StaticResource BoolToVisibility}}">
+                <ic:SymbolIcon
+                    Symbol="PeopleSearch"
+                    FontSize="64"
+                    Opacity="0.3"
+                    HorizontalAlignment="Center" />
+                <TextBlock
+                    Text="Nenhuma conta encontrada"
+                    FontSize="18"
+                    Opacity="0.5"
+                    HorizontalAlignment="Center"
+                    Margin="0,16,0,8" />
+                <TextBlock
+                    Text="Adicione uma conta Steam para começar."
+                    Opacity="0.35"
+                    HorizontalAlignment="Center" />
+            </StackPanel>
+            
+        </Grid>
+    </Grid>
+</Page>

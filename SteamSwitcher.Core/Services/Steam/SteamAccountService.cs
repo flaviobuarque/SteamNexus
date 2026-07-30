@@ -1,0 +1,335 @@
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
+using SteamSwitcher.Core.Models;
+using ValveKeyValue;
+
+namespace SteamSwitcher.Core.Services;
+
+public class SteamAccountService(
+    ISteamLocatorService locator,
+    IAppSettingsService settingsService,
+    ILogger<SteamAccountService> logger) : ISteamAccountService
+{
+    private readonly string _steamPath = locator.FindSteamInstallPath() ?? string.Empty;
+
+    public async Task<IReadOnlyList<SteamAccount>> GetAccountsAsync(CancellationToken ct = default)
+    {
+        if (string.IsNullOrEmpty(_steamPath))
+        {
+            logger.LogWarning("Steam não encontrado");
+            return [];
+        }
+
+        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        if (!File.Exists(vdfPath))
+        {
+            logger.LogWarning("loginusers.vdf não encontrado em {Path}", vdfPath);
+            return [];
+        }
+
+        return await Task.Run(() =>
+        {
+            var accounts = new List<SteamAccount>();
+            try
+            {
+                using var stream = File.OpenRead(vdfPath);
+                var kv = KVSerializer.Create(KVSerializationFormat.KeyValues1Text);
+                var data = kv.Deserialize(stream);
+
+                foreach (var user in data)
+                {
+                    var steamId64 = user.Name;
+                    var account = new SteamAccount
+                    {
+                        SteamId64 = steamId64,
+                        AccountName = user["AccountName"]?.ToString() ?? string.Empty,
+                        PersonaName = user["PersonaName"]?.ToString() ?? string.Empty,
+                        RememberPassword = user["RememberPassword"]?.ToString() == "1",
+                        MostRecent = user["MostRecent"]?.ToString() == "1",
+                        WantsOfflineMode = user["WantsOfflineMode"]?.ToString() == "1",
+                    };
+
+                    var tsStr = user["Timestamp"]?.ToString() ?? string.Empty;
+                    if (long.TryParse(tsStr, System.Globalization.NumberStyles.Integer,
+                            System.Globalization.CultureInfo.InvariantCulture, out long ts))
+                        account.Timestamp = ts;
+
+                    account.IsActive = account.MostRecent;
+                    accounts.Add(account);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Erro ao ler loginusers.vdf");
+            }
+
+            return (IReadOnlyList<SteamAccount>)accounts;
+        }, ct);
+    }
+
+    public async Task SwitchAccountAsync(
+        SteamAccount account,
+        LoginState? stateOverride = null,
+        CancellationToken ct = default)
+    {
+        var settings = settingsService.Current;
+        LoginState? targetState = stateOverride
+            ?? account.LoginStateOverride
+            ?? settings.DefaultLoginStateOverride;
+
+        logger.LogInformation(
+            "Trocando para {Account} com estado {State}",
+            account.AccountName, targetState);
+
+        // 1. Fecha Steam
+        await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
+
+        // 2. Edita loginusers.vdf
+        await UpdateLoginUsersVdfAsync(account, targetState, ct);
+
+        // 3. Atualiza registro
+        UpdateRegistry(account);
+
+        // 4. Abre Steam
+        await StartSteamAsync(settings, targetState, ct);
+    }
+
+    public async Task<SteamAccount?> GetActiveAccountAsync(CancellationToken ct = default)
+    {
+        var accounts = await GetAccountsAsync(ct);
+
+        try
+        {
+            var activeUserValue = Registry.GetValue(
+                @"HKEY_CURRENT_USER\Software\Valve\Steam\ActiveProcess",
+                "ActiveUser",
+                null);
+
+            if (activeUserValue is not null &&
+                uint.TryParse(activeUserValue.ToString(), out var activeSteamId32) &&
+                activeSteamId32 != 0)
+            {
+                var activeAccount = accounts.FirstOrDefault(account =>
+                    uint.TryParse(account.SteamId32, out var accountSteamId32) &&
+                    accountSteamId32 == activeSteamId32);
+
+                if (activeAccount is not null)
+                    return activeAccount;
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogDebug(ex, "Não foi possível obter a conta Steam ativa pelo Registro");
+        }
+
+        return accounts.FirstOrDefault(account => account.MostRecent);
+    }
+
+    public void ForgetAccount(SteamAccount account)
+    {
+        // Remove do loginusers.vdf e salva backup
+        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        var backupPath = vdfPath + ".bak";
+
+        File.Copy(vdfPath, backupPath, overwrite: true);
+
+        // TODO: implementar remoção do VDF e backup do account
+        logger.LogInformation("Conta {Account} esquecida, backup em {Backup}",
+            account.AccountName, backupPath);
+    }
+
+    public void RestoreAccount(SteamAccount account)
+    {
+        logger.LogInformation("Restaurando conta {Account}", account.AccountName);
+        // TODO: restaurar do backup
+    }
+
+    // --- Privados ---
+
+    private async Task CloseSteamAsync(SteamCloseMethod method, CancellationToken ct)
+    {
+        var processes = System.Diagnostics.Process
+            .GetProcesses()
+            .Where(p => p.ProcessName.StartsWith("steam", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (!processes.Any()) return;
+
+        // Sempre tenta gracioso primeiro
+        var steamExe = locator.GetSteamExePath(_steamPath);
+        if (File.Exists(steamExe))
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = steamExe,
+                Arguments = "-shutdown",
+                UseShellExecute = true
+            });
+
+            var deadline = DateTime.UtcNow.AddSeconds(6);
+            while (DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(300, ct);
+                var still = System.Diagnostics.Process
+                    .GetProcesses()
+                    .Any(p => p.ProcessName.StartsWith("steam", StringComparison.OrdinalIgnoreCase));
+                if (!still) goto done;
+            }
+        }
+
+        // Kill forçado de tudo que sobrou
+        foreach (var proc in System.Diagnostics.Process
+            .GetProcesses()
+            .Where(p => p.ProcessName.StartsWith("steam", StringComparison.OrdinalIgnoreCase)))
+        {
+            try { proc.Kill(entireProcessTree: true); } catch { }
+        }
+
+    done:
+        // Aguarda OS liberar handles dos arquivos
+        await Task.Delay(1200, ct);
+    }
+
+    private async Task UpdateLoginUsersVdfAsync(
+    SteamAccount target,
+    LoginState? state,
+    CancellationToken ct)
+{
+    await Task.Run(() =>
+    {
+        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        File.Copy(vdfPath, vdfPath + "_last", overwrite: true);
+
+        var content = File.ReadAllText(vdfPath);
+
+        // Encontra o bloco de cada usuário e atualiza MostRecent
+        // loginusers.vdf tem estrutura: "76561198XXXXXXXX" { ... }
+        // Abordagem: ler, parsear, reescrever campo a campo via regex
+
+        var lines = File.ReadAllLines(vdfPath).ToList();
+        string? currentSteamId = null;
+
+        for (int i = 0; i < lines.Count; i++)
+        {
+            var trimmed = lines[i].Trim().Trim('"');
+
+            if (trimmed == "}" && currentSteamId is not null)
+            {
+                currentSteamId = null;
+                continue;
+            }
+
+            // Detecta linha de SteamID (linha com só número de 17 dígitos entre aspas)
+            if (System.Text.RegularExpressions.Regex.IsMatch(
+                lines[i].Trim(), @"^""7656\d{13}""$"))
+            {
+                currentSteamId = trimmed;
+                continue;
+            }
+
+            if (currentSteamId is null) continue;
+
+            var isTarget = currentSteamId == target.SteamId64;
+
+            // MostRecent
+            if (lines[i].Contains("\"MostRecent\""))
+            {
+                lines[i] = System.Text.RegularExpressions.Regex.Replace(
+                    lines[i], @"""MostRecent""\s+""[^""]*""",
+                    $"\"MostRecent\"\t\t\"{(isTarget ? "1" : "0")}\"");
+            }
+
+            // RememberPassword — garante 1 no target
+            if (isTarget && lines[i].Contains("\"RememberPassword\""))
+            {
+                lines[i] = System.Text.RegularExpressions.Regex.Replace(
+                    lines[i], @"""RememberPassword""\s+""[^""]*""",
+                    "\"RememberPassword\"\t\t\"1\"");
+            }
+
+            // WantsOfflineMode — só no target
+            if (state.HasValue &&
+                isTarget &&
+                lines[i].Contains("\"WantsOfflineMode\""))
+            {
+                lines[i] = System.Text.RegularExpressions.Regex.Replace(
+                    lines[i], @"""WantsOfflineMode""\s+""[^""]*""",
+                    $"\"WantsOfflineMode\"\t\t\"{(state == LoginState.Offline ? "1" : "0")}\"");
+            }
+
+            if (state.HasValue && isTarget && lines[i].Contains("\"SkipOfflineModeWarning\""))
+            {
+                lines[i] = System.Text.RegularExpressions.Regex.Replace(
+                    lines[i], @"""SkipOfflineModeWarning""\s+""[^""]*""",
+                    $"\"SkipOfflineModeWarning\"\t\t\"{(state == LoginState.Offline ? "1" : "0")}\"");
+            }
+        }
+
+        File.WriteAllLines(vdfPath, lines);
+    }, ct);
+}
+
+    private static void UpdateRegistry(SteamAccount account)
+    {
+        Registry.SetValue(
+            @"HKEY_CURRENT_USER\Software\Valve\Steam",
+            "AutoLoginUser",
+            account.AccountName);
+
+        Registry.SetValue(
+            @"HKEY_CURRENT_USER\Software\Valve\Steam",
+            "RememberPassword",
+            1,
+            RegistryValueKind.DWord);
+    }
+
+    private async Task StartSteamAsync(AppSettings settings, LoginState? state, CancellationToken ct)
+    {
+        var steamExe = locator.GetSteamExePath(_steamPath);
+        if (!File.Exists(steamExe)) return;
+
+        var args = new List<string>();
+
+        if (settings.StartSilent) args.Add("-silent");
+        if (state == LoginState.Offline) args.Add("-offline");
+
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = steamExe,
+            Arguments = string.Join(" ", args),
+            UseShellExecute = settings.StartAsAdmin,
+            Verb = settings.StartAsAdmin ? "runas" : string.Empty,
+        };
+
+        System.Diagnostics.Process.Start(psi);
+        await Task.Delay(1000, ct); // aguarda Steam inicializar
+    }
+
+    public async Task AddAccountAsync(CancellationToken ct = default)
+    {
+        // 1. Fecha Steam
+        await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
+
+        // 2. Limpa autologin do registro
+        Registry.SetValue(
+            @"HKEY_CURRENT_USER\Software\Valve\Steam",
+            "AutoLoginUser",
+            string.Empty);
+
+        Registry.SetValue(
+            @"HKEY_CURRENT_USER\Software\Valve\Steam",
+            "RememberPassword",
+            0,
+            RegistryValueKind.DWord);
+
+        // 3. Abre Steam sem argumentos (cai na tela de login)
+        var steamExe = locator.GetSteamExePath(_steamPath);
+        if (!File.Exists(steamExe)) return;
+
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = steamExe,
+            UseShellExecute = true
+        });
+    }
+}

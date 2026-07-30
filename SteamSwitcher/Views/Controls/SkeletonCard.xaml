@@ -1,0 +1,99 @@
+﻿<UserControl
+    x:Class="SteamSwitcher.Views.Controls.SkeletonCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Width="180" Height="220">
+
+    <UserControl.Resources>
+        <Storyboard x:Key="ShimmerAnimation" RepeatBehavior="Forever">
+            <DoubleAnimation
+                Storyboard.TargetName="ShimmerTranslate"
+                Storyboard.TargetProperty="X"
+                From="-300" To="300"
+                Duration="0:0:1.4" />
+        </Storyboard>
+    </UserControl.Resources>
+
+    <UserControl.Triggers>
+        <EventTrigger RoutedEvent="Loaded">
+            <BeginStoryboard Storyboard="{StaticResource ShimmerAnimation}" />
+        </EventTrigger>
+    </UserControl.Triggers>
+
+    <Border
+        CornerRadius="12"
+        Background="{ui:ThemeResource ControlFillColorDefaultBrush}"
+        BorderThickness="1"
+        BorderBrush="{ui:ThemeResource ControlStrokeColorDefaultBrush}"
+        ClipToBounds="True">
+
+        <!-- Shimmer overlay -->
+        <Border.OpacityMask>
+            <VisualBrush>
+                <VisualBrush.Visual>
+                    <Border
+                        Width="180" Height="220"
+                        CornerRadius="12"
+                        Background="White" />
+                </VisualBrush.Visual>
+            </VisualBrush>
+        </Border.OpacityMask>
+
+        <Grid>
+            <!-- Conteúdo skeleton -->
+            <Border Padding="16,20,16,16" HorizontalAlignment="Center">
+                <StackPanel HorizontalAlignment="Center">
+                    <!-- Avatar placeholder -->
+                    <Ellipse
+                        Width="72" Height="72"
+                        HorizontalAlignment="Center"
+                        Fill="{ui:ThemeResource ControlFillColorSecondaryBrush}" />
+
+                    <!-- Nome placeholder -->
+                    <Border
+                        Height="14"
+                        Width="100"
+                        CornerRadius="4"
+                        Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+                        Margin="0,14,0,0" />
+
+                    <!-- Username placeholder -->
+                    <Border
+                        Height="10"
+                        Width="70"
+                        CornerRadius="4"
+                        Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+                        Margin="0,8,0,0" />
+
+                    <Separator Opacity="0.3" Margin="0,14,0,14" />
+
+                    <!-- Timestamp placeholder -->
+                    <Border
+                        Height="10"
+                        Width="80"
+                        CornerRadius="4"
+                        Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+                        HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
+
+            <!-- Shimmer sweep -->
+            <Rectangle
+                Width="80"
+                HorizontalAlignment="Left"
+                RenderTransformOrigin="0.5,0.5">
+                <Rectangle.RenderTransform>
+                    <TranslateTransform x:Name="ShimmerTranslate" X="-300" />
+                </Rectangle.RenderTransform>
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="Transparent" Offset="0" />
+                        <GradientStop Color="#18FFFFFF" Offset="0.5" />
+                        <GradientStop Color="Transparent" Offset="1" />
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+        </Grid>
+    </Border>
+</UserControl>

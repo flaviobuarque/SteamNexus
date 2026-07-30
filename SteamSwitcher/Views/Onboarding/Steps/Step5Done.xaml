@@ -1,0 +1,115 @@
+﻿<UserControl
+    x:Class="SteamSwitcher.Views.Onboarding.Steps.Step5Done"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+    xmlns:converters="clr-namespace:SteamSwitcher.Converters">
+
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <StackPanel
+        VerticalAlignment="Center"
+        HorizontalAlignment="Center"
+        MaxWidth="420">
+
+        <Border
+            Width="80" Height="80"
+            CornerRadius="40"
+            Background="{ui:ThemeResource SystemAccentColorPrimaryBrush}"
+            HorizontalAlignment="Center">
+            <ic:SymbolIcon
+                Symbol="Checkmark"
+                IconVariant="Filled"
+                FontSize="40"
+                Foreground="White"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center" />
+        </Border>
+
+        <TextBlock
+            Text="Tudo pronto!"
+            FontSize="26"
+            FontWeight="SemiBold"
+            HorizontalAlignment="Center"
+            Margin="0,20,0,8" />
+
+        <TextBlock
+            TextAlignment="Center"
+            Opacity="0.6"
+            TextWrapping="Wrap"
+            Margin="0,0,0,24">
+            O Steam Switcher está configurado e pronto para usar.
+            Clique em Concluir para abrir o painel principal.
+        </TextBlock>
+
+        <!-- Resumo do que foi configurado -->
+        <Border
+    Padding="16,14"
+    CornerRadius="10"
+    Background="{ui:ThemeResource ControlFillColorDefaultBrush}"
+    BorderThickness="1"
+    BorderBrush="{ui:ThemeResource ControlStrokeColorDefaultBrush}">
+            <StackPanel>
+                <StackPanel
+            Orientation="Horizontal"
+            Margin="0,0,0,8"
+            Visibility="{Binding SteamFound,
+                Converter={StaticResource BoolToVisibility}}">
+                    <ic:SymbolIcon
+                Symbol="Checkmark"
+                IconVariant="Filled"
+                FontSize="14"
+                Foreground="#57e389"
+                Margin="0,0,8,0"
+                VerticalAlignment="Center" />
+                    <TextBlock Text="Steam detectado" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel
+            Orientation="Horizontal"
+            Margin="0,0,0,8"
+            Visibility="{Binding ImportedFromTcNo,
+                Converter={StaticResource BoolToVisibility}}">
+                    <ic:SymbolIcon
+                Symbol="Checkmark"
+                IconVariant="Filled"
+                FontSize="14"
+                Foreground="#57e389"
+                Margin="0,0,8,0"
+                VerticalAlignment="Center" />
+                    <TextBlock Text="Contas importadas do TcNo" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <ic:SymbolIcon
+                Symbol="Checkmark"
+                IconVariant="Filled"
+                FontSize="14"
+                Foreground="#57e389"
+                Margin="0,0,8,0"
+                VerticalAlignment="Center" />
+                    <TextBlock Text="Contas Steam carregadas automaticamente"
+                VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Contagem de contas -->
+                <StackPanel Orientation="Horizontal">
+                    <ic:SymbolIcon
+                Symbol="People"
+                IconVariant="Filled"
+                FontSize="14"
+                Foreground="#57e389"
+                Margin="0,0,8,0"
+                VerticalAlignment="Center" />
+                    <TextBlock VerticalAlignment="Center">
+                <Run Text="{Binding AccountsFoundCount, Mode=OneWay}" />
+                <Run Text="conta(s) Steam encontrada(s)" />
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

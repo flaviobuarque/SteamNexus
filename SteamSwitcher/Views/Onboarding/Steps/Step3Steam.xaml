@@ -1,0 +1,240 @@
+﻿<UserControl
+    x:Class="SteamSwitcher.Views.Onboarding.Steps.Step3Steam"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+    xmlns:converters="clr-namespace:SteamSwitcher.Converters">
+
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+    </UserControl.Resources>
+
+    <StackPanel Margin="40,0" VerticalAlignment="Center">
+
+        <TextBlock
+            Text="Steam"
+            FontSize="20"
+            FontWeight="SemiBold"
+            Margin="0,0,0,4" />
+
+        <!-- Steam encontrado -->
+        <StackPanel
+            Visibility="{Binding SteamFound, Converter={StaticResource BoolToVisibility}}">
+            <Border
+                Padding="16,14"
+                CornerRadius="10"
+                Background="#1a3d2b"
+                BorderThickness="1"
+                BorderBrush="#2d6a4f"
+                Margin="0,12,0,16">
+                <StackPanel Orientation="Horizontal">
+                    <ic:SymbolIcon
+                        Symbol="CheckmarkCircle"
+                        IconVariant="Filled"
+                        FontSize="22"
+                        Foreground="#57e389"
+                        Margin="0,0,12,0"
+                        VerticalAlignment="Center" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock
+                            Text="Steam detectado com sucesso"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            Text="{Binding SteamPath}"
+                            FontSize="11"
+                            Opacity="0.5"
+                            Margin="0,2,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Steam não encontrado -->
+        <StackPanel
+            Visibility="{Binding SteamFound, Converter={StaticResource InverseBoolToVisibility}}">
+            <Border
+                Padding="16,14"
+                CornerRadius="10"
+                Background="#3d1a1a"
+                BorderThickness="1"
+                BorderBrush="#6b2020"
+                Margin="0,12,0,16">
+                <StackPanel Orientation="Horizontal">
+                    <ic:SymbolIcon
+                        Symbol="Warning"
+                        IconVariant="Filled"
+                        FontSize="22"
+                        Foreground="#ff6b6b"
+                        Margin="0,0,12,0"
+                        VerticalAlignment="Center" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock
+                            Text="Steam não encontrado"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            Text="Instale o Steam para continuar, ou instale depois."
+                            FontSize="11"
+                            Opacity="0.5"
+                            Margin="0,2,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Botões Instalar / Instalar depois -->
+            <StackPanel
+                Orientation="Horizontal"
+                Visibility="{Binding ShowDriveSelector,
+                    Converter={StaticResource InverseBoolToVisibility}}">
+                <ui:Button
+                    Content="Instalar agora"
+                    Appearance="Primary"
+                    Margin="0,0,10,0"
+                    Command="{Binding LoadDrivesCommand}" />
+                <ui:Button
+                    Content="Instalar depois"
+                    Appearance="Secondary"
+                    Command="{Binding SkipSteamInstallCommand}" />
+            </StackPanel>
+
+            <!-- Seleção de drive -->
+            <StackPanel
+                Visibility="{Binding ShowDriveSelector, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock
+                    Text="Selecione onde instalar o Steam:"
+                    Margin="0,0,0,10"
+                    Opacity="0.7" />
+
+                <ItemsControl ItemsSource="{Binding AvailableDrives}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border
+                                Margin="0,0,0,8"
+                                Padding="14,12"
+                                CornerRadius="10"
+                                BorderThickness="2"
+                                Cursor="Hand">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background"
+                                            Value="{ui:ThemeResource ControlFillColorDefaultBrush}" />
+                                        <Setter Property="BorderBrush"
+                                            Value="{ui:ThemeResource ControlStrokeColorDefaultBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger
+                                                Binding="{Binding DataContext.SelectedDrive,
+                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                Value="{Binding}">
+                                                <Setter Property="BorderBrush"
+                                                    Value="{ui:ThemeResource SystemAccentColorPrimaryBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Border.InputBindings>
+                                    <MouseBinding
+                                        MouseAction="LeftClick"
+                                        Command="{Binding DataContext.SelectDriveCommand,
+                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}" />
+                                </Border.InputBindings>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock
+                                            Text="{Binding Name}"
+                                            FontWeight="SemiBold" />
+                                        <TextBlock
+                                            FontSize="11"
+                                            Opacity="0.5"
+                                            Margin="0,2,0,0">
+                                            <Run Text="{Binding AvailableFreeSpace,
+                                                StringFormat='{}{0:N0} bytes livres'}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <!-- Badge SSD/HDD via DriveType -->
+                                    <Border
+                                        Grid.Column="1"
+                                        CornerRadius="6"
+                                        Padding="8,3"
+                                        Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+                                        VerticalAlignment="Center">
+                                        <TextBlock
+                                            Text="{Binding DriveType}"
+                                            FontSize="11"
+                                            Opacity="0.6" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Barra de progresso de instalação -->
+                <StackPanel
+                    Margin="0,12,0,0"
+                    Visibility="{Binding IsInstallingSteam,
+                        Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock
+                        Text="Instalando Steam..."
+                        Margin="0,0,0,6"
+                        Opacity="0.7" />
+                    <ProgressBar
+                        Value="{Binding InstallProgress}"
+                        Maximum="100"
+                        Height="6" />
+                </StackPanel>
+
+                <StackPanel
+                    Orientation="Horizontal"
+                    Margin="0,12,0,0"
+                    Visibility="{Binding IsInstallingSteam,
+                        Converter={StaticResource InverseBoolToVisibility}}">
+                    <ui:Button
+                        Content="Instalar"
+                        Appearance="Primary"
+                        Margin="0,0,10,0"
+                        Command="{Binding InstallSteamCommand}"
+                        IsEnabled="{Binding SelectedDrive,
+                            Converter={StaticResource NotNullToBool}}" />
+                    <ui:Button
+                        Content="Cancelar"
+                        Appearance="Secondary"
+                        Command="{Binding CancelDriveSelectorCommand}" />
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Botão desfazer instalação (visível após instalar) -->
+        <Border
+            Margin="0,16,0,0"
+            Padding="14,10"
+            CornerRadius="8"
+            Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+            Visibility="{Binding SteamFound, Converter={StaticResource BoolToVisibility}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    Grid.Column="0"
+                    Text="Instalou por engano?"
+                    Opacity="0.6"
+                    VerticalAlignment="Center"
+                    FontSize="12" />
+                <ui:Button
+                    Cursor="Hand"
+                    Grid.Column="1"
+                    Content="Desfazer instalação"
+                    Appearance="Secondary"
+                    FontSize="12"
+                    Command="{Binding UninstallSteamCommand}" />
+            </Grid>
+        </Border>
+    </StackPanel>
+</UserControl>

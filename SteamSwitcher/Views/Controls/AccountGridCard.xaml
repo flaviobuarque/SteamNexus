@@ -1,0 +1,355 @@
+﻿<UserControl
+    x:Class="SteamSwitcher.Views.Controls.AccountGridCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+    xmlns:converters="clr-namespace:SteamSwitcher.Converters"
+    ClipToBounds="False"
+    Width="180">
+
+    <UserControl.Resources>
+        <converters:PathToImageSourceConverter x:Key="PathToImageSource" />
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+
+        <Style x:Key="CardBorderStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush"
+                        Value="{DynamicResource AppAccentBrush}" />
+                </Trigger>
+                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                    <Setter Property="BorderBrush"
+            Value="{DynamicResource AppAccentBrush}" />
+                    <Setter Property="BorderThickness" Value="2" />
+                    <Setter Property="Background"
+            Value="{DynamicResource AppAccentSurfaceBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <UserControl.Triggers>
+        <EventTrigger RoutedEvent="MouseEnter">
+            <BeginStoryboard>
+                <Storyboard>
+                    <DoubleAnimation
+                    Storyboard.TargetName="ScaleRoot"
+Storyboard.TargetProperty="ScaleX"
+                    To="1.03" Duration="0:0:0.12" />
+                    <DoubleAnimation
+                    Storyboard.TargetName="ScaleRoot"
+Storyboard.TargetProperty="ScaleY"
+                    To="1.03" Duration="0:0:0.12" />
+                </Storyboard>
+            </BeginStoryboard>
+        </EventTrigger>
+        <EventTrigger RoutedEvent="MouseLeave">
+            <BeginStoryboard>
+                <Storyboard>
+                    <DoubleAnimation
+            Storyboard.TargetName="ScaleRoot"
+            Storyboard.TargetProperty="ScaleX"
+            To="1.0" Duration="0:0:0.12" />
+                    <DoubleAnimation
+            Storyboard.TargetName="ScaleRoot"
+            Storyboard.TargetProperty="ScaleY"
+            To="1.0" Duration="0:0:0.12" />
+                </Storyboard>
+            </BeginStoryboard>
+        </EventTrigger>
+    </UserControl.Triggers>
+
+    <Border
+    Padding="4"
+    Background="Transparent"
+    RenderTransformOrigin="0.5,0.5">
+        <Border.RenderTransform>
+            <ScaleTransform x:Name="ScaleRoot" ScaleX="1" ScaleY="1" />
+        </Border.RenderTransform>
+
+        <Border
+            x:Name="CardBorder"
+            Style="{StaticResource CardBorderStyle}"
+            ClipToBounds="False"
+            Tag="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}">
+
+            <Border.InputBindings>
+                <MouseBinding
+                MouseAction="LeftDoubleClick"
+                Command="{Binding SwitchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                CommandParameter="{Binding}" />
+            </Border.InputBindings>
+
+            <!-- ContextMenu no Border, não no Grid -->
+            <Border.ContextMenu>
+                <ContextMenu
+        Background="{DynamicResource AppSurfaceBrush}"
+        BorderBrush="{DynamicResource AppBorderBrush}"
+        BorderThickness="1"
+        Padding="4">
+                    <ContextMenu.Effect>
+                        <DropShadowEffect
+                Color="#000000"
+                BlurRadius="16"
+                ShadowDepth="4"
+                Opacity="0.4" />
+                    </ContextMenu.Effect>
+
+                    <MenuItem
+    Header="Trocar para esta conta"
+    Background="Transparent"
+    Foreground="{DynamicResource AppTextPrimaryBrush}"
+    Command="{Binding PlacementTarget.Tag.SwitchCommand,
+        RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+    CommandParameter="{Binding}">
+                        <MenuItem.Icon>
+                            <ic:SymbolIcon Symbol="ArrowSwap"
+            Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        </MenuItem.Icon>
+                        <MenuItem.Style>
+                            <Style TargetType="MenuItem">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </MenuItem.Style>
+                    </MenuItem>
+
+                    <MenuItem
+            Header="Editar conta"
+            Background="Transparent"
+            Foreground="{DynamicResource AppTextPrimaryBrush}"
+            Command="{Binding PlacementTarget.Tag.EditCommand,
+                RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+            CommandParameter="{Binding}">
+                        <MenuItem.Icon>
+                            <ic:SymbolIcon Symbol="Edit"
+                    Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+
+                    <MenuItem
+            Header="Copiar SteamID64"
+            Background="Transparent"
+            Foreground="{DynamicResource AppTextPrimaryBrush}"
+            Command="{Binding PlacementTarget.Tag.CopySteamIdCommand,
+                RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+            CommandParameter="{Binding}">
+                        <MenuItem.Icon>
+                            <ic:SymbolIcon Symbol="Copy"
+                    Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+
+                    <Separator Background="{DynamicResource AppBorderBrush}"
+                   Margin="6,3" />
+
+                    <MenuItem
+            Header="Esquecer conta"
+            Background="Transparent"
+            Foreground="{DynamicResource AppDangerBrush}"
+            Command="{Binding PlacementTarget.Tag.ForgetCommand,
+                RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+            CommandParameter="{Binding}">
+                        <MenuItem.Icon>
+                            <ic:SymbolIcon Symbol="Delete"
+                    Foreground="{DynamicResource AppDangerBrush}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </Border.ContextMenu>
+
+            <Grid>
+                <!-- Overlay de remoção pendente -->
+                <Border
+                CornerRadius="12"
+                Background="{DynamicResource AppOverlayBrush}"
+                Panel.ZIndex="10"
+                Visibility="{Binding IsPendingRemoval, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <ic:SymbolIcon Symbol="Delete" FontSize="32" Foreground="{DynamicResource AppDangerBrush}" />
+                        <TextBlock
+                        Text="Conta removida"
+                        Foreground="White"
+                        HorizontalAlignment="Center"
+                        Margin="0,8,0,4" />
+                        <ui:Button
+                        Content="Desfazer"
+                        Appearance="Primary"
+                        Margin="12,4,12,0"
+                        HorizontalAlignment="Center"
+                        Command="{Binding CancelForgetCommand,
+                            RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Overlay de switching -->
+                <Border
+                CornerRadius="12"
+                Background="{DynamicResource AppOverlayBrush}"
+                Panel.ZIndex="9"
+                Visibility="{Binding IsSwitching, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <ui:ProgressRing IsIndeterminate="True" Width="32" Height="32" />
+                        <TextBlock
+                        Text="Alternando..."
+                        Foreground="White"
+                        HorizontalAlignment="Center"
+                        Margin="0,10,0,0"
+                        FontSize="12" />
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Margin="0">
+
+                    <!-- Header colorido com avatar -->
+                    <Border
+                        CornerRadius="16,16,0,0"
+                        Height="76"
+                        Background="{DynamicResource AccountCardHeaderBrush}">
+                        <Grid>
+
+
+                            <!-- Avatar centralizado -->
+                            <Grid
+                Width="64" Height="64"
+                VerticalAlignment="Bottom"
+                HorizontalAlignment="Center"
+                Margin="0,0,0,-36">
+
+                                <Ellipse Width="60" Height="60">
+                                    <Ellipse.Fill>
+                                        <ImageBrush
+                            ImageSource="{Binding AvatarPath,
+                                Converter={StaticResource PathToImageSource}}"
+                            Stretch="UniformToFill" />
+                                    </Ellipse.Fill>
+                                </Ellipse>
+
+                                <Ellipse
+                                    Width="60" Height="60"
+                                    Fill="{DynamicResource AccountCardHeaderBrush}"
+                                    Visibility="{Binding HasAvatar,
+                                        Converter={StaticResource InverseBoolToVisibility}}">
+                                </Ellipse>
+
+                                <ic:SymbolIcon
+                    Symbol="Person"
+                    FontSize="34"
+                    Foreground="{DynamicResource AppTextMutedBrush}"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Visibility="{Binding HasAvatar,
+                        Converter={StaticResource InverseBoolToVisibility}}" />
+
+                                <!-- Badge online -->
+                                <Ellipse
+                                    Width="14" Height="14"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom"
+                                    Margin="0,0,1,1"
+                                    Fill="{DynamicResource OnlineBrush}"
+                                    Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibility}}" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Corpo do card -->
+                    <StackPanel Margin="14,38,14,12">
+
+                        <TextBlock
+            Text="{Binding DisplayName}"
+            FontSize="14"
+            FontWeight="SemiBold"
+            Foreground="{DynamicResource AppTextPrimaryBrush}"
+            HorizontalAlignment="Center"
+            TextAlignment="Center"
+            TextTrimming="CharacterEllipsis"
+            ToolTip="{Binding DisplayName}" />
+
+                        <TextBlock
+            Text="{Binding AccountName, StringFormat=@{0}}"
+            FontSize="11"
+            Foreground="{DynamicResource AppTextSecondaryBrush}"
+            HorizontalAlignment="Center"
+            TextTrimming="CharacterEllipsis"
+            Margin="0,3,0,14" />
+
+                        <Border
+            Height="1"
+            Background="{DynamicResource AccountCardSeparatorBrush}"
+            Margin="0,0,0,12" />
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <ic:SymbolIcon
+                Symbol="Clock"
+                FontSize="11"
+                Foreground="{DynamicResource AppTextSecondaryBrush}"
+                Margin="0,0,4,0"
+                VerticalAlignment="Center" />
+                            <TextBlock
+                Text="{Binding LastLoginFormatted}"
+                FontSize="11"
+                Foreground="{DynamicResource AppTextSecondaryBrush}"
+                VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <Border
+    CornerRadius="7"
+    Padding="12,5"
+    HorizontalAlignment="Center"
+    Margin="0,12,0,0"
+    BorderThickness="1"
+    Background="{DynamicResource AppAccentSurfaceBrush}"
+    BorderBrush="{DynamicResource AppAccentBrush}"
+    Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibility}}">
+
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse
+            Width="7"
+            Height="7"
+            Margin="0,0,6,0"
+            VerticalAlignment="Center"
+            Fill="{DynamicResource AppSuccessBrush}">
+
+                                    <Ellipse.Triggers>
+                                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard
+                            AutoReverse="True"
+                            RepeatBehavior="Forever">
+                                                    <DoubleAnimation
+                                Storyboard.TargetProperty="Opacity"
+                                From="1"
+                                To="0.35"
+                                Duration="0:0:1.4" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Ellipse.Triggers>
+                                </Ellipse>
+
+                                <TextBlock
+            Text="CONTA ATIVA"
+            Foreground="{DynamicResource AppAccentBrush}"
+            FontSize="10"
+            FontWeight="Bold" />
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Border>
+</UserControl>
