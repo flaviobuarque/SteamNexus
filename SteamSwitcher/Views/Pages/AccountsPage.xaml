@@ -174,50 +174,56 @@ Duration="0:0:0.15">
             </ItemsControl>
 
             <!-- Grid View (virtualizado) -->
-            <ScrollViewer
-                x:Name="AccountsScrollViewer"
+            <ItemsControl
+                x:Name="AccountsItemsControl"
                 Padding="20"
-                VerticalScrollBarVisibility="Auto"
-                HorizontalScrollBarVisibility="Disabled"
-                CanContentScroll="True"
+                ItemsSource="{Binding AccountsView}"
                 Focusable="False"
                 ClipToBounds="True"
+                VirtualizingPanel.IsVirtualizing="True"
+                VirtualizingPanel.VirtualizationMode="Recycling"
+                ScrollViewer.CanContentScroll="True"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibility}}">
-                <ItemsControl
-                    x:Name="AccountsItemsControl"
-                    ItemsSource="{Binding AccountsView}"
-                    Focusable="False"
-                    VirtualizingPanel.IsVirtualizing="True"
-                    VirtualizingPanel.VirtualizationMode="Recycling"
-                    ScrollViewer.CanContentScroll="True"
-                    ScrollViewer.IsDeferredScrollingEnabled="False"
-                    ScrollViewer.PanningMode="VerticalOnly">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <vwp:VirtualizingWrapPanel
-                                ItemSize="196,272"
-                                Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type vm:AccountCardViewModel}">
-                            <local:AccountGridCard
-                                DataContext="{Binding}"
-                                Margin="0,0,16,12"
-                                SwitchCommand="{Binding DataContext.SwitchAccountCommand,
-                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                EditCommand="{Binding DataContext.EditAccountCommand,
-                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                CopySteamIdCommand="{Binding DataContext.CopySteamIdCommand,
-                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                ForgetCommand="{Binding DataContext.ForgetAccountCommand,
-                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                CancelForgetCommand="{Binding DataContext.CancelForgetAccountCommand,
-                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+                <ItemsControl.Template>
+                    <ControlTemplate TargetType="ItemsControl">
+                        <ScrollViewer
+                            CanContentScroll="True"
+                            IsDeferredScrollingEnabled="False"
+                            VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Padding="{TemplateBinding Padding}"
+                            Focusable="False">
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ItemsControl.Template>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <vwp:VirtualizingWrapPanel
+                            ItemSize="196,272"
+                            Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:AccountCardViewModel}">
+                        <local:AccountGridCard
+                            DataContext="{Binding}"
+                            Margin="0,0,16,12"
+                            SwitchCommand="{Binding DataContext.SwitchAccountCommand,
+                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            EditCommand="{Binding DataContext.EditAccountCommand,
+                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CopySteamIdCommand="{Binding DataContext.CopySteamIdCommand,
+                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            ForgetCommand="{Binding DataContext.ForgetAccountCommand,
+                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CancelForgetCommand="{Binding DataContext.CancelForgetAccountCommand,
+                                RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
             <!-- Empty state -->
             <StackPanel

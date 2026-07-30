@@ -51,7 +51,7 @@ public partial class GamesPage : Page,
         if (GamesItemsControl.ItemContainerGenerator.Status != GeneratorStatus.ContainersGenerated)
             return;
 
-        var scrollViewer = GamesScrollViewer;
+        var scrollViewer = FindScrollViewer(GamesItemsControl);
         if (scrollViewer is null) return;
 
         var viewport = new Rect(0, 0,
@@ -77,5 +77,16 @@ public partial class GamesPage : Page,
             }
             catch { }
         }
+    }
+
+    private static ScrollViewer? FindScrollViewer(DependencyObject d)
+    {
+        var cur = d;
+        while (cur is not null && cur is not Page)
+        {
+            if (cur is ScrollViewer sv) return sv;
+            cur = VisualTreeHelper.GetParent(cur);
+        }
+        return null;
     }
 }

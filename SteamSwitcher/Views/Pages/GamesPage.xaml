@@ -133,31 +133,38 @@
 
         <!-- Conteúdo -->
         <Grid Grid.Row="1">
-            <ScrollViewer
-                x:Name="GamesScrollViewer"
+            <ItemsControl
+                x:Name="GamesItemsControl"
                 Padding="16"
-                VerticalScrollBarVisibility="Auto"
-                HorizontalScrollBarVisibility="Disabled"
-                CanContentScroll="True"
+                ItemsSource="{Binding Games}"
                 ClipToBounds="True"
-                Focusable="False"
+                VirtualizingPanel.IsVirtualizing="True"
+                VirtualizingPanel.VirtualizationMode="Recycling"
+                ScrollViewer.CanContentScroll="True"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibility}}">
-                <ItemsControl
-                    x:Name="GamesItemsControl"
-                    ItemsSource="{Binding Games}"
-                    VirtualizingPanel.IsVirtualizing="True"
-                    VirtualizingPanel.VirtualizationMode="Recycling"
-                    ScrollViewer.CanContentScroll="True"
-                    ScrollViewer.IsDeferredScrollingEnabled="False"
-                    ScrollViewer.PanningMode="VerticalOnly">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <vwp:VirtualizingWrapPanel
-                                ItemSize="172,364"
-                                Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
+                <ItemsControl.Template>
+                    <ControlTemplate TargetType="ItemsControl">
+                        <ScrollViewer
+                            CanContentScroll="True"
+                            IsDeferredScrollingEnabled="False"
+                            VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Padding="{TemplateBinding Padding}"
+                            Focusable="False">
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ItemsControl.Template>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <vwp:VirtualizingWrapPanel
+                            ItemSize="172,364"
+                            Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:GameCardViewModel}">
                             <Border
                                 x:Name="CardRoot"
@@ -394,7 +401,6 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-            </ScrollViewer>
 
             <Border
     HorizontalAlignment="Center"
