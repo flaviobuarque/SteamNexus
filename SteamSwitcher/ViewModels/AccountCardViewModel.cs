@@ -13,10 +13,6 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     [ObservableProperty] private bool _isActive = account.IsActive;
     [ObservableProperty] private bool _isSwitching;
     [ObservableProperty] private bool _isPendingRemoval;
-    [ObservableProperty] private bool _isVacBanned;
-    [ObservableProperty] private bool _isGameBanned;
-    [ObservableProperty] private bool _isLimited;
-    [ObservableProperty] private bool _hasValidSession = true;
 
     public string DisplayName => Account.DisplayName;
     public string AccountName => Account.AccountName;

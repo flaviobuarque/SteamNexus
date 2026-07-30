@@ -11,11 +11,8 @@ public class SteamAccount
     public long Timestamp { get; set; }
     public bool WantsOfflineMode { get; set; }
 
-    // Dados remotos (avatar, VAC)
+    // Dados remotos (avatar)
     public string? AvatarUrl { get; set; }
-    public bool IsVacBanned { get; set; }
-    public bool IsGameBanned { get; set; }
-    public bool IsLimitedAccount { get; set; }
 
     // Overrides locais do app
     public string? CustomDisplayName { get; set; }
