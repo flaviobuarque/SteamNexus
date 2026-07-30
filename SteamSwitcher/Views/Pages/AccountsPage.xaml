@@ -188,7 +188,10 @@ Duration="0:0:0.15">
                     ItemsSource="{Binding AccountsView}"
                     Focusable="False"
                     VirtualizingPanel.IsVirtualizing="True"
-                    VirtualizingPanel.VirtualizationMode="Recycling">
+                    VirtualizingPanel.VirtualizationMode="Recycling"
+                    ScrollViewer.CanContentScroll="True"
+                    ScrollViewer.IsDeferredScrollingEnabled="False"
+                    ScrollViewer.PanningMode="VerticalOnly">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <vwp:VirtualizingWrapPanel

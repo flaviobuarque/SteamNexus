@@ -146,7 +146,10 @@
                     x:Name="GamesItemsControl"
                     ItemsSource="{Binding Games}"
                     VirtualizingPanel.IsVirtualizing="True"
-                    VirtualizingPanel.VirtualizationMode="Recycling">
+                    VirtualizingPanel.VirtualizationMode="Recycling"
+                    ScrollViewer.CanContentScroll="True"
+                    ScrollViewer.IsDeferredScrollingEnabled="False"
+                    ScrollViewer.PanningMode="VerticalOnly">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <vwp:VirtualizingWrapPanel
