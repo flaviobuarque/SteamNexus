@@ -16,11 +16,6 @@ public class SteamGame
     // Precedência: per-game > per-account > global.
     public LoginState? LoginStateOverride { get; set; }
 
-    // Imagens
-    public string? CoverUrl { get; set; }
-    public string? HeroCoverUrl { get; set; }
-    public string? CoverLocalPath { get; set; }
-
     // Stats (do localconfig.vdf)
     public int PlaytimeMinutes { get; set; }
     public int PlaytimeForever => PlaytimeMinutes;

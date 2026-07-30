@@ -201,8 +201,6 @@ public class SteamGameService(
                 SizeOnDisk = sizeBytes,
                 OwnerSteamId64 = lastOwner,
                 OwnerAccount = owner,
-                CoverUrl = $"https://cdn.akamai.steamstatic.com/steam/apps/{appId}/header.jpg",
-                HeroCoverUrl = $"https://cdn.akamai.steamstatic.com/steam/apps/{appId}/capsule_616x353.jpg",
             };
 
             return game;
