@@ -231,7 +231,6 @@ public partial class SettingsViewModel(
         return new AppSettings
         {
             Theme = Theme,
-            UseGridView = current.UseGridView,
             AfterAccountSwitch = AfterAccountSwitch,
             AfterGameLaunch = AfterGameLaunch,
             DefaultLoginStateOverride = DefaultLoginStateOverride,

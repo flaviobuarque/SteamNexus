@@ -4,7 +4,6 @@ public class AppSettings
 {
     // Aparência
     public AppTheme Theme { get; set; } = AppTheme.System;
-    public bool UseGridView { get; set; } = true;
 
     // Comportamento após troca de conta
     public PostSwitchBehavior AfterAccountSwitch { get; set; } = PostSwitchBehavior.KeepOpen;
