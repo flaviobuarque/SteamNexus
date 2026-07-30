@@ -4,7 +4,6 @@ using System.Diagnostics;
 namespace SteamSwitcher.Core.Services;
 
 public sealed class GameProcessService(
-    ISteamLocatorService steamLocator,
     ILogger<GameProcessService> logger) : IGameProcessService, IAsyncDisposable
 {
     public event EventHandler<GameStateChangedEventArgs>? GameStateChanged;
@@ -122,7 +121,7 @@ public sealed class GameProcessService(
         string[] exeNames;
         lock (_exeCache)
         {
-            if (!_exeCache.TryGetValue(installPath, out exeNames))
+            if (!_exeCache.TryGetValue(installPath, out exeNames!))
             {
                 try
                 {
