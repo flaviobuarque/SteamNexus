@@ -52,25 +52,6 @@ public class OnboardingService : IOnboardingService
         _ = SaveFlagsAsync();
     }
 
-    public async Task<bool> TryImportFromTcNoAsync(CancellationToken ct = default)
-    {
-        var tcnoPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "TcNo Account Switcher");
-
-        if (!Directory.Exists(tcnoPath))
-        {
-            _logger.LogInformation("TcNo não encontrado em {Path}", tcnoPath);
-            return false;
-        }
-
-        var steamCachePath = Path.Combine(tcnoPath, "LoginCache", "Steam", "LoginCache.json");
-        if (!File.Exists(steamCachePath)) return false;
-
-        _logger.LogInformation("TcNo encontrado, importando contas de {Path}", steamCachePath);
-        return true;
-    }
-
     public async Task<IReadOnlyList<DriveInfo>> GetSuitableDrivesAsync()
     {
         return await Task.Run(() =>
