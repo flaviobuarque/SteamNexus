@@ -2,7 +2,6 @@
 using SteamSwitcher.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace SteamSwitcher.Views.Pages;
 
@@ -26,15 +25,6 @@ public partial class AccountsPage : Page,
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
-        RemoveHandler(
-            UIElement.PreviewMouseWheelEvent,
-            new MouseWheelEventHandler(OnPageMouseWheel));
-
-        AddHandler(
-            UIElement.PreviewMouseWheelEvent,
-            new MouseWheelEventHandler(OnPageMouseWheel),
-            handledEventsToo: true);
-
         if (!_messengerRegistered)
         {
             WeakReferenceMessenger.Default.Register<CacheCleared>(
@@ -61,36 +51,7 @@ public partial class AccountsPage : Page,
 
     private void Page_Unloaded(object sender, RoutedEventArgs e)
     {
-        RemoveHandler(
-            UIElement.PreviewMouseWheelEvent,
-            new MouseWheelEventHandler(OnPageMouseWheel));
         WeakReferenceMessenger.Default.Unregister<CacheCleared>(this);
         _messengerRegistered = false;
-    }
-
-    // Garante que o wheel role a página mesmo sobre Cards não-ItemsControl
-    // (ItemsControl virtualizado já absorve wheel, este handler evita
-    // situações onde o evento é interceptado por algum filho).
-    private void OnPageMouseWheel(object sender, MouseWheelEventArgs e)
-    {
-        if (e.Handled) return;
-        var scrollViewer = FindScrollViewer(AccountsItemsControl);
-        if (scrollViewer is null) return;
-
-        scrollViewer.ScrollToVerticalOffset(
-            scrollViewer.VerticalOffset - e.Delta);
-        e.Handled = true;
-    }
-
-    private static ScrollViewer? FindScrollViewer(DependencyObject d)
-    {
-        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++)
-        {
-            var child = System.Windows.Media.VisualTreeHelper.GetChild(d, i);
-            if (child is ScrollViewer sv) return sv;
-            var found = FindScrollViewer(child);
-            if (found is not null) return found;
-        }
-        return null;
     }
 }

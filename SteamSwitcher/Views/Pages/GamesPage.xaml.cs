@@ -51,7 +51,7 @@ public partial class GamesPage : Page,
         if (GamesItemsControl.ItemContainerGenerator.Status != GeneratorStatus.ContainersGenerated)
             return;
 
-        var scrollViewer = FindScrollViewer(GamesItemsControl);
+        var scrollViewer = GamesScrollViewer;
         if (scrollViewer is null) return;
 
         var viewport = new Rect(0, 0,
@@ -77,17 +77,5 @@ public partial class GamesPage : Page,
             }
             catch { }
         }
-    }
-
-    private static ScrollViewer? FindScrollViewer(DependencyObject d)
-    {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
-        {
-            var child = VisualTreeHelper.GetChild(d, i);
-            if (child is ScrollViewer sv) return sv;
-            var found = FindScrollViewer(child);
-            if (found is not null) return found;
-        }
-        return null;
     }
 }

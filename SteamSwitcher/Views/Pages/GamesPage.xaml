@@ -133,25 +133,28 @@
 
         <!-- Conteúdo -->
         <Grid Grid.Row="1">
-            <ItemsControl
-                x:Name="GamesItemsControl"
+            <ScrollViewer
+                x:Name="GamesScrollViewer"
                 Padding="16"
-                ItemsSource="{Binding Games}"
-                VirtualizingPanel.IsVirtualizing="True"
-                VirtualizingPanel.VirtualizationMode="Recycling"
-                ScrollViewer.CanContentScroll="True"
-                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Disabled"
+                CanContentScroll="True"
                 ClipToBounds="True"
+                Focusable="False"
                 Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibility}}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <vwp:VirtualizingWrapPanel
-                            ItemSize="172,364"
-                            Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
+                <ItemsControl
+                    x:Name="GamesItemsControl"
+                    ItemsSource="{Binding Games}"
+                    VirtualizingPanel.IsVirtualizing="True"
+                    VirtualizingPanel.VirtualizationMode="Recycling">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <vwp:VirtualizingWrapPanel
+                                ItemSize="172,364"
+                                Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:GameCardViewModel}">
                             <Border
                                 x:Name="CardRoot"
@@ -388,6 +391,7 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+            </ScrollViewer>
 
             <Border
     HorizontalAlignment="Center"
