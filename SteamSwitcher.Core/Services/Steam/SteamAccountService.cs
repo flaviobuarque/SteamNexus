@@ -155,7 +155,7 @@ public class SteamAccountService(
 
         if (!processes.Any()) return;
 
-        // Sempre tenta gracioso primeiro
+        // Sempre tenta gracioso primeiro (-shutdown eh o proprio metodo de fechamento do Steam).
         var steamExe = locator.GetSteamExePath(_steamPath);
         if (File.Exists(steamExe))
         {
@@ -166,28 +166,45 @@ public class SteamAccountService(
                 UseShellExecute = true
             });
 
-            var deadline = DateTime.UtcNow.AddSeconds(6);
+            // Aguarda ate 8s o Steam fechar voluntariamente (sem enumerar/matando processos).
+            var deadline = DateTime.UtcNow.AddSeconds(8);
             while (DateTime.UtcNow < deadline)
             {
-                await Task.Delay(300, ct);
+                await Task.Delay(400, ct);
                 var still = System.Diagnostics.Process
-                    .GetProcesses()
-                    .Any(p => p.ProcessName.StartsWith("steam", StringComparison.OrdinalIgnoreCase));
+                    .GetProcessesByName("steam")
+                    .Length > 0;
                 if (!still) goto done;
             }
         }
 
-        // Kill forçado de tudo que sobrou
+        // Fallback: pede fechamento gracioso da janela principal de cada processo Steam,
+        // evitando Kill (que eleva heuristica de antivirrus e pode corromper arquivos VDF).
         foreach (var proc in System.Diagnostics.Process
             .GetProcesses()
             .Where(p => p.ProcessName.StartsWith("steam", StringComparison.OrdinalIgnoreCase)))
         {
-            try { proc.Kill(entireProcessTree: true); } catch { }
+            try { proc.CloseMainWindow(); } catch { }
+            proc.Dispose();
+        }
+
+        // Da tempo pro Steam processar o WM_CLOSE.
+        await Task.Delay(1500, ct);
+
+        // Se ainda houver Steam rodando, encerra forcando - ultima recurso.
+        foreach (var proc in System.Diagnostics.Process
+            .GetProcessesByName("steam"))
+        {
+            try { if (!proc.HasExited) proc.Close(); } catch { }
+            proc.Dispose();
         }
 
     done:
-        // Aguarda OS liberar handles dos arquivos
-        await Task.Delay(1200, ct);
+        // Aguarda OS liberar handles dos arquivos.
+        await Task.Delay(800, ct);
+
+        // Dispose do snapshot original.
+        foreach (var p in processes) p.Dispose();
     }
 
     private async Task UpdateLoginUsersVdfAsync(
