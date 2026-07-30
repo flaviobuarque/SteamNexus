@@ -85,50 +85,35 @@ public class OnboardingService : IOnboardingService
         IProgress<int> progress,
         CancellationToken ct = default)
     {
+        // Abrimos apenas a pagina oficial de download do Steam no navegador padrao.
+        // Antes baixavamos SteamSetup.exe e o executavamos com /S /runas, padrao
+        // heuristico identico ao de "droppers" — alvo de antivirrus. O usuario
+        // instala manualmente a partir dai.
         SetCorruptedInstallFlag(true);
-        var installerPath = Path.Combine(Path.GetTempPath(), "SteamSetup.exe");
+        progress.Report(50);
 
         try
         {
-            progress.Report(5);
-            using var http = new HttpClient();
-            var bytes = await http.GetByteArrayAsync(
-                "https://cdn.cloudflare.steamstatic.com/client/installer/SteamSetup.exe", ct);
-            await File.WriteAllBytesAsync(installerPath, bytes, ct);
-            progress.Report(50);
-
-            var targetPath = Path.Combine(targetDrive, "Steam");
-            var psi = new System.Diagnostics.ProcessStartInfo
+            var url = "https://store.steampowered.com/about/";
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
-                FileName = installerPath,
-                Arguments = $"/S /D={targetPath}",
-                UseShellExecute = true,
-                Verb = "runas"
-            };
+                FileName = url,
+                UseShellExecute = true
+            });
 
-            var proc = System.Diagnostics.Process.Start(psi)!;
-            await proc.WaitForExitAsync(ct);
-            progress.Report(90);
+            progress.Report(100);
 
-            var steamExe = Path.Combine(targetPath, "Steam.exe");
-            if (File.Exists(steamExe))
-            {
-                SetCorruptedInstallFlag(false);
-                progress.Report(100);
-                return true;
-            }
+            // Aguarda alguns segundos para o usuario iniciar o download se quiser.
+            await Task.Delay(TimeSpan.FromSeconds(2), ct);
 
+            // Sinaliza false: a instalacao nao foi confirmada por nos; o usuario
+            // concluir manualmente e o onboarding re-detecta o Steam na proxima exec.
             return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao instalar Steam");
+            _logger.LogError(ex, "Erro ao abrir pagina de download do Steam");
             return false;
-        }
-        finally
-        {
-            if (File.Exists(installerPath))
-                File.Delete(installerPath);
         }
     }
 
