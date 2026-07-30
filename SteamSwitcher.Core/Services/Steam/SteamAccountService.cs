@@ -138,12 +138,6 @@ public class SteamAccountService(
             account.AccountName, backupPath);
     }
 
-    public void RestoreAccount(SteamAccount account)
-    {
-        logger.LogInformation("Restaurando conta {Account}", account.AccountName);
-        // TODO: restaurar do backup
-    }
-
     // --- Privados ---
 
     private async Task CloseSteamAsync(SteamCloseMethod method, CancellationToken ct)
