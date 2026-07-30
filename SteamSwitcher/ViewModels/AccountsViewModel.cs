@@ -61,6 +61,10 @@ public partial class AccountsViewModel(
         Timeout = TimeSpan.FromSeconds(5)
     };
 
+    private static readonly System.Text.RegularExpressions.Regex AvatarUrlRegex =
+        new(@"<avatarFull><!\[CDATA\[(.+?)\]\]></avatarFull>",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
     private long _ignoreVdfChangesUntilUtcTicks;
 
     public async Task InitializeAsync(CancellationToken ct = default)
@@ -254,9 +258,7 @@ public partial class AccountsViewModel(
 
                     var xml = await AvatarHttp.GetStringAsync(profileUrl, ct);
 
-                    var match = System.Text.RegularExpressions.Regex.Match(
-                        xml,
-                        @"<avatarFull><!\[CDATA\[(.+?)\]\]></avatarFull>");
+                    var match = AvatarUrlRegex.Match(xml);
 
                     if (!match.Success)
                         return;

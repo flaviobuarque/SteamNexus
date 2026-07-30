@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SteamSwitcher.Core.Models;
+using System.Text.RegularExpressions;
 using ValveKeyValue;
 
 namespace SteamSwitcher.Core.Services;
@@ -11,6 +12,19 @@ public class SteamAccountService(
     ILogger<SteamAccountService> logger) : ISteamAccountService
 {
     private readonly string _steamPath = locator.FindSteamInstallPath() ?? string.Empty;
+
+    // Regex pre-compiladas (热心 usado em cada linha do VDF) — evita compilar a
+    // cada iteracao de SwitchAccountAsync (potencialmente centenas de linhas).
+    private static readonly Regex SteamIdLineRegex =
+        new(@"""7656\d{13}""", RegexOptions.Compiled);
+    private static readonly Regex MostRecentRegex =
+        new(@"""MostRecent""\s+""[^""]*""", RegexOptions.Compiled);
+    private static readonly Regex RememberPasswordRegex =
+        new(@"""RememberPassword""\s+""[^""]*""", RegexOptions.Compiled);
+    private static readonly Regex WantsOfflineModeRegex =
+        new(@"""WantsOfflineMode""\s+""[^""]*""", RegexOptions.Compiled);
+    private static readonly Regex SkipOfflineModeWarningRegex =
+        new(@"""SkipOfflineModeWarning""\s+""[^""]*""", RegexOptions.Compiled);
 
     public async Task<IReadOnlyList<SteamAccount>> GetAccountsAsync(CancellationToken ct = default)
     {
@@ -230,8 +244,7 @@ public class SteamAccountService(
             }
 
             // Detecta linha de SteamID (linha com só número de 17 dígitos entre aspas)
-            if (System.Text.RegularExpressions.Regex.IsMatch(
-                lines[i].Trim(), @"^""7656\d{13}""$"))
+            if (SteamIdLineRegex.IsMatch(lines[i].Trim()))
             {
                 currentSteamId = trimmed;
                 continue;
@@ -244,17 +257,15 @@ public class SteamAccountService(
             // MostRecent
             if (lines[i].Contains("\"MostRecent\""))
             {
-                lines[i] = System.Text.RegularExpressions.Regex.Replace(
-                    lines[i], @"""MostRecent""\s+""[^""]*""",
-                    $"\"MostRecent\"\t\t\"{(isTarget ? "1" : "0")}\"");
+                lines[i] = MostRecentRegex.Replace(
+                    lines[i], $"\"MostRecent\"\t\t\"{(isTarget ? "1" : "0")}\"");
             }
 
             // RememberPassword — garante 1 no target
             if (isTarget && lines[i].Contains("\"RememberPassword\""))
             {
-                lines[i] = System.Text.RegularExpressions.Regex.Replace(
-                    lines[i], @"""RememberPassword""\s+""[^""]*""",
-                    "\"RememberPassword\"\t\t\"1\"");
+                lines[i] = RememberPasswordRegex.Replace(
+                    lines[i], "\"RememberPassword\"\t\t\"1\"");
             }
 
             // WantsOfflineMode — escreve em TODOS os usuários quando Online,
@@ -262,17 +273,15 @@ public class SteamAccountService(
             if (lines[i].Contains("\"WantsOfflineMode\""))
             {
                 var newValue = (isTarget && wantsOffline) ? "1" : "0";
-                lines[i] = System.Text.RegularExpressions.Regex.Replace(
-                    lines[i], @"""WantsOfflineMode""\s+""[^""]*""",
-                    $"\"WantsOfflineMode\"\t\t\"{newValue}\"");
+                lines[i] = WantsOfflineModeRegex.Replace(
+                    lines[i], $"\"WantsOfflineMode\"\t\t\"{newValue}\"");
             }
 
             if (lines[i].Contains("\"SkipOfflineModeWarning\""))
             {
                 var newValue = (isTarget && wantsOffline) ? "1" : "0";
-                lines[i] = System.Text.RegularExpressions.Regex.Replace(
-                    lines[i], @"""SkipOfflineModeWarning""\s+""[^""]*""",
-                    $"\"SkipOfflineModeWarning\"\t\t\"{newValue}\"");
+                lines[i] = SkipOfflineModeWarningRegex.Replace(
+                    lines[i], $"\"SkipOfflineModeWarning\"\t\t\"{newValue}\"");
             }
         }
 
