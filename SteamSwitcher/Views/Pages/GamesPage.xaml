@@ -6,6 +6,7 @@
     xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
     xmlns:vm="clr-namespace:SteamSwitcher.ViewModels"
     xmlns:converters="clr-namespace:SteamSwitcher.Converters"
+    xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
     Loaded="Page_Loaded">
 
     <Page.Resources>
@@ -132,21 +133,25 @@
 
         <!-- Conteúdo -->
         <Grid Grid.Row="1">
-            <ScrollViewer
-                x:Name="GamesScrollViewer"
+            <ItemsControl
+                x:Name="GamesItemsControl"
                 Padding="16"
-                VerticalScrollBarVisibility="Auto"
-                HorizontalScrollBarVisibility="Disabled"
+                ItemsSource="{Binding Games}"
+                VirtualizingPanel.IsVirtualizing="True"
+                VirtualizingPanel.VirtualizationMode="Recycling"
+                ScrollViewer.CanContentScroll="True"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ClipToBounds="True"
                 Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibility}}">
-                <ItemsControl
-                    x:Name="GamesItemsControl"
-                    ItemsSource="{Binding Games}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <vwp:VirtualizingWrapPanel
+                            ItemSize="172,364"
+                            Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:GameCardViewModel}">
                             <Border
                                 x:Name="CardRoot"
@@ -181,8 +186,7 @@
                                         VerticalAlignment="Top">
                                         <Border.Background>
                                             <ImageBrush
-                                                ImageSource="{Binding CoverPath,
-                                                    Converter={StaticResource PathToImageSource}}"
+                                                ImageSource="{Binding CoverImage}"
                                                 Stretch="UniformToFill" />
                                         </Border.Background>
                                         <Border
@@ -384,7 +388,6 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-            </ScrollViewer>
 
             <Border
     HorizontalAlignment="Center"

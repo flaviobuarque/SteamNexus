@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using SteamSwitcher.Helpers;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
@@ -36,12 +37,17 @@ public class EmptyStringToVisibilityConverter : IValueConverter
 }
 
 // Path local → BitmapImage (com fallback gracioso)
+// Prioriza o cache compartilhado do ImageLoader (pré-decodado e frozen).
+// Em cache miss síncrono, decodifica uma única vez habilitando o cache de Bitmap do WPF.
 public class PathToImageSourceConverter : IValueConverter
 {
     public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         var path = value as string;
         if (string.IsNullOrEmpty(path)) return null;
+
+        var cached = ImageLoader.GetCached(path);
+        if (cached is not null) return cached;
 
         try
         {
@@ -53,8 +59,9 @@ public class PathToImageSourceConverter : IValueConverter
             bitmap.BeginInit();
             bitmap.UriSource = uri;
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            bitmap.CreateOptions = BitmapCreateOptions.None;
             bitmap.EndInit();
+            bitmap.Freeze();
             return bitmap;
         }
         catch

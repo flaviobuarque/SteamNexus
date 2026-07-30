@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SteamSwitcher.Core.Models;
+using SteamSwitcher.ViewModels;
 using System.Windows;
 using System.Windows.Media.Animation;
 using System.Collections.ObjectModel;
@@ -10,12 +11,19 @@ namespace SteamSwitcher.Views.Dialogs;
 public partial class PickAccountDialog : Window
 {
     public SteamAccount? SelectedAccount { get; private set; }
+    public LoginState? SelectedLoginState { get; private set; }
     private readonly PickAccountDialogViewModel _vm;
 
     public PickAccountDialog(string gameName, IReadOnlyList<SteamAccount> accounts)
+        : this(gameName, accounts, currentLoginState: null) { }
+
+    public PickAccountDialog(
+        string gameName,
+        IReadOnlyList<SteamAccount> accounts,
+        LoginState? currentLoginState)
     {
         InitializeComponent();
-        _vm = new PickAccountDialogViewModel(gameName, accounts);
+        _vm = new PickAccountDialogViewModel(gameName, accounts, currentLoginState);
         DataContext = _vm;
         Loaded += (_, _) =>
         {
@@ -47,6 +55,7 @@ public partial class PickAccountDialog : Window
     {
         if (_vm.SelectedAccount is null) return;
         SelectedAccount = _vm.SelectedAccount;
+        SelectedLoginState = _vm.SelectedLoginState;
         DialogResult = true;
     }
 
@@ -63,6 +72,22 @@ public partial class PickAccountDialogViewModel : ObservableObject
 
     public ObservableCollection<SelectableAccount> Accounts { get; } = [];
 
+    public IReadOnlyList<LoginStateItem> LoginStateOptions =>
+        EditAccountViewModel.LoginStateOptions;
+
+    [ObservableProperty]
+    private LoginStateItem? _selectedLoginStateItem;
+
+    public LoginState? SelectedLoginState
+    {
+        get
+        {
+            var v = SelectedLoginStateItem?.Value;
+            if (v is null or -1) return null;
+            return (LoginState)v;
+        }
+    }
+
     [ObservableProperty]
     private string _searchText = string.Empty;
 
@@ -75,13 +100,20 @@ public partial class PickAccountDialogViewModel : ObservableObject
     public bool HasSelection => SelectedItem is not null;
     public SteamAccount? SelectedAccount => SelectedItem?.Account;
 
-    public PickAccountDialogViewModel(string gameName, IReadOnlyList<SteamAccount> accounts)
+    public PickAccountDialogViewModel(
+        string gameName,
+        IReadOnlyList<SteamAccount> accounts,
+        LoginState? currentLoginState)
     {
         GameName = gameName;
         _allAccounts = accounts.Select(a => new SelectableAccount(a)).ToList();
 
         foreach (var account in _allAccounts)
             Accounts.Add(account);
+
+        var stateValue = currentLoginState.HasValue ? (int)currentLoginState.Value : -1;
+        SelectedLoginStateItem = LoginStateOptions.FirstOrDefault(o => o.Value == stateValue)
+            ?? LoginStateOptions[0];
     }
 
     private void ApplyFilter()

@@ -4,8 +4,10 @@ using Microsoft.Extensions.DependencyInjection;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Net.Http;
+using System.Windows.Data;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 
@@ -21,14 +23,33 @@ public partial class AccountsViewModel(
     IServiceProvider serviceProvider,
     MainViewModel mainViewModel) : ObservableObject
 {
-    [ObservableProperty] private ObservableCollection<AccountCardViewModel> _accounts = [];
-    [ObservableProperty] private bool _isGridView = true;
+    private readonly ObservableCollection<AccountCardViewModel> _accounts = [];
+    private ICollectionView? _accountsView;
+
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private AccountCardViewModel? _switchingAccount;
     [ObservableProperty] private string _searchText = string.Empty;
 
+    public ICollectionView AccountsView
+    {
+        get
+        {
+            if (_accountsView is null)
+            {
+                var view = CollectionViewSource.GetDefaultView(_accounts);
+                view.SortDescriptions.Add(new SortDescription(
+                    nameof(AccountCardViewModel.IsActive),
+                    ListSortDirection.Descending));
+                view.Filter = AccountFilter;
+                _accountsView = view;
+            }
+            return _accountsView;
+        }
+    }
 
-    public bool HasNoAccounts => !IsLoading && Accounts.Count == 0;
+    public int AccountsCount => _accounts.Count;
+
+    public bool HasNoAccounts => !IsLoading && _accounts.Count == 0;
 
     private FileSystemWatcher? _vdfWatcher;
     private CancellationTokenSource? _vdfReloadCts;
@@ -41,7 +62,6 @@ public partial class AccountsViewModel(
     };
 
     private long _ignoreVdfChangesUntilUtcTicks;
-    private IReadOnlyList<AccountCardViewModel> _allAccounts = [];
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
@@ -87,8 +107,14 @@ public partial class AccountsViewModel(
                     _ = LoadAvatarAsync(card, account, avatarLoadCts.Token);
                 }
 
-                _allAccounts = cards;
-                ApplyFilters();
+                // Reaproveita a mesma coleção: clera + Fill mantém
+                // a ICollectionView (default view) que está bound ao ItemsControl.
+                _accounts.Clear();
+                foreach (var c in cards)
+                    _accounts.Add(c);
+
+                AccountsView.Refresh();
+                OnPropertyChanged(nameof(AccountsCount));
                 OnPropertyChanged(nameof(HasNoAccounts));
 
                 StartWatchingLoginUsers();
@@ -105,27 +131,24 @@ public partial class AccountsViewModel(
         }
     }
 
-    private void ApplyFilters()
+    private bool AccountFilter(object item)
     {
-        var filtered = _allAccounts
-            .OrderByDescending(account => account.IsActive)
-            .AsEnumerable();
+        if (string.IsNullOrWhiteSpace(SearchText)) return true;
+        if (item is not AccountCardViewModel a) return false;
+        return a.DisplayName.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+            || a.AccountName.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
+    }
 
-        if (!string.IsNullOrWhiteSpace(SearchText))
-        {
-            filtered = filtered.Where(account =>
-                account.DisplayName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                account.AccountName.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
-        }
-
-        Accounts = new ObservableCollection<AccountCardViewModel>(filtered);
+    partial void OnSearchTextChanged(string value)
+    {
+        AccountsView.Refresh();
+        OnPropertyChanged(nameof(AccountsCount));
     }
 
     public void RefreshStatusBar()
     {
-        var active = Accounts.FirstOrDefault(a => a.IsActive);
         mainViewModel.UpdateStatusBar(
-            $"{Accounts.Count} contas",
+            $"{AccountsCount} contas",
             showLoginToggle: true);
     }
 
@@ -201,9 +224,11 @@ public partial class AccountsViewModel(
     {
         if (!string.IsNullOrEmpty(account.CustomAvatarPath))
         {
+            var avatar = await Helpers.ImageLoader.LoadAvatarAsync(account.CustomAvatarPath);
             RunOnUi(() =>
             {
                 card.AvatarPath = account.CustomAvatarPath;
+                card.AvatarImage = avatar;
 
                 if (card.IsActive)
                     mainViewModel.NotifyActiveAccountAvatarLoaded(account.CustomAvatarPath);
@@ -254,9 +279,12 @@ public partial class AccountsViewModel(
                 if (string.IsNullOrEmpty(localPath))
                     return;
 
+                var avatar = await Helpers.ImageLoader.LoadAvatarAsync(localPath);
+
                 RunOnUi(() =>
                 {
                     card.AvatarPath = localPath;
+                    card.AvatarImage = avatar;
 
                     if (card.IsActive)
                         mainViewModel.NotifyActiveAccountAvatarLoaded(localPath);
@@ -287,7 +315,7 @@ public partial class AccountsViewModel(
         cardVm.IsSwitching = true;
 
         // Feedback otimista: marca como ativa imediatamente na UI
-        var previousActive = Accounts.FirstOrDefault(a => a.IsActive);
+        var previousActive = _accounts.FirstOrDefault(a => a.IsActive);
 
         if (previousActive is not null)
         {
@@ -326,9 +354,15 @@ public partial class AccountsViewModel(
             mainViewModel.TrayTooltip = $"Steam Switcher — {cardVm.Account.DisplayName}";
             mainViewModel.TrayActiveAccountText = $"● {cardVm.Account.DisplayName}";
 
+            // Atualiza StatusBar com o estado que foi efetivamente aplicado.
+            var appliedState = cardVm.Account.LoginStateOverride
+                ?? settingsService.Current.DefaultLoginStateOverride;
+            mainViewModel.StatusLoginState = appliedState?.ToString() ?? "Online";
+
             snackbarService.Show(
                 "Conta alternada",
-                $"Entrando como {cardVm.Account.DisplayName}",
+                $"Entrando como {cardVm.Account.DisplayName}"
+                    + (appliedState is null ? " (Online)" : $" ({appliedState})"),
                 ControlAppearance.Success,
                 null,
                 TimeSpan.FromSeconds(3));
@@ -359,9 +393,6 @@ public partial class AccountsViewModel(
     }
 
     [RelayCommand]
-    private void ToggleView() => IsGridView = !IsGridView;
-
-    [RelayCommand]
     private async Task ForgetAccountAsync(AccountCardViewModel cardVm)
     {
         // Undo disponível por 5s
@@ -371,7 +402,9 @@ public partial class AccountsViewModel(
         if (!cardVm.IsPendingRemoval) return; // usuário cancelou
 
         accountService.ForgetAccount(cardVm.Account);
-        Accounts.Remove(cardVm);
+        _accounts.Remove(cardVm);
+        OnPropertyChanged(nameof(AccountsCount));
+        OnPropertyChanged(nameof(HasNoAccounts));
     }
 
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(HasNoAccounts));

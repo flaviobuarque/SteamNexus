@@ -200,14 +200,13 @@ public class SteamAccountService(
         var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
         File.Copy(vdfPath, vdfPath + "_last", overwrite: true);
 
-        var content = File.ReadAllText(vdfPath);
-
-        // Encontra o bloco de cada usuário e atualiza MostRecent
-        // loginusers.vdf tem estrutura: "76561198XXXXXXXX" { ... }
-        // Abordagem: ler, parsear, reescrever campo a campo via regex
-
         var lines = File.ReadAllLines(vdfPath).ToList();
         string? currentSteamId = null;
+
+        // Interpreta null como Online: garante reset determinístico do modo offline
+        // em todo o loginusers.vdf, evitando resíduos de sessões anteriores offline.
+        var effectiveState = state ?? LoginState.Online;
+        var wantsOffline = effectiveState == LoginState.Offline;
 
         for (int i = 0; i < lines.Count; i++)
         {
@@ -247,21 +246,22 @@ public class SteamAccountService(
                     "\"RememberPassword\"\t\t\"1\"");
             }
 
-            // WantsOfflineMode — só no target
-            if (state.HasValue &&
-                isTarget &&
-                lines[i].Contains("\"WantsOfflineMode\""))
+            // WantsOfflineMode — escreve em TODOS os usuários quando Online,
+            // e apenas no target quando Offline.
+            if (lines[i].Contains("\"WantsOfflineMode\""))
             {
+                var newValue = (isTarget && wantsOffline) ? "1" : "0";
                 lines[i] = System.Text.RegularExpressions.Regex.Replace(
                     lines[i], @"""WantsOfflineMode""\s+""[^""]*""",
-                    $"\"WantsOfflineMode\"\t\t\"{(state == LoginState.Offline ? "1" : "0")}\"");
+                    $"\"WantsOfflineMode\"\t\t\"{newValue}\"");
             }
 
-            if (state.HasValue && isTarget && lines[i].Contains("\"SkipOfflineModeWarning\""))
+            if (lines[i].Contains("\"SkipOfflineModeWarning\""))
             {
+                var newValue = (isTarget && wantsOffline) ? "1" : "0";
                 lines[i] = System.Text.RegularExpressions.Regex.Replace(
                     lines[i], @"""SkipOfflineModeWarning""\s+""[^""]*""",
-                    $"\"SkipOfflineModeWarning\"\t\t\"{(state == LoginState.Offline ? "1" : "0")}\"");
+                    $"\"SkipOfflineModeWarning\"\t\t\"{newValue}\"");
             }
         }
 

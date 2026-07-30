@@ -23,6 +23,8 @@
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="BorderBrush"
                         Value="{DynamicResource AppAccentBrush}" />
+                    <Setter Property="Background"
+                        Value="{DynamicResource AppSurfaceHoverBrush}" />
                 </Trigger>
                 <DataTrigger Binding="{Binding IsActive}" Value="True">
                     <Setter Property="BorderBrush"
@@ -35,44 +37,9 @@
         </Style>
     </UserControl.Resources>
 
-    <UserControl.Triggers>
-        <EventTrigger RoutedEvent="MouseEnter">
-            <BeginStoryboard>
-                <Storyboard>
-                    <DoubleAnimation
-                    Storyboard.TargetName="ScaleRoot"
-Storyboard.TargetProperty="ScaleX"
-                    To="1.03" Duration="0:0:0.12" />
-                    <DoubleAnimation
-                    Storyboard.TargetName="ScaleRoot"
-Storyboard.TargetProperty="ScaleY"
-                    To="1.03" Duration="0:0:0.12" />
-                </Storyboard>
-            </BeginStoryboard>
-        </EventTrigger>
-        <EventTrigger RoutedEvent="MouseLeave">
-            <BeginStoryboard>
-                <Storyboard>
-                    <DoubleAnimation
-            Storyboard.TargetName="ScaleRoot"
-            Storyboard.TargetProperty="ScaleX"
-            To="1.0" Duration="0:0:0.12" />
-                    <DoubleAnimation
-            Storyboard.TargetName="ScaleRoot"
-            Storyboard.TargetProperty="ScaleY"
-            To="1.0" Duration="0:0:0.12" />
-                </Storyboard>
-            </BeginStoryboard>
-        </EventTrigger>
-    </UserControl.Triggers>
-
     <Border
     Padding="4"
-    Background="Transparent"
-    RenderTransformOrigin="0.5,0.5">
-        <Border.RenderTransform>
-            <ScaleTransform x:Name="ScaleRoot" ScaleX="1" ScaleY="1" />
-        </Border.RenderTransform>
+    Background="Transparent">
 
         <Border
             x:Name="CardBorder"
@@ -89,18 +56,11 @@ Storyboard.TargetProperty="ScaleY"
 
             <!-- ContextMenu no Border, não no Grid -->
             <Border.ContextMenu>
-                <ContextMenu
+<ContextMenu
         Background="{DynamicResource AppSurfaceBrush}"
         BorderBrush="{DynamicResource AppBorderBrush}"
         BorderThickness="1"
         Padding="4">
-                    <ContextMenu.Effect>
-                        <DropShadowEffect
-                Color="#000000"
-                BlurRadius="16"
-                ShadowDepth="4"
-                Opacity="0.4" />
-                    </ContextMenu.Effect>
 
                     <MenuItem
     Header="Trocar para esta conta"
@@ -227,11 +187,10 @@ Storyboard.TargetProperty="ScaleY"
                 HorizontalAlignment="Center"
                 Margin="0,0,0,-36">
 
-                                <Ellipse Width="60" Height="60">
+<Ellipse Width="60" Height="60">
                                     <Ellipse.Fill>
                                         <ImageBrush
-                            ImageSource="{Binding AvatarPath,
-                                Converter={StaticResource PathToImageSource}}"
+                            ImageSource="{Binding AvatarImage}"
                             Stretch="UniformToFill" />
                                     </Ellipse.Fill>
                                 </Ellipse>
@@ -320,24 +279,7 @@ Storyboard.TargetProperty="ScaleY"
             Height="7"
             Margin="0,0,6,0"
             VerticalAlignment="Center"
-            Fill="{DynamicResource AppSuccessBrush}">
-
-                                    <Ellipse.Triggers>
-                                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                                            <BeginStoryboard>
-                                                <Storyboard
-                            AutoReverse="True"
-                            RepeatBehavior="Forever">
-                                                    <DoubleAnimation
-                                Storyboard.TargetProperty="Opacity"
-                                From="1"
-                                To="0.35"
-                                Duration="0:0:1.4" />
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                    </Ellipse.Triggers>
-                                </Ellipse>
+            Fill="{DynamicResource AppSuccessBrush}" />
 
                                 <TextBlock
             Text="CONTA ATIVA"

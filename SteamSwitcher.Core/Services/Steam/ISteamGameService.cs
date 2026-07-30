@@ -17,4 +17,8 @@ public interface ISteamGameService
         SteamGame game,
         string steamPath,
         CancellationToken ct = default);
+
+    Task<Dictionary<string, int>> LoadGameLoginStatesAsync();
+
+    Task SetGameLoginStateAsync(string appId, LoginState? state, CancellationToken ct = default);
 }

@@ -12,6 +12,10 @@ public class SteamGame
     public string? OwnerSteamId64 { get; set; }
     public SteamAccount? OwnerAccount { get; set; }
 
+    // Preferência de status de login exclusiva deste jogo.
+    // Precedência: per-game > per-account > global.
+    public LoginState? LoginStateOverride { get; set; }
+
     // Imagens
     public string? CoverUrl { get; set; }
     public string? HeroCoverUrl { get; set; }

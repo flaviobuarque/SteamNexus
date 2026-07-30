@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using SteamSwitcher.Core.Models;
+using System.Windows.Media;
 
 namespace SteamSwitcher.ViewModels;
 
@@ -8,6 +9,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     public SteamAccount Account { get; } = account;
 
     [ObservableProperty] private string _avatarPath = string.Empty;
+    [ObservableProperty] private ImageSource? _avatarImage;
     [ObservableProperty] private bool _isActive = account.IsActive;
     [ObservableProperty] private bool _isSwitching;
     [ObservableProperty] private bool _isPendingRemoval;
@@ -19,7 +21,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     public string DisplayName => Account.DisplayName;
     public string AccountName => Account.AccountName;
     public string LastLoginFormatted => FormatLastLogin(Account.Timestamp);
-    public bool HasAvatar => !string.IsNullOrEmpty(AvatarPath);
+    public bool HasAvatar => AvatarImage is not null || !string.IsNullOrEmpty(AvatarPath);
 
     private static string FormatLastLogin(long timestamp)
     {
@@ -38,6 +40,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     }
 
     partial void OnAvatarPathChanged(string value) => OnPropertyChanged(nameof(HasAvatar));
+    partial void OnAvatarImageChanged(ImageSource? value) => OnPropertyChanged(nameof(HasAvatar));
 
     public void RefreshDisplayName()
     {

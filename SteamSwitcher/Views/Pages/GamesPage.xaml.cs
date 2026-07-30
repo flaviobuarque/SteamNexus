@@ -4,9 +4,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 
 namespace SteamSwitcher.Views.Pages;
 
@@ -23,15 +20,19 @@ public partial class GamesPage : Page,
         InitializeComponent();
         DataContext = ViewModel;
         Loaded += Page_Loaded;
-        SizeChanged += Page_SizeChanged;
-        GamesScrollViewer.ScrollChanged += OnScrollChanged;
         Unloaded += (_, _) => ViewModel.SetPollingActive(false);
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
         ViewModel.SetPollingActive(true);
-        AdjustScrollViewerHeight();
+
+        RemoveHandler(ScrollViewer.ScrollChangedEvent,
+            new ScrollChangedEventHandler(OnScrollChanged));
+        AddHandler(ScrollViewer.ScrollChangedEvent,
+            new ScrollChangedEventHandler(OnScrollChanged),
+            handledEventsToo: true);
+
         if (!_initialized)
         {
             await ViewModel.InitializeAsync();
@@ -42,9 +43,6 @@ public partial class GamesPage : Page,
         UpdateVisibleCards();
     }
 
-    private void Page_SizeChanged(object sender, SizeChangedEventArgs e)
-        => AdjustScrollViewerHeight();
-
     private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
         => UpdateVisibleCards();
 
@@ -53,9 +51,12 @@ public partial class GamesPage : Page,
         if (GamesItemsControl.ItemContainerGenerator.Status != GeneratorStatus.ContainersGenerated)
             return;
 
+        var scrollViewer = FindScrollViewer(GamesItemsControl);
+        if (scrollViewer is null) return;
+
         var viewport = new Rect(0, 0,
-            GamesScrollViewer.ViewportWidth,
-            GamesScrollViewer.ViewportHeight);
+            scrollViewer.ViewportWidth,
+            scrollViewer.ViewportHeight);
 
         foreach (var card in ViewModel.Games)
         {
@@ -67,7 +68,7 @@ public partial class GamesPage : Page,
 
             try
             {
-                var transform = container.TransformToAncestor(GamesScrollViewer);
+                var transform = container.TransformToAncestor(scrollViewer);
                 var bounds = transform.TransformBounds(
                     new Rect(0, 0, container.ActualWidth, container.ActualHeight));
 
@@ -78,11 +79,15 @@ public partial class GamesPage : Page,
         }
     }
 
-    private void AdjustScrollViewerHeight()
+    private static ScrollViewer? FindScrollViewer(DependencyObject d)
     {
-        var toolbarHeight = Toolbar.ActualHeight;
-        var pageHeight = ActualHeight;
-        if (pageHeight > 0 && toolbarHeight > 0)
-            GamesScrollViewer.MaxHeight = pageHeight - toolbarHeight;
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
+        {
+            var child = VisualTreeHelper.GetChild(d, i);
+            if (child is ScrollViewer sv) return sv;
+            var found = FindScrollViewer(child);
+            if (found is not null) return found;
+        }
+        return null;
     }
 }

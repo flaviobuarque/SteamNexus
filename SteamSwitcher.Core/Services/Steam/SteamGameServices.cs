@@ -7,9 +7,14 @@ namespace SteamSwitcher.Core.Services;
 public class SteamGameService(
     ISteamLocatorService locator,
     ISteamAccountService accountService,
+    IAppSettingsService settingsService,
     ILogger<SteamGameService> logger) : ISteamGameService
 {
     private readonly string _steamPath = locator.FindSteamInstallPath() ?? string.Empty;
+
+    private static readonly string _gameLoginStatesPath = System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "SteamSwitcher", "game_loginstates.json");
 
     public async Task<IReadOnlyList<SteamGame>> GetInstalledGamesAsync(
         IReadOnlyList<SteamAccount> accounts,
@@ -44,6 +49,17 @@ public class SteamGameService(
                     await LoadPlaytimeAsync(game, _steamPath, ct);
             }
 
+            // Aplica preferência de status de login por jogo, se houver.
+            var loginStates = await LoadGameLoginStatesAsync();
+            foreach (var game in games)
+            {
+                if (loginStates.TryGetValue(game.AppId, out var rawState)
+                    && Enum.IsDefined(typeof(LoginState), rawState))
+                {
+                    game.LoginStateOverride = (LoginState)rawState;
+                }
+            }
+
             return (IReadOnlyList<SteamGame>)games
                 .GroupBy(g => g.AppId)
                 .Select(g => g.First())
@@ -57,8 +73,14 @@ public class SteamGameService(
         SteamAccount account,
         CancellationToken ct = default)
     {
-        // Troca de conta primeiro
-        await accountService.SwitchAccountAsync(account, null, ct);
+        // Resolve precedência: per-game > per-account > global.
+        // null na camada inferior cai como Online garanteed no serviço, mas repassamos explicito.
+        var state = game.LoginStateOverride
+            ?? account.LoginStateOverride
+            ?? settingsService.Current.DefaultLoginStateOverride;
+
+        // Troca de conta primeiro (passando o estado resolvido).
+        await accountService.SwitchAccountAsync(account, state, ct);
 
         // Aguarda Steam inicializar um pouco
         await Task.Delay(2000, ct);
@@ -71,8 +93,8 @@ public class SteamGameService(
             UseShellExecute = true
         });
 
-        logger.LogInformation("Jogo {Game} lançado na conta {Account}",
-            game.Name, account.AccountName);
+        logger.LogInformation("Jogo {Game} lançado na conta {Account} (estado {State})",
+            game.Name, account.AccountName, state);
     }
 
     public async Task LoadPlaytimeAsync(
@@ -205,5 +227,34 @@ public class SteamGameService(
             || lower.Contains("dotnet")
             || lower.StartsWith("steam linux")
             || lower.StartsWith("proton");
+    }
+
+    // --- Preferência de status de login por jogo ---
+
+    public async Task<Dictionary<string, int>> LoadGameLoginStatesAsync()
+    {
+        try
+        {
+            if (!System.IO.File.Exists(_gameLoginStatesPath)) return [];
+            var raw = await System.IO.File.ReadAllTextAsync(_gameLoginStatesPath);
+            return System.Text.Json.JsonSerializer
+                .Deserialize<Dictionary<string, int>>(raw) ?? [];
+        }
+        catch { return []; }
+    }
+
+    public async Task SetGameLoginStateAsync(string appId, LoginState? state, CancellationToken ct = default)
+    {
+        var map = await LoadGameLoginStatesAsync();
+        if (state is null)
+            map.Remove(appId);
+        else
+            map[appId] = (int)state.Value;
+
+        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_gameLoginStatesPath)!);
+        await System.IO.File.WriteAllTextAsync(_gameLoginStatesPath,
+            System.Text.Json.JsonSerializer.Serialize(map,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+            ct);
     }
 }

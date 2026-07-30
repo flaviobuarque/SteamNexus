@@ -22,13 +22,10 @@ public partial class AccountsPage : Page,
 
         Loaded += Page_Loaded;
         Unloaded += Page_Unloaded;
-        SizeChanged += Page_SizeChanged;
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
-        AdjustScrollViewerHeight();
-
         RemoveHandler(
             UIElement.PreviewMouseWheelEvent,
             new MouseWheelEventHandler(OnPageMouseWheel));
@@ -71,31 +68,29 @@ public partial class AccountsPage : Page,
         _messengerRegistered = false;
     }
 
-    private void Page_SizeChanged(object sender, SizeChangedEventArgs e)
-        => AdjustScrollViewerHeight();
-
-    private void AdjustScrollViewerHeight()
-    {
-        var toolbarHeight = Toolbar.ActualHeight;
-        var pageHeight = ActualHeight;
-
-        if (pageHeight > 0 && toolbarHeight > 0)
-        {
-            var maxH = pageHeight - toolbarHeight;
-            GridScrollViewer.MaxHeight = maxH;
-            ListScrollViewer.MaxHeight = maxH;
-        }
-    }
-
+    // Garante que o wheel role a página mesmo sobre Cards não-ItemsControl
+    // (ItemsControl virtualizado já absorve wheel, este handler evita
+    // situações onde o evento é interceptado por algum filho).
     private void OnPageMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        var scrollViewer = ViewModel.IsGridView
-            ? GridScrollViewer
-            : ListScrollViewer;
+        if (e.Handled) return;
+        var scrollViewer = FindScrollViewer(AccountsItemsControl);
+        if (scrollViewer is null) return;
 
         scrollViewer.ScrollToVerticalOffset(
             scrollViewer.VerticalOffset - e.Delta);
-
         e.Handled = true;
+    }
+
+    private static ScrollViewer? FindScrollViewer(DependencyObject d)
+    {
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(d, i);
+            if (child is ScrollViewer sv) return sv;
+            var found = FindScrollViewer(child);
+            if (found is not null) return found;
+        }
+        return null;
     }
 }
