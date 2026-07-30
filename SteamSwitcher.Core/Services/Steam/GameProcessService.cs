@@ -3,12 +3,16 @@ using System.Diagnostics;
 
 namespace SteamSwitcher.Core.Services;
 
-public sealed class GameProcessService(ILogger<GameProcessService> logger) : IGameProcessService, IAsyncDisposable
+public sealed class GameProcessService(
+    ISteamLocatorService steamLocator,
+    ILogger<GameProcessService> logger) : IGameProcessService, IAsyncDisposable
 {
     public event EventHandler<GameStateChangedEventArgs>? GameStateChanged;
 
     private readonly object _sync = new();
+    // appId -> installPath (lowercased), vindo de SetTrackedGames.
     private Dictionary<string, string> _tracked = [];
+    // appId -> running state
     private Dictionary<string, bool> _lastState = [];
 
     private PeriodicTimer? _timer;
@@ -75,24 +79,16 @@ public sealed class GameProcessService(ILogger<GameProcessService> logger) : IGa
                 tracked = new Dictionary<string, string>(_tracked);
             }
 
-            var processes = Process.GetProcesses();
-            var runningPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var proc in processes)
-            {
-                try
-                {
-                    var path = proc.MainModule?.FileName;
-                    if (!string.IsNullOrEmpty(path))
-                        runningPaths.Add(path.ToLowerInvariant());
-                }
-                catch { }
-                finally { proc.Dispose(); }
-            }
-
+            // Nao enumeramos todos os processos do SO (padrao suspeito a AVs).
+            // Em vez disso, mantemos um cache de caminhos de exe por jogo verificado
+            // sob demanda (lazy): quando o jogo e detectado pela primeira vez,
+            // varremos o diretorio de instalacao do proprio jogo (.exe) e procuramos
+            // apenas o processo correspondente (Process.GetProcessesByName sem
+            // acionar MainModule de todos os processos).
             foreach (var (appId, installPath) in tracked)
             {
-                var isRunning = runningPaths.Any(p => p.StartsWith(installPath));
+                var isRunning = CheckIfRunning(installPath);
+
                 bool was;
                 lock (_sync)
                 {
@@ -101,7 +97,7 @@ public sealed class GameProcessService(ILogger<GameProcessService> logger) : IGa
                     _lastState[appId] = isRunning;
                 }
 
-                logger.LogDebug("GameStateChanged: {AppId} → {State}", appId, isRunning);
+                logger.LogDebug("GameStateChanged: {AppId} -> {State}", appId, isRunning);
                 GameStateChanged?.Invoke(this, new GameStateChangedEventArgs(appId, isRunning));
             }
         }
@@ -111,6 +107,44 @@ public sealed class GameProcessService(ILogger<GameProcessService> logger) : IGa
         }
 
         return Task.CompletedTask;
+    }
+
+    private static readonly Dictionary<string, string[]> _exeCache = new(StringComparer.OrdinalIgnoreCase);
+
+    // Descobre os nomes de executaveis (.exe) dentro da pasta do jogo (uma vez) e
+    // checa se algum processo com esse nome esta rodando. Nao escaneia todos os
+    // processos do SO nem le MainModule de nada — apenas GetProcessesByName(nome),
+    // que e barato e nao e tipicamente marcado por heuristica de antivirrus.
+    private static bool CheckIfRunning(string installPath)
+    {
+        if (string.IsNullOrEmpty(installPath) || !Directory.Exists(installPath)) return false;
+
+        string[] exeNames;
+        lock (_exeCache)
+        {
+            if (!_exeCache.TryGetValue(installPath, out exeNames))
+            {
+                try
+                {
+                    exeNames = Directory.EnumerateFiles(installPath, "*.exe", SearchOption.TopDirectoryOnly)
+                        .Select(f => Path.GetFileNameWithoutExtension(f))
+                        .ToArray();
+                }
+                catch
+                {
+                    exeNames = [];
+                }
+                _exeCache[installPath] = exeNames;
+            }
+        }
+
+        foreach (var exe in exeNames)
+        {
+            if (Process.GetProcessesByName(exe).Length > 0)
+                return true;
+        }
+
+        return false;
     }
 
     public async ValueTask DisposeAsync()
