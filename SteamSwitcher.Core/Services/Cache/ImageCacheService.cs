@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 
 namespace SteamSwitcher.Core.Services;
 
@@ -12,18 +13,26 @@ public class ImageCacheService(ILogger<ImageCacheService> logger) : IImageCacheS
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SteamSwitcher", "meta");
 
+    // Cache do hash SHA256 por URL — evita rehashear (relativamente caro) a cada
+    // chamada de GetCachedPathAsync (chamado N vezes durante polling de covers).
+    private static readonly ConcurrentDictionary<string, string> _hashCache = new();
+
     public string GetCacheDirectory() => _cacheDir;
 
     public async Task<string?> GetCachedPathAsync(string url, CancellationToken ct = default)
     {
         Directory.CreateDirectory(_cacheDir);
 
-        var hash = Convert.ToHexString(
-            System.Security.Cryptography.SHA256.HashData(
-                System.Text.Encoding.UTF8.GetBytes(url)))[..16];
-
         var ext = Path.GetExtension(url).Split('?')[0];
         if (string.IsNullOrEmpty(ext)) ext = ".jpg";
+
+        if (!_hashCache.TryGetValue(url, out var hash))
+        {
+            hash = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(
+                    System.Text.Encoding.UTF8.GetBytes(url)))[..16];
+            _hashCache.TryAdd(url, hash);
+        }
 
         var localPath = Path.Combine(_cacheDir, hash + ext);
 
@@ -57,6 +66,22 @@ public class ImageCacheService(ILogger<ImageCacheService> logger) : IImageCacheS
         }
     }
 
+    public Task ClearCacheAsync()
+    {
+        _hashCache.Clear();
+        return Task.Run(() =>
+        {
+            foreach (var dir in new[] { _cacheDir, _metaDir })
+            {
+                if (Directory.Exists(dir))
+                {
+                    Directory.Delete(dir, recursive: true);
+                    Directory.CreateDirectory(dir);
+                }
+            }
+        });
+    }
+
     public async Task<string?> GetStringAsync(string key)
     {
         Directory.CreateDirectory(_metaDir);
@@ -84,18 +109,6 @@ public class ImageCacheService(ILogger<ImageCacheService> logger) : IImageCacheS
 
     private static string SanitizeKey(string key) =>
         string.Concat(key.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
-
-    public Task ClearCacheAsync() => Task.Run(() =>
-    {
-        foreach (var dir in new[] { _cacheDir, _metaDir })
-        {
-            if (Directory.Exists(dir))
-            {
-                Directory.Delete(dir, recursive: true);
-                Directory.CreateDirectory(dir);
-            }
-        }
-    });
 
     public Task<long> GetCacheSizeAsync() => Task.Run(() =>
     {
