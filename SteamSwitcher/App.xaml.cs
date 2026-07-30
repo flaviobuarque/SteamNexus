@@ -139,7 +139,7 @@ public partial class App : Application
         services.AddSingleton<AccountsViewModel>();
         services.AddSingleton<GamesViewModel>();
         services.AddSingleton<SettingsViewModel>();
-        services.AddSingleton<ModsViewModel>();
+        if (FeatureFlags.Mods) services.AddSingleton<ModsViewModel>();
         services.AddTransient<OnboardingViewModel>();
         services.AddTransient<EditAccountViewModel>();
 
@@ -149,8 +149,7 @@ public partial class App : Application
         services.AddTransient<AccountsPage>();
         services.AddTransient<GamesPage>();
         services.AddTransient<SettingsPage>();
-        services.AddSingleton<ModsPage>();
-        
+        if (FeatureFlags.Mods) services.AddSingleton<ModsPage>();
     }
 
     public static void ApplyTheme(SteamSwitcher.Core.Models.AppTheme theme)
