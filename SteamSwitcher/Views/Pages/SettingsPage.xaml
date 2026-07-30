@@ -171,9 +171,9 @@
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                 <RadioButton Content="Online" GroupName="LoginState" Margin="0,0,16,0" Cursor="Hand"
-                IsChecked="{Binding DefaultLoginState, Converter={StaticResource EnumToBool}, ConverterParameter={x:Static models:LoginState.Online}}" />
+                IsChecked="{Binding DefaultLoginStateOverride, Converter={StaticResource EnumToBool}, ConverterParameter={x:Static models:LoginState.Online}}" />
                                 <RadioButton Content="Offline" GroupName="LoginState" Cursor="Hand"
-                IsChecked="{Binding DefaultLoginState, Converter={StaticResource EnumToBool}, ConverterParameter={x:Static models:LoginState.Offline}}" />
+                IsChecked="{Binding DefaultLoginStateOverride, Converter={StaticResource EnumToBool}, ConverterParameter={x:Static models:LoginState.Offline}}" />
                             </StackPanel>
                         </Grid>
                     </Border>

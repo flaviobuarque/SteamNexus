@@ -126,6 +126,8 @@ public partial class SettingsViewModel(
         App.ApplyTheme(Theme);
         _original = settings;
         HasUnsavedChanges = false;
+        _mainViewModel.StatusLoginState =
+            DefaultLoginStateOverride?.ToString() ?? "Não alterar";
         RefreshStatusBar();
 
         if (hadKey && !string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey))

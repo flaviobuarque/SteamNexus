@@ -26,6 +26,7 @@ public partial class GamesViewModel(
     private const int GamesPerPage = 60;
     private IReadOnlyList<SteamAccount> _allAccounts = [];
     private bool _processHandlerRegistered;
+    private readonly SemaphoreSlim _coverLoadGate = new(6, 6);
 
     [ObservableProperty] private ObservableCollection<GameCardViewModel> _games = [];
     [ObservableProperty] private ObservableCollection<SteamAccount> _filterAccounts = [];
@@ -81,6 +82,11 @@ public partial class GamesViewModel(
                         card.HeroCoverPath = string.Empty;
                         card.ResetLoadState();
                     }
+
+                    // Re-kickoff para a página visível (e para os jogos visíveis)
+                    // já que o reset acima só dispara LoadRequested para cards
+                    // marcados como in-viewport (irrelevante com virtualização).
+                    KickoffMissingCoverLoads(Games);
                 });
             });
 
@@ -229,19 +235,29 @@ public partial class GamesViewModel(
 
     private async Task LoadGameDataAsync(GameCardViewModel card, CancellationToken ct)
     {
-        // Busca capa
-        var steamUrl = $"https://cdn.akamai.steamstatic.com/steam/apps/{card.Game.AppId}/library_600x900.jpg";
-        var localPath = await imageCacheService.GetCachedPathAsync(steamUrl, ct);
+        // Limita concorrência: múltiplos cards sem capa não disparam todas
+        // as HTTPs de uma vez.
+        await _coverLoadGate.WaitAsync(ct);
 
-        if (string.IsNullOrEmpty(localPath))
+        try
         {
-            var sgdbKey = settingsService.Current.SteamGridDbApiKey;
-            if (!string.IsNullOrEmpty(sgdbKey))
-                localPath = await FetchSteamGridDbCoverAsync(card.Game.AppId, sgdbKey, ct);
-        }
+            // Busca capa
+            var steamUrl = $"https://cdn.akamai.steamstatic.com/steam/apps/{card.Game.AppId}/library_600x900.jpg";
+            var localPath = await imageCacheService.GetCachedPathAsync(steamUrl, ct);
 
-        if (!string.IsNullOrEmpty(localPath))
-        {
+            if (string.IsNullOrEmpty(localPath))
+            {
+                var sgdbKey = settingsService.Current.SteamGridDbApiKey;
+                if (!string.IsNullOrEmpty(sgdbKey))
+                    localPath = await FetchSteamGridDbCoverAsync(card.Game.AppId, sgdbKey, ct);
+            }
+
+            if (string.IsNullOrEmpty(localPath))
+            {
+                RunOnUi(() => card.CoverMissing = true);
+                return;
+            }
+
             var img = await Helpers.ImageLoader.LoadCoverAsync(localPath);
             RunOnUi(() =>
             {
@@ -249,8 +265,10 @@ public partial class GamesViewModel(
                 card.CoverImage = img;
             });
         }
-        else
-            RunOnUi(() => card.CoverMissing = true);
+        finally
+        {
+            _coverLoadGate.Release();
+        }
     }
 
     private static readonly System.Net.Http.HttpClient _http = new()
@@ -454,6 +472,24 @@ public partial class GamesViewModel(
         OnPropertyChanged(nameof(PageText));
 
         RefreshStatusBar();
+
+        // Proativamente dispara o cargamento de capas que faltam para esta página,
+        // sem depender do trigger de visibilidade (que falha com virtualização).
+        KickoffMissingCoverLoads(Games);
+    }
+
+    private void KickoffMissingCoverLoads(IEnumerable<GameCardViewModel> cards)
+    {
+        foreach (var card in cards)
+        {
+            if (string.IsNullOrEmpty(card.CoverPath)
+                && !card.CoverMissing
+                && !card.HasLoadBeenRequested)
+            {
+                card.MarkLoadRequested();
+                _ = LoadGameDataAsync(card, CancellationToken.None);
+            }
+        }
     }
 
     [RelayCommand]
