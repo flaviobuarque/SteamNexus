@@ -2,6 +2,7 @@
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using SteamSwitcher.Core;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
@@ -85,30 +86,79 @@ public partial class MainViewModel(
         StatusBarVisible = true;
     }
 
-    public async Task InitializeAsync(CancellationToken ct = default)
+public async Task InitializeAsync(CancellationToken ct = default)
     {
         var steamPath = locatorService.FindSteamInstallPath();
         SteamNotFound = string.IsNullOrEmpty(steamPath);
+
+        // Observa mudancas de conta ativa vindas de outros pontos (ex.: troca
+        // manual pelo Steam detectada pelo FileSystemWatcher em AccountsViewModel).
+        if (!WeakReferenceMessenger.Default.IsRegistered<ActiveAccountChanged>(this))
+        {
+            WeakReferenceMessenger.Default.Register<ActiveAccountChanged>(this, async (_, _) =>
+            {
+                await Application.Current.Dispatcher
+                    .InvokeAsync(async () => await RefreshActiveAccountAsync())
+                    .Task
+                    .Unwrap();
+            });
+        }
 
         try
         {
             var accounts = await accountService.GetAccountsAsync(ct);
             TrayAccounts = new ObservableCollection<SteamAccount>(accounts);
 
-            var active = await accountService.GetActiveAccountAsync(ct);
-            if (active is not null)
-            {
-                ActiveAccountName = active.DisplayName;
-                HasActiveAccount = true;
-                TrayTooltip = $"Steam Switcher — {active.DisplayName}";
-                TrayActiveAccountText = $"● {active.DisplayName}";
-                StatusAccountName = active.DisplayName;
-                StatusLoginState = active.LoginStateOverride?.ToString()
-                    ?? settingsService.Current.DefaultLoginStateOverride?.ToString() ?? "Não alterar";
-                ActiveAccountAvatarPath = string.Empty;
-            }
+            await RefreshActiveAccountAsync(ct);
         }
         catch { }
+    }
+
+    /// <summary>
+    /// Re-le do Steam qual conta esta ativa e atualiza todas as UI dependententes
+    /// (status bar, tray, avatar, etc.). Idempotente.
+    /// </summary>
+    public async Task RefreshActiveAccountAsync(CancellationToken ct = default)
+    {
+        var active = await accountService.GetActiveAccountAsync(ct);
+        ApplyActiveAccount(active);
+    }
+
+    /// <summary>
+    /// Aplica uma conta ativa ja conhecida em todas as UI dependententes.
+    /// Usado tanto em InitializeAsync quanto apos troca iniciada pelo app,
+    /// evitando re-ler do registry quando ja sabemos a resposta.
+    /// </summary>
+    public void ApplyActiveAccount(SteamAccount? active)
+    {
+        if (active is null)
+        {
+            HasActiveAccount = false;
+            ActiveAccountName = string.Empty;
+            StatusAccountName = string.Empty;
+            ActiveAccountAvatarPath = string.Empty;
+            StatusLoginState = string.Empty;
+            TrayTooltip = "Steam Switcher";
+            TrayActiveAccountText = "Nenhuma conta ativa";
+
+            foreach (var a in TrayAccounts)
+                a.IsActive = false;
+            return;
+        }
+
+        HasActiveAccount = true;
+        ActiveAccountName = active.DisplayName;
+        StatusAccountName = active.DisplayName;
+        TrayTooltip = $"Steam Switcher - {active.DisplayName}";
+        TrayActiveAccountText = $"\u25CF {active.DisplayName}";
+        ActiveAccountAvatarPath = string.Empty;
+
+        var appliedState = active.LoginStateOverride
+            ?? settingsService.Current.DefaultLoginStateOverride;
+        StatusLoginState = appliedState?.ToString() ?? "Online";
+
+foreach (var a in TrayAccounts)
+            a.IsActive = a.SteamId64 == active.SteamId64;
     }
 
     [RelayCommand]
@@ -121,18 +171,10 @@ public partial class MainViewModel(
             null,
             TimeSpan.FromSeconds(3));
 
-        try
+try
         {
             await accountService.SwitchAccountAsync(account);
-
-            ActiveAccountName = account.DisplayName;
-            HasActiveAccount = true;
-            TrayTooltip = $"Steam Switcher — {account.DisplayName}";
-            TrayActiveAccountText = $"● {account.DisplayName}";
-            ActiveAccountAvatarPath = string.Empty;
-
-            foreach (var a in TrayAccounts)
-                a.IsActive = a.SteamId64 == account.SteamId64;
+            ApplyActiveAccount(account);
 
             var settings = settingsService.Current;
             if (settings.AfterAccountSwitch == PostSwitchBehavior.Close)

@@ -2,3 +2,4 @@
 
 public record CacheCleared;
 public record SteamGridDbKeyChanged;
+public record ActiveAccountChanged;

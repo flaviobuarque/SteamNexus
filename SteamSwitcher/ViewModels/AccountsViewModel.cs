@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
@@ -205,6 +206,9 @@ public partial class AccountsViewModel(
                 .InvokeAsync(() => InitializeAsync())
                 .Task
                 .Unwrap();
+
+            // Avisa o MainViewModel para re-ler a conta ativa do registry/VDF.
+            WeakReferenceMessenger.Default.Send(new ActiveAccountChanged());
         }
         catch (OperationCanceledException)
         {
@@ -347,24 +351,20 @@ public partial class AccountsViewModel(
                 ref _ignoreVdfChangesUntilUtcTicks,
                 DateTime.UtcNow.AddSeconds(8).Ticks);
 
-            await accountService.SwitchAccountAsync(cardVm.Account);
+await accountService.SwitchAccountAsync(cardVm.Account);
 
             watchdogService.EndSwitch();
 
             mainViewModel.NotifyAccountSwitchFinished();
             mainViewModel.NotifyActiveAccountAvatarLoaded(cardVm.AvatarPath);
-            mainViewModel.TrayTooltip = $"Steam Switcher — {cardVm.Account.DisplayName}";
-            mainViewModel.TrayActiveAccountText = $"● {cardVm.Account.DisplayName}";
-
-            // Atualiza StatusBar com o estado que foi efetivamente aplicado.
-            var appliedState = cardVm.Account.LoginStateOverride
-                ?? settingsService.Current.DefaultLoginStateOverride;
-            mainViewModel.StatusLoginState = appliedState?.ToString() ?? "Online";
+            mainViewModel.ApplyActiveAccount(cardVm.Account);
 
             snackbarService.Show(
                 "Conta alternada",
                 $"Entrando como {cardVm.Account.DisplayName}"
-                    + (appliedState is null ? " (Online)" : $" ({appliedState})"),
+                    + (mainViewModel.StatusLoginState == "Online"
+                        ? " (Online)"
+                        : $" ({mainViewModel.StatusLoginState})"),
                 ControlAppearance.Success,
                 null,
                 TimeSpan.FromSeconds(3));

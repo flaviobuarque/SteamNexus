@@ -21,4 +21,10 @@ public interface ISteamGameService
     Task<Dictionary<string, int>> LoadGameLoginStatesAsync();
 
     Task SetGameLoginStateAsync(string appId, LoginState? state, CancellationToken ct = default);
+
+    Task<Dictionary<string, string>> LoadManualCoversAsync();
+
+    Task SetManualCoverAsync(string appId, string? path, CancellationToken ct = default);
+
+    Task ClearManualCoverAsync(string appId, CancellationToken ct = default);
 }

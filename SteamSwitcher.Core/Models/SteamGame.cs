@@ -16,6 +16,11 @@ public class SteamGame
     // Precedência: per-game > per-account > global.
     public LoginState? LoginStateOverride { get; set; }
 
+    // Capa fornecida manualmente pelo usuario. Tem precedencia sobre
+    // cache local e SteamGridDB. Apontada para o arquivo comprimido em
+    // %LOCALAPPDATA%\SteamSwitcher\covers_manual\<appId>.jpg.
+    public string? ManualCoverPath { get; set; }
+
     // Stats (do localconfig.vdf)
     public int PlaytimeMinutes { get; set; }
     public int PlaytimeForever => PlaytimeMinutes;

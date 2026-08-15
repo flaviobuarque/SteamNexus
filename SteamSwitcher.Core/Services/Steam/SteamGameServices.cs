@@ -16,6 +16,14 @@ public class SteamGameService(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SteamSwitcher", "game_loginstates.json");
 
+    private static readonly string _manualCoversPath = System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "SteamSwitcher", "game_covers.json");
+
+    public static readonly string ManualCoversDir = System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "SteamSwitcher", "covers_manual");
+
     public async Task<IReadOnlyList<SteamGame>> GetInstalledGamesAsync(
         IReadOnlyList<SteamAccount> accounts,
         CancellationToken ct = default)
@@ -51,12 +59,19 @@ public class SteamGameService(
 
             // Aplica preferência de status de login por jogo, se houver.
             var loginStates = await LoadGameLoginStatesAsync();
+            var manualCovers = await LoadManualCoversAsync();
             foreach (var game in games)
             {
                 if (loginStates.TryGetValue(game.AppId, out var rawState)
                     && Enum.IsDefined(typeof(LoginState), rawState))
                 {
                     game.LoginStateOverride = (LoginState)rawState;
+                }
+
+                if (manualCovers.TryGetValue(game.AppId, out var manualPath)
+                    && System.IO.File.Exists(manualPath))
+                {
+                    game.ManualCoverPath = manualPath;
                 }
             }
 
@@ -251,6 +266,49 @@ public class SteamGameService(
 
         System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_gameLoginStatesPath)!);
         await System.IO.File.WriteAllTextAsync(_gameLoginStatesPath,
+            System.Text.Json.JsonSerializer.Serialize(map,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+            ct);
+    }
+
+    public async Task<Dictionary<string, string>> LoadManualCoversAsync()
+    {
+        try
+        {
+            if (!System.IO.File.Exists(_manualCoversPath)) return [];
+            var raw = await System.IO.File.ReadAllTextAsync(_manualCoversPath);
+            return System.Text.Json.JsonSerializer
+                .Deserialize<Dictionary<string, string>>(raw) ?? [];
+        }
+        catch { return []; }
+    }
+
+    public async Task SetManualCoverAsync(string appId, string? path, CancellationToken ct = default)
+    {
+        var map = await LoadManualCoversAsync();
+        if (string.IsNullOrEmpty(path))
+            map.Remove(appId);
+        else
+            map[appId] = path;
+
+        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_manualCoversPath)!);
+        await System.IO.File.WriteAllTextAsync(_manualCoversPath,
+            System.Text.Json.JsonSerializer.Serialize(map,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+            ct);
+    }
+
+    public async Task ClearManualCoverAsync(string appId, CancellationToken ct = default)
+    {
+        var map = await LoadManualCoversAsync();
+        if (map.TryGetValue(appId, out var path))
+        {
+            try { if (System.IO.File.Exists(path)) System.IO.File.Delete(path); }
+            catch { }
+        }
+        map.Remove(appId);
+        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_manualCoversPath)!);
+        await System.IO.File.WriteAllTextAsync(_manualCoversPath,
             System.Text.Json.JsonSerializer.Serialize(map,
                 new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
             ct);
