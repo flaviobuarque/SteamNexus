@@ -188,14 +188,13 @@
                                                 <ic:SymbolIcon Symbol="ArrowSwap" />
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <Separator />
                                         <MenuItem
                                             Header="Adicionar capa..."
                                             Command="{Binding PlacementTarget.Tag.AddCoverCommand,
                                                 RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                             CommandParameter="{Binding}">
                                             <MenuItem.Icon>
-                                                <ic:SymbolIcon Symbol="ImageAdd" />
+                                                <ic:SymbolIcon Symbol="Image" />
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem
@@ -204,7 +203,7 @@
                                                 RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                             CommandParameter="{Binding}">
                                             <MenuItem.Icon>
-                                                <ic:SymbolIcon Symbol="ImageDelete" />
+                                                <ic:SymbolIcon Symbol="ImageOff" />
                                             </MenuItem.Icon>
                                         </MenuItem>
                                     </ContextMenu>

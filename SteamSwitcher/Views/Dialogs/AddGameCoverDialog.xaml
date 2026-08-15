@@ -43,7 +43,7 @@
                 <!-- Header -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                     <ic:SymbolIcon
-                        Symbol="ImageAdd"
+                        Symbol="Image"
                         FontSize="18"
                         Foreground="#38D6C6"
                         Margin="0,0,10,0"
