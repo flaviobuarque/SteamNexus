@@ -89,8 +89,7 @@ public partial class GamesViewModel(
         IsLoading = true;
         try
         {
-            var accounts = DebugDemoData.TryCreateAccountsFromArgs()
-                ?? await accountService.GetAccountsAsync(ct);
+            var accounts = await accountService.GetAccountsAsync(ct);
             _allAccounts = accounts;
 
             // Monta lista de filtros

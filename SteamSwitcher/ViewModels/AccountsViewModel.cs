@@ -82,13 +82,9 @@ public partial class AccountsViewModel(
             IsLoading = true;
             try
             {
-                var demoAccounts = DebugDemoData.TryCreateAccountsFromArgs();
+                var rawAccounts = await accountService.GetAccountsAsync(ct);
 
-                var rawAccounts = demoAccounts
-                    ?? await accountService.GetAccountsAsync(ct);
-
-                var activeAccount = demoAccounts?.FirstOrDefault(a => a.IsActive)
-                    ?? await accountService.GetActiveAccountAsync(ct)
+                var activeAccount = await accountService.GetActiveAccountAsync(ct)
                     ?? rawAccounts.FirstOrDefault(a => a.MostRecent);
 
                 System.Diagnostics.Debug.WriteLine(
