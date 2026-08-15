@@ -3,6 +3,7 @@ using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
 using SteamSwitcher.ViewModels;
 using SteamSwitcher.Views.Pages;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -78,6 +79,14 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
         NavigateTo(typeof(AccountsPage), "Accounts");
         await _viewModel.InitializeAsync();
+
+        // Navega para Configuracoes quando solicitado (ex.: botao "Configurar API key"
+        // no placeholder de capa do jogo).
+        if (!WeakReferenceMessenger.Default.IsRegistered<NavigateToSettingsRequested>(this))
+        {
+            WeakReferenceMessenger.Default.Register<NavigateToSettingsRequested>(this, (_, _) =>
+                Dispatcher.Invoke(() => NavigateTo(typeof(SettingsPage), "Settings")));
+        }
 
         ThemeNavItem.AddHandler(
             UIElement.MouseLeftButtonUpEvent,

@@ -284,6 +284,12 @@ public partial class GamesViewModel(
         _ = LoadGameDataAsync(cardVm, CancellationToken.None);
     }
 
+    [RelayCommand]
+    private void OpenSteamGridDbSettings()
+    {
+        WeakReferenceMessenger.Default.Send(new NavigateToSettingsRequested());
+    }
+
     private async Task LoadGameDataAsync(GameCardViewModel card, CancellationToken ct)
     {
         // Limita concorrência: múltiplos cards sem capa não disparam todas
