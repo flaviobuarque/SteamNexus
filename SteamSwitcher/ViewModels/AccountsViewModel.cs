@@ -91,6 +91,9 @@ public partial class AccountsViewModel(
                     ?? await accountService.GetActiveAccountAsync(ct)
                     ?? rawAccounts.FirstOrDefault(a => a.MostRecent);
 
+                System.Diagnostics.Debug.WriteLine(
+                    $"[AccountsViewModel.InitializeAsync] active={(activeAccount is null ? "NULL" : activeAccount.AccountName)}, rawCount={rawAccounts.Count}");
+
                 foreach (var account in rawAccounts)
                 {
                     account.IsActive = account.SteamId64 == activeAccount?.SteamId64;
