@@ -216,6 +216,74 @@ public partial class GamesViewModel(
         }
     }
 
+    [RelayCommand]
+    private async Task AddCoverAsync(GameCardViewModel cardVm)
+    {
+        var dialog = new SteamSwitcher.Views.Dialogs.AddGameCoverDialog(cardVm.Game.Name)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+
+        if (dialog.ShowDialog() != true || string.IsNullOrEmpty(dialog.SelectedImagePath))
+            return;
+
+        // Comprime e copia para covers_manual\<appId>.jpg
+        var destPath = System.IO.Path.Combine(
+            SteamSwitcher.Core.Services.SteamGameService.ManualCoversDir,
+            $"{cardVm.Game.AppId}.jpg");
+
+        var compressed = await Task.Run(() =>
+            SteamSwitcher.Core.Helpers.CoverCompressor.TryCompress(
+                dialog.SelectedImagePath, destPath));
+
+        if (!compressed || !File.Exists(destPath))
+        {
+            snackbarService.Show(
+                "Erro",
+                "Não foi possível processar a imagem.",
+                ControlAppearance.Danger,
+                null,
+                TimeSpan.FromSeconds(4));
+            return;
+        }
+
+        cardVm.Game.ManualCoverPath = destPath;
+        await gameService.SetManualCoverAsync(cardVm.Game.AppId, destPath);
+
+        // Aplica imediatamente na UI.
+        var img = await Helpers.ImageLoader.LoadCoverAsync(destPath);
+        RunOnUi(() =>
+        {
+            cardVm.CoverPath = destPath;
+            cardVm.CoverImage = img;
+            cardVm.CoverMissing = false;
+        });
+
+        snackbarService.Show(
+            "Capa adicionada",
+            $"Capa manual definida para {cardVm.Game.Name}.",
+            ControlAppearance.Success,
+            null,
+            TimeSpan.FromSeconds(3));
+    }
+
+    [RelayCommand]
+    private async Task RemoveManualCoverAsync(GameCardViewModel cardVm)
+    {
+        await gameService.ClearManualCoverAsync(cardVm.Game.AppId);
+        cardVm.Game.ManualCoverPath = null;
+
+        // Limpa UI e re-busca automaticamente (Opcao A).
+        RunOnUi(() =>
+        {
+            cardVm.CoverPath = string.Empty;
+            cardVm.CoverImage = null;
+            cardVm.CoverMissing = false;
+        });
+
+        _ = LoadGameDataAsync(cardVm, CancellationToken.None);
+    }
+
     private async Task LoadGameDataAsync(GameCardViewModel card, CancellationToken ct)
     {
         // Limita concorrência: múltiplos cards sem capa não disparam todas
@@ -224,6 +292,20 @@ public partial class GamesViewModel(
 
         try
         {
+            // Capa manual tem precedencia sobre cache e SteamGridDB.
+            if (!string.IsNullOrEmpty(card.Game.ManualCoverPath)
+                && File.Exists(card.Game.ManualCoverPath))
+            {
+                var manualImg = await Helpers.ImageLoader.LoadCoverAsync(card.Game.ManualCoverPath);
+                RunOnUi(() =>
+                {
+                    card.CoverPath = card.Game.ManualCoverPath!;
+                    card.CoverImage = manualImg;
+                    card.CoverMissing = false;
+                });
+                return;
+            }
+
             // Busca capa
             var steamUrl = $"https://cdn.akamai.steamstatic.com/steam/apps/{card.Game.AppId}/library_600x900.jpg";
             var localPath = await imageCacheService.GetCachedPathAsync(steamUrl, ct);
