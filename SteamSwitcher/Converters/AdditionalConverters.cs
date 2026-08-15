@@ -5,6 +5,19 @@ using Wpf.Ui.Controls;
 
 namespace SteamSwitcher.Converters;
 
+// null → Visibility.Visible ; não-null → Collapsed
+// Usado para mostrar placeholder quando não há imagem.
+public sealed class NullToVisibilityConverter : IValueConverter
+{
+    public static readonly NullToVisibilityConverter Instance = new();
+
+    public object Convert(object? value, Type targetType, object parameter, CultureInfo culture) =>
+        value is null ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotImplementedException();
+}
+
 // null → false
 public class NotNullToBoolConverter : IValueConverter
 {
