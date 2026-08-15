@@ -88,7 +88,8 @@ public partial class AccountsViewModel(
                     ?? await accountService.GetAccountsAsync(ct);
 
                 var activeAccount = demoAccounts?.FirstOrDefault(a => a.IsActive)
-                    ?? await accountService.GetActiveAccountAsync(ct);
+                    ?? await accountService.GetActiveAccountAsync(ct)
+                    ?? rawAccounts.FirstOrDefault(a => a.MostRecent);
 
                 foreach (var account in rawAccounts)
                 {

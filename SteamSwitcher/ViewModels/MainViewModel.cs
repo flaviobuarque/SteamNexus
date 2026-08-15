@@ -111,7 +111,11 @@ public async Task InitializeAsync(CancellationToken ct = default)
 
             await RefreshActiveAccountAsync(ct);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[MainViewModel.InitializeAsync] falha: {ex}");
+        }
     }
 
     /// <summary>
@@ -121,6 +125,16 @@ public async Task InitializeAsync(CancellationToken ct = default)
     public async Task RefreshActiveAccountAsync(CancellationToken ct = default)
     {
         var active = await accountService.GetActiveAccountAsync(ct);
+
+        // Fallback: se o registry/VDF nao retornou nada, pega a conta marcada
+        // como MostRecent/IsActive em TrayAccounts (lida do VDF em InitializeAsync).
+        // Isto cobre steam recem-fechado, racing com startup do Steam, etc.
+        if (active is null)
+            active = TrayAccounts.FirstOrDefault(a => a.MostRecent || a.IsActive);
+
+        System.Diagnostics.Debug.WriteLine(
+            $"[MainViewModel.RefreshActiveAccountAsync] active={(active is null ? "NULL" : active.AccountName)}");
+
         ApplyActiveAccount(active);
     }
 
