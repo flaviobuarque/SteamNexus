@@ -97,3 +97,37 @@ jobs:
             --publish `
             --tag "v${{ steps.version.outputs.version }}" `
             --releaseName "SteamNexus ${{ steps.version.outputs.version }}"
+
+      - name: Adicionar descrição da versão
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v${{ steps.version.outputs.version }}"
+          $generated = gh api `
+            --method POST `
+            "/repos/${{ github.repository }}/releases/generate-notes" `
+            -f "tag_name=$tag" | ConvertFrom-Json
+
+          $notes = @"
+          ## ✨ Sobre esta versão
+
+          Esta versão do SteamNexus reúne as alterações listadas abaixo.
+
+          $($generated.body)
+
+          ## 📥 Como instalar
+
+          - **Nova instalação:** baixe e execute **Flavio.SteamNexus-win-Setup.exe**.
+          - **Versão portátil:** baixe **Flavio.SteamNexus-win-Portable.zip** e extraia o conteúdo.
+          - **Aplicativo já instalado:** a atualização será detectada e baixada pelo próprio SteamNexus.
+
+          > O pacote é autocontido e não exige a instalação separada do .NET.
+          "@
+
+          $notes | Set-Content -Path release-notes.md -Encoding utf8
+
+          gh release edit "$tag" `
+            --repo "${{ github.repository }}" `
+            --title "SteamNexus ${{ steps.version.outputs.version }}" `
+            --notes-file release-notes.md
