@@ -2,6 +2,7 @@
     x:Class="SteamSwitcher.Views.Pages.AboutPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Background="{DynamicResource AppBackgroundBrush}">
 
@@ -85,7 +86,8 @@
 
                 <Border Grid.Column="0" Style="{StaticResource AboutCardStyle}" Margin="0,0,8,0">
                     <StackPanel>
-                        <TextBlock Text="⚡" FontSize="22" />
+                        <ic:SymbolIcon Symbol="Flash" Width="24" Height="24"
+                                       HorizontalAlignment="Left" Foreground="#3B82F6" />
                         <TextBlock Text="Rápido por natureza" Margin="0,12,0,0" FontSize="15"
                                    FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
                         <TextBlock Text="Listas virtualizadas, cache local e carregamento progressivo para manter tudo responsivo."
@@ -96,7 +98,8 @@
 
                 <Border Grid.Column="1" Style="{StaticResource AboutCardStyle}" Margin="8,0">
                     <StackPanel>
-                        <TextBlock Text="🔐" FontSize="22" />
+                        <ic:SymbolIcon Symbol="LockClosed" Width="24" Height="24"
+                                       HorizontalAlignment="Left" Foreground="#FBBF24" />
                         <TextBlock Text="Privacidade local" Margin="0,12,0,0" FontSize="15"
                                    FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
                         <TextBlock Text="O aplicativo não lê senhas e mantém preferências e personalizações no seu computador."
@@ -107,7 +110,8 @@
 
                 <Border Grid.Column="2" Style="{StaticResource AboutCardStyle}" Margin="8,0,0,0">
                     <StackPanel>
-                        <TextBlock Text="💙" FontSize="22" />
+                        <ic:SymbolIcon Symbol="Heart" Width="24" Height="24"
+                                       HorizontalAlignment="Left" Foreground="#EF4444" />
                         <TextBlock Text="Feito com propósito" Margin="0,12,0,0" FontSize="15"
                                    FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
                         <TextBlock Text="Cada detalhe existe para reduzir atrito e deixar sua experiência com a Steam mais organizada."
