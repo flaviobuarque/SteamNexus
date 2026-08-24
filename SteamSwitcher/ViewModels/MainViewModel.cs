@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
+using SteamSwitcher.Services.Updates;
 using System.Collections.ObjectModel;
 using System.Windows;
 using Wpf.Ui;
@@ -14,8 +15,10 @@ public partial class MainViewModel(
     ISteamAccountService accountService,
     ISteamLocatorService locatorService,
     ISnackbarService snackbarService,
-    IAppSettingsService settingsService) : ObservableObject
+    IAppSettingsService settingsService,
+    IUpdateService updateService) : ObservableObject
 {
+    public IUpdateService UpdateService { get; } = updateService;
     [ObservableProperty] private string _activeAccountName = string.Empty;
     [ObservableProperty] private bool _hasActiveAccount;
     [ObservableProperty] private bool _steamNotFound;

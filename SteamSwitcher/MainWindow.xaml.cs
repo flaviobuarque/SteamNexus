@@ -168,6 +168,17 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private void NavItem_About_Click(object sender, MouseButtonEventArgs e)
         => NavigateTo(typeof(AboutPage), "About");
 
+    private void UpdateIndicator_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateTo(typeof(SettingsPage), "Settings");
+        if (MainFrame.Content is not SettingsPage settingsPage)
+            return;
+
+        Dispatcher.BeginInvoke(
+            settingsPage.ShowUpdatesSection,
+            System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
     private void ThemeNavItem_Click(object sender, MouseButtonEventArgs e)
     {
         if (sender is Border border)

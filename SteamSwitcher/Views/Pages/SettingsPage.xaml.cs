@@ -146,6 +146,26 @@ public partial class SettingsPage : System.Windows.Controls.Page,
         UpdateActiveSettingsSection(button);
     }
 
+    public void ShowUpdatesSection()
+    {
+        if (!IsLoaded)
+        {
+            RoutedEventHandler? loaded = null;
+            loaded = (_, _) =>
+            {
+                Loaded -= loaded;
+                ShowUpdatesSection();
+            };
+            Loaded += loaded;
+            return;
+        }
+
+        var offset = UpdatesSection
+            .TranslatePoint(new Point(0, 0), SettingsContent).Y;
+        SettingsScrollViewer.ScrollToVerticalOffset(Math.Max(0, offset - 8));
+        UpdateActiveSettingsSection(UpdatesNavButton);
+    }
+
     private void SettingsScrollViewer_ScrollChanged(
         object sender,
         System.Windows.Controls.ScrollChangedEventArgs e)

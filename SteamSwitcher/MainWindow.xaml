@@ -558,6 +558,57 @@
                         Margin="0,0,16,0"
                         Visibility="{Binding StatusBarRight, Converter={StaticResource EmptyStringToVisibility}}" />
 
+                    <Button
+                        Margin="0,0,8,0"
+                        Padding="9,3"
+                        VerticalAlignment="Center"
+                        Cursor="Hand"
+                        ToolTip="Abrir configurações de atualização"
+                        ToolTipService.InitialShowDelay="300"
+                        Click="UpdateIndicator_Click"
+                        Visibility="{Binding UpdateService.IsUpdateAvailable, Converter={StaticResource BoolToVisibility}}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="{DynamicResource AppAccentSurfaceBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource AppBorderStrongBrush}" />
+                                <Setter Property="BorderThickness" Value="1" />
+                                <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="UpdateBorder"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="7"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="UpdateBorder" Property="Background"
+                                                            Value="{DynamicResource AppSurfaceHoverBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="UpdateBorder" Property="Opacity" Value="0.78" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="ArrowDownload" FontSize="14"
+                                           Foreground="{DynamicResource AppAccentBrush}"
+                                           VerticalAlignment="Center" />
+                            <TextBlock Margin="5,0,0,0" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AppAccentBrush}"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding UpdateService.AvailableVersion, StringFormat=Atualizar para {0}}" />
+                        </StackPanel>
+                    </Button>
+
                     <Border
                         VerticalAlignment="Center"
                         CornerRadius="6"
