@@ -81,9 +81,11 @@ jobs:
         shell: pwsh
         run: |
           vpk pack `
-            --packId Flavio.SteamNexus `
+            --packId SteamNexus `
             --packVersion "${{ steps.version.outputs.version }}" `
             --packDir publish `
+            --packTitle SteamNexus `
+            --packAuthors "Flávio Buarque" `
             --mainExe SteamSwitcher.exe `
             --outputDir Releases
 
@@ -118,8 +120,8 @@ jobs:
 
           ## 📥 Como instalar
 
-          - **Nova instalação:** baixe e execute **Flavio.SteamNexus-win-Setup.exe**.
-          - **Versão portátil:** baixe **Flavio.SteamNexus-win-Portable.zip** e extraia o conteúdo.
+          - **Nova instalação:** baixe e execute **SteamNexus-win-Setup.exe**.
+          - **Versão portátil:** baixe **SteamNexus-win-Portable.zip** e extraia o conteúdo.
           - **Aplicativo já instalado:** a atualização será detectada e baixada pelo próprio SteamNexus.
 
           > O pacote é autocontido e não exige a instalação separada do .NET.

@@ -199,6 +199,7 @@ public partial class App : Application
         services.AddTransient<AccountsPage>();
         services.AddTransient<GamesPage>();
         services.AddTransient<SettingsPage>();
+        services.AddTransient<AboutPage>();
         if (FeatureFlags.Mods) services.AddSingleton<ModsPage>();
     }
 

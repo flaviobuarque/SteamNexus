@@ -141,6 +141,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             case SettingsPage settingsPage:
                 settingsPage.ViewModel.RefreshStatusBar();
                 break;
+            case AboutPage:
+                _viewModel.UpdateStatusBar("Sobre o SteamNexus", "Projeto independente");
+                break;
             default:
                 _viewModel.UpdateStatusBar(string.Empty);
                 break;
@@ -161,6 +164,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private void NavItem_Settings_Click(object sender, MouseButtonEventArgs e)
         => NavigateTo(typeof(SettingsPage), "Settings");
+
+    private void NavItem_About_Click(object sender, MouseButtonEventArgs e)
+        => NavigateTo(typeof(AboutPage), "About");
 
     private void ThemeNavItem_Click(object sender, MouseButtonEventArgs e)
     {

@@ -85,7 +85,7 @@ O aplicativo lê as contas reconhecidas pela instalação local da Steam e foi p
 ## 📥 Instalação
 
 1. Acesse a página de [Releases](https://github.com/flaviobuarque/SteamNexus/releases/latest).
-2. Baixe o instalador `Setup.exe` da versão mais recente.
+2. Baixe o arquivo `SteamNexus-win-Setup.exe` da versão mais recente.
 3. Execute o instalador e abra o SteamNexus.
 4. Na primeira execução, siga o assistente para localizar e importar as contas da Steam.
 

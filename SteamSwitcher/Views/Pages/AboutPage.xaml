@@ -1,0 +1,167 @@
+<Page
+    x:Class="SteamSwitcher.Views.Pages.AboutPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Background="{DynamicResource AppBackgroundBrush}">
+
+    <Page.Resources>
+        <Style x:Key="AboutCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="22" />
+        </Style>
+        <Style x:Key="AboutEyebrowStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AppAccentAltBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="34,30,34,40" MaxWidth="980" HorizontalAlignment="Center">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Hero -->
+            <Border Grid.Row="0" CornerRadius="18" Padding="30" BorderThickness="1"
+                    BorderBrush="{DynamicResource AppBorderStrongBrush}">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#24388EE3" Offset="0" />
+                        <GradientStop Color="#143CCEFD" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="STEAMNEXUS" Style="{StaticResource AboutEyebrowStyle}" />
+                        <TextBlock Text="Sua biblioteca. Suas contas. Um só lugar."
+                                   Margin="0,8,0,0" FontSize="27" FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        <TextBlock Margin="0,12,0,0" MaxWidth="610" TextWrapping="Wrap"
+                                   FontSize="14" LineHeight="22"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                   Text="Um projeto independente criado para tornar o uso de múltiplas contas Steam mais simples, rápido e agradável." />
+                        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                            <Border Background="{DynamicResource AppAccentSurfaceBrush}" CornerRadius="12" Padding="12,6">
+                                <TextBlock Text="{Binding VersionText}" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppAccentBrush}" />
+                            </Border>
+                            <Border Margin="8,0,0,0" Background="{DynamicResource AppSuccessSurfaceBrush}"
+                                    CornerRadius="12" Padding="12,6">
+                                <TextBlock Text="Projeto independente" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppSuccessBrush}" />
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Grid.Column="1" Width="150" Height="102" Margin="28,0,0,0"
+                            Background="White" CornerRadius="18" Padding="12">
+                        <Image Source="/Assets/logo.png" Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Valores -->
+            <Grid Grid.Row="1" Margin="0,16,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource AboutCardStyle}" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="⚡" FontSize="22" />
+                        <TextBlock Text="Rápido por natureza" Margin="0,12,0,0" FontSize="15"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        <TextBlock Text="Listas virtualizadas, cache local e carregamento progressivo para manter tudo responsivo."
+                                   Margin="0,7,0,0" TextWrapping="Wrap" LineHeight="19"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Style="{StaticResource AboutCardStyle}" Margin="8,0">
+                    <StackPanel>
+                        <TextBlock Text="🔐" FontSize="22" />
+                        <TextBlock Text="Privacidade local" Margin="0,12,0,0" FontSize="15"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        <TextBlock Text="O aplicativo não lê senhas e mantém preferências e personalizações no seu computador."
+                                   Margin="0,7,0,0" TextWrapping="Wrap" LineHeight="19"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource AboutCardStyle}" Margin="8,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="💙" FontSize="22" />
+                        <TextBlock Text="Feito com propósito" Margin="0,12,0,0" FontSize="15"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        <TextBlock Text="Cada detalhe existe para reduzir atrito e deixar sua experiência com a Steam mais organizada."
+                                   Margin="0,7,0,0" TextWrapping="Wrap" LineHeight="19"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Autor -->
+            <Border Grid.Row="2" Style="{StaticResource AboutCardStyle}" Margin="0,16,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Width="58" Height="58" CornerRadius="29"
+                            Background="{DynamicResource AppAccentSurfaceBrush}">
+                        <TextBlock Text="FB" FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource AppAccentBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Margin="16,0" VerticalAlignment="Center">
+                        <TextBlock Text="CRIADO E MANTIDO POR" Style="{StaticResource AboutEyebrowStyle}" />
+                        <TextBlock Text="Flávio Buarque" Margin="0,4,0,0" FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        <TextBlock Text="Desenvolvido no Brasil, com atenção aos detalhes e à comunidade."
+                                   Margin="0,4,0,0" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                    </StackPanel>
+
+                    <ui:Button Grid.Column="2" Content="Ver no GitHub" Appearance="Secondary"
+                               VerticalAlignment="Center" Cursor="Hand" Click="OpenGitHub_Click" />
+                </Grid>
+            </Border>
+
+            <!-- Rodapé -->
+            <Grid Grid.Row="3" Margin="0,16,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Construído com .NET 10, WPF, WPF UI e Velopack."
+                               Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                    <TextBlock Margin="0,4,0,0" FontSize="11" TextWrapping="Wrap"
+                               Foreground="{DynamicResource AppTextMutedBrush}"
+                               Text="SteamNexus não possui vínculo, patrocínio ou aprovação da Valve Corporation." />
+                </StackPanel>
+                <ui:Button Grid.Column="1" Content="Ver versões" Appearance="Primary"
+                           Margin="16,0,0,0" Cursor="Hand" Click="OpenReleases_Click" />
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</Page>
