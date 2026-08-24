@@ -77,16 +77,10 @@ O aplicativo lê as contas reconhecidas pela instalação local da Steam e foi p
 
 ## 📸 Capturas de tela
 
-<!--
-Quando os arquivos estiverem em docs/images, substitua este comentário pelo bloco abaixo:
-
 <p align="center">
   <img src="docs/images/accounts.png" alt="Tela de contas do SteamNexus" width="49%">
   <img src="docs/images/games.png" alt="Biblioteca de jogos do SteamNexus" width="49%">
 </p>
--->
-
-As capturas oficiais serão adicionadas aqui. Consulte [as instruções da galeria](docs/images/README.md) para usar os nomes e dimensões recomendados.
 
 ## 📥 Instalação
 
