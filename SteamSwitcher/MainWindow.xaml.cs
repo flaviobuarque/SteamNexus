@@ -4,6 +4,7 @@ using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
 using SteamSwitcher.ViewModels;
 using SteamSwitcher.Views.Pages;
+using SteamSwitcher.Views.Dialogs;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -168,15 +169,55 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private void NavItem_About_Click(object sender, MouseButtonEventArgs e)
         => NavigateTo(typeof(AboutPage), "About");
 
-    private void UpdateIndicator_Click(object sender, RoutedEventArgs e)
+    private async void UpdateIndicator_Click(object sender, RoutedEventArgs e)
     {
-        NavigateTo(typeof(SettingsPage), "Settings");
-        if (MainFrame.Content is not SettingsPage settingsPage)
+        var updateService = _viewModel.UpdateService;
+        if (!updateService.IsUpdateAvailable || updateService.IsDownloading)
             return;
 
-        Dispatcher.BeginInvoke(
-            settingsPage.ShowUpdatesSection,
-            System.Windows.Threading.DispatcherPriority.Loaded);
+        var dialog = new UpdatePromptDialog(
+            updateService.AvailableVersion,
+            updateService.IsUpdateReady)
+        {
+            Owner = this
+        };
+        dialog.ShowDialog();
+
+        if (dialog.Choice == UpdatePromptDialog.UpdateChoice.Later)
+            return;
+
+        if (updateService.IsUpdateReady)
+        {
+            updateService.ApplyUpdateAndRestart();
+            return;
+        }
+
+        await updateService.DownloadUpdateAsync();
+        if (!updateService.IsUpdateReady)
+        {
+            _snackbarService.Show(
+                "Falha no download",
+                string.IsNullOrWhiteSpace(updateService.ErrorText)
+                    ? "Não foi possível preparar a atualização."
+                    : updateService.ErrorText,
+                Wpf.Ui.Controls.ControlAppearance.Danger,
+                null,
+                TimeSpan.FromSeconds(6));
+            return;
+        }
+
+        if (dialog.Choice == UpdatePromptDialog.UpdateChoice.DownloadAndInstall)
+        {
+            updateService.ApplyUpdateAndRestart();
+            return;
+        }
+
+        _snackbarService.Show(
+            "Atualização pronta",
+            $"A versão {updateService.AvailableVersion} foi baixada. Instale quando quiser pelo rodapé.",
+            Wpf.Ui.Controls.ControlAppearance.Success,
+            null,
+            TimeSpan.FromSeconds(6));
     }
 
     private void ThemeNavItem_Click(object sender, MouseButtonEventArgs e)

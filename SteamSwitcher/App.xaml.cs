@@ -20,6 +20,8 @@ namespace SteamSwitcher;
 public partial class App : Application
 {
     private IHost? _host;
+    private readonly CancellationTokenSource _updateMonitorCancellation = new();
+    private string _lastNotifiedUpdateVersion = string.Empty;
 
     [STAThread]
     private static void Main(string[] args)
@@ -108,9 +110,8 @@ public partial class App : Application
             Shutdown();
         }
 
-        // Não bloqueia a abertura: versões instaladas consultam e preparam a
-        // atualização alguns segundos depois que a interface estiver pronta.
-        _ = PrepareUpdateInBackgroundAsync();
+        // Não bloqueia a abertura e continua verificando enquanto o app estiver aberto.
+        _ = MonitorUpdatesAsync(_updateMonitorCancellation.Token);
 
         // Arg --minimized (startup com Windows)
         if (e.Args.Contains("--minimized"))
@@ -122,42 +123,60 @@ public partial class App : Application
             await HandleCliSwitchAsync(switchArg, GetArgValue(e.Args, "--state"));
     }
 
-    private async Task PrepareUpdateInBackgroundAsync()
+    private async Task MonitorUpdatesAsync(CancellationToken ct)
     {
         if (_host is null)
             return;
 
         var updateService = _host.Services.GetRequiredService<IUpdateService>();
-        if (!updateService.CanCheckForUpdates)
+        if (!updateService.IsConfigured || !updateService.IsInstalled)
             return;
 
         try
         {
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            await updateService.CheckForUpdatesAsync();
-            if (!updateService.IsUpdateAvailable)
-                return;
+            await Task.Delay(TimeSpan.FromSeconds(5), ct);
+            while (!ct.IsCancellationRequested)
+            {
+                if (!updateService.IsUpdateAvailable && updateService.CanCheckForUpdates)
+                    await updateService.CheckForUpdatesAsync(ct);
 
-            await updateService.DownloadUpdateAsync();
-            if (!updateService.IsUpdateReady)
-                return;
+                var shouldNotify = updateService.IsUpdateAvailable
+                    && !string.IsNullOrWhiteSpace(updateService.AvailableVersion)
+                    && !string.Equals(
+                        _lastNotifiedUpdateVersion,
+                        updateService.AvailableVersion,
+                        StringComparison.Ordinal)
+                    && Current.MainWindow?.IsVisible == true;
 
-            var snackbar = _host.Services.GetRequiredService<ISnackbarService>();
-            snackbar.Show(
-                "Atualização pronta",
-                $"A versão {updateService.AvailableVersion} será instalada quando você confirmar nas configurações.",
-                Wpf.Ui.Controls.ControlAppearance.Success,
-                null,
-                TimeSpan.FromSeconds(7));
+                if (shouldNotify)
+                {
+                    var snackbar = _host.Services.GetRequiredService<ISnackbarService>();
+                    snackbar.Show(
+                        "Nova atualização disponível",
+                        $"A versão {updateService.AvailableVersion} está pronta para baixar. Use o botão no rodapé para escolher quando instalar.",
+                        Wpf.Ui.Controls.ControlAppearance.Info,
+                        null,
+                        TimeSpan.FromSeconds(8));
+                    _lastNotifiedUpdateVersion = updateService.AvailableVersion;
+                }
+
+                await Task.Delay(TimeSpan.FromMinutes(5), ct);
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Encerramento normal do aplicativo.
         }
         catch
         {
-            // Atualização automática nunca deve impedir o uso do aplicativo.
+            // O monitor nunca deve impedir o uso do aplicativo.
         }
     }
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        _updateMonitorCancellation.Cancel();
+
         if (_host is not null)
         {
             if (FeatureFlags.Mods)
@@ -169,6 +188,8 @@ public partial class App : Application
             await _host.StopAsync(TimeSpan.FromSeconds(5));
             _host.Dispose();
         }
+
+        _updateMonitorCancellation.Dispose();
 
         base.OnExit(e);
     }

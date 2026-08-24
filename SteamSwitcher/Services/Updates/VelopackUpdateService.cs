@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Diagnostics;
 using System.Reflection;
 using Velopack;
 using Velopack.Sources;
@@ -14,6 +15,7 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
     [ObservableProperty] private string _availableVersion = string.Empty;
     [ObservableProperty] private string _statusText;
     [ObservableProperty] private string _errorText = string.Empty;
+    [ObservableProperty] private string _downloadSpeedText = string.Empty;
     [ObservableProperty] private int _downloadProgress;
     [ObservableProperty] private bool _isChecking;
     [ObservableProperty] private bool _isDownloading;
@@ -58,6 +60,9 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
     }
 
     public string CurrentVersion { get; }
+    public string UpdateActionText => IsUpdateReady
+        ? $"Instalar {AvailableVersion}"
+        : $"Atualizar para {AvailableVersion}";
     public bool IsConfigured { get; }
     public bool IsInstalled { get; }
     public bool CanCheckForUpdates =>
@@ -68,6 +73,12 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
 
     partial void OnIsDownloadingChanged(bool value) =>
         OnPropertyChanged(nameof(CanCheckForUpdates));
+
+    partial void OnAvailableVersionChanged(string value) =>
+        OnPropertyChanged(nameof(UpdateActionText));
+
+    partial void OnIsUpdateReadyChanged(bool value) =>
+        OnPropertyChanged(nameof(UpdateActionText));
 
     public async Task CheckForUpdatesAsync(CancellationToken ct = default)
     {
@@ -124,14 +135,40 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
             IsDownloading = true;
             ErrorText = string.Empty;
             DownloadProgress = 0;
+            DownloadSpeedText = "Calculando velocidade...";
             StatusText = $"Baixando versão {AvailableVersion}...";
+
+            var expectedBytes = GetExpectedDownloadSize(_pendingUpdate);
+            var stopwatch = Stopwatch.StartNew();
+            var lastBytes = 0d;
+            var lastElapsed = TimeSpan.Zero;
+            var smoothedBytesPerSecond = 0d;
 
             await _manager.DownloadUpdatesAsync(
                 _pendingUpdate,
-                progress => DownloadProgress = progress,
+                progress =>
+                {
+                    DownloadProgress = progress;
+
+                    var elapsed = stopwatch.Elapsed;
+                    var estimatedBytes = expectedBytes * progress / 100d;
+                    var intervalSeconds = (elapsed - lastElapsed).TotalSeconds;
+                    if (intervalSeconds < 0.25 || estimatedBytes <= lastBytes)
+                        return;
+
+                    var instantaneous = (estimatedBytes - lastBytes) / intervalSeconds;
+                    smoothedBytesPerSecond = smoothedBytesPerSecond <= 0
+                        ? instantaneous
+                        : (smoothedBytesPerSecond * 0.72) + (instantaneous * 0.28);
+
+                    DownloadSpeedText = FormatSpeed(smoothedBytesPerSecond);
+                    lastBytes = estimatedBytes;
+                    lastElapsed = elapsed;
+                },
                 ct);
 
             DownloadProgress = 100;
+            DownloadSpeedText = "Download concluído";
             IsUpdateReady = true;
             StatusText = $"Versão {AvailableVersion} pronta para instalar";
         }
@@ -160,6 +197,22 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
             ?? _manager.UpdatePendingRestart;
         if (target is not null)
             _manager.ApplyUpdatesAndRestart(target, []);
+    }
+
+    private static long GetExpectedDownloadSize(UpdateInfo update)
+    {
+        var fullSize = Math.Max(1, update.TargetFullRelease.Size);
+        var deltaSize = update.DeltasToTarget?.Sum(delta => delta.Size) ?? 0;
+        return deltaSize > 0 && deltaSize < fullSize ? deltaSize : fullSize;
+    }
+
+    private static string FormatSpeed(double bytesPerSecond)
+    {
+        if (bytesPerSecond >= 1024 * 1024)
+            return $"{bytesPerSecond / (1024 * 1024):0.0} MB/s";
+        if (bytesPerSecond >= 1024)
+            return $"{bytesPerSecond / 1024:0} KB/s";
+        return $"{bytesPerSecond:0} B/s";
     }
 
     private static string ReadAssemblyMetadata(string key) =>

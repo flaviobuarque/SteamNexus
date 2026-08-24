@@ -1,0 +1,84 @@
+<Window
+    x:Class="SteamSwitcher.Views.Dialogs.UpdatePromptDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+    WindowStyle="None"
+    AllowsTransparency="True"
+    Background="Transparent"
+    ResizeMode="NoResize"
+    Width="800"
+    Height="600"
+    WindowStartupLocation="CenterOwner"
+    ShowInTaskbar="False">
+
+    <Border Background="{DynamicResource AppDialogBackdropBrush}">
+        <Border Width="500" Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="{DynamicResource AppChromeBrush}"
+                BorderBrush="{DynamicResource AppBorderStrongBrush}"
+                BorderThickness="1" CornerRadius="16">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="46" Height="46" CornerRadius="23"
+                            Background="{DynamicResource AppAccentSurfaceBrush}">
+                        <ic:SymbolIcon Symbol="ArrowDownload" FontSize="23"
+                                       Foreground="{DynamicResource AppAccentBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="Atualização disponível" FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        <TextBlock x:Name="VersionText" Margin="0,4,0,0" FontSize="12"
+                                   Foreground="{DynamicResource AppAccentAltBrush}" />
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock x:Name="DescriptionText" Margin="0,20,0,18" TextWrapping="Wrap"
+                           LineHeight="20" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+
+                <Border Padding="14,11" CornerRadius="10"
+                        Background="{DynamicResource AppSurfaceBrush}"
+                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                    <TextBlock Text="O SteamNexus continuará disponível enquanto o pacote é baixado."
+                               FontSize="12" TextWrapping="Wrap"
+                               Foreground="{DynamicResource AppTextMutedBrush}" />
+                </Border>
+
+                <StackPanel Margin="0,22,0,0">
+                    <ui:Button x:Name="InstallButton" Appearance="Primary" Cursor="Hand"
+                               HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                               Padding="16,10" Click="InstallButton_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <ic:SymbolIcon Symbol="ArrowSync" FontSize="16" Margin="0,0,8,0" />
+                            <TextBlock x:Name="InstallButtonText" Text="Baixar e instalar agora" />
+                        </StackPanel>
+                    </ui:Button>
+
+                    <ui:Button x:Name="DownloadButton" Appearance="Secondary" Cursor="Hand"
+                               Margin="0,8,0,0" HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Center" Padding="16,10"
+                               Click="DownloadButton_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <ic:SymbolIcon Symbol="ArrowDownload" FontSize="16" Margin="0,0,8,0" />
+                            <TextBlock Text="Apenas baixar" />
+                        </StackPanel>
+                    </ui:Button>
+
+                    <ui:Button Appearance="Transparent" Cursor="Hand" Margin="0,6,0,0"
+                               HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                               Padding="16,8" Click="LaterButton_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <ic:SymbolIcon Symbol="Clock" FontSize="16" Margin="0,0,8,0" />
+                            <TextBlock Text="Agora não" />
+                        </StackPanel>
+                    </ui:Button>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Border>
+</Window>

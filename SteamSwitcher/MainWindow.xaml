@@ -565,10 +565,10 @@
                         Cursor="Hand"
                         ToolTip="Abrir configurações de atualização"
                         ToolTipService.InitialShowDelay="300"
-                        Click="UpdateIndicator_Click"
-                        Visibility="{Binding UpdateService.IsUpdateAvailable, Converter={StaticResource BoolToVisibility}}">
+                        Click="UpdateIndicator_Click">
                         <Button.Style>
                             <Style TargetType="Button">
+                                <Setter Property="Visibility" Value="Collapsed" />
                                 <Setter Property="Background" Value="{DynamicResource AppAccentSurfaceBrush}" />
                                 <Setter Property="BorderBrush" Value="{DynamicResource AppBorderStrongBrush}" />
                                 <Setter Property="BorderThickness" Value="1" />
@@ -596,6 +596,15 @@
                                         </ControlTemplate>
                                     </Setter.Value>
                                 </Setter>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding UpdateService.IsUpdateAvailable}" Value="True" />
+                                            <Condition Binding="{Binding UpdateService.IsDownloading}" Value="False" />
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
@@ -605,9 +614,25 @@
                             <TextBlock Margin="5,0,0,0" FontSize="11" FontWeight="SemiBold"
                                        Foreground="{DynamicResource AppAccentBrush}"
                                        VerticalAlignment="Center"
-                                       Text="{Binding UpdateService.AvailableVersion, StringFormat=Atualizar para {0}}" />
+                                       Text="{Binding UpdateService.UpdateActionText}" />
                         </StackPanel>
                     </Button>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,10,0"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding UpdateService.IsDownloading, Converter={StaticResource BoolToVisibility}}">
+                        <ProgressBar Width="150" Height="5" Minimum="0" Maximum="100"
+                                     Value="{Binding UpdateService.DownloadProgress}"
+                                     VerticalAlignment="Center" />
+                        <TextBlock Margin="8,0,0,0" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppAccentBrush}"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding UpdateService.DownloadProgress, StringFormat={}{0}%}" />
+                        <TextBlock Margin="7,0,0,0" FontSize="11"
+                                   Foreground="{DynamicResource AppTextMutedBrush}"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding UpdateService.DownloadSpeedText}" />
+                    </StackPanel>
 
                     <Border
                         VerticalAlignment="Center"
