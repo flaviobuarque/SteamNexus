@@ -164,7 +164,11 @@
                             Background="{DynamicResource AppSurfaceBrush}"
                             BorderBrush="{DynamicResource AppBorderBrush}"
                             BorderThickness="1"
-                            Padding="4">
+                            Padding="4"
+                            UseLayoutRounding="True"
+                            SnapsToDevicePixels="True"
+                            TextOptions.TextFormattingMode="Display"
+                            TextOptions.TextRenderingMode="ClearType">
                             <MenuItem
                                 Command="{Binding PlacementTarget.DataContext.SortByRecentUsageCommand,
                                     RelativeSource={RelativeSource AncestorType=ContextMenu}}">

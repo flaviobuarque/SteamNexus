@@ -13,6 +13,10 @@
     MinWidth="950"
     MinHeight="500"
     WindowStartupLocation="CenterScreen"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True"
+    TextOptions.TextFormattingMode="Display"
+    TextOptions.TextRenderingMode="ClearType"
     ExtendsContentIntoTitleBar="True">
 
     <ui:FluentWindow.Resources>
