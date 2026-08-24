@@ -599,7 +599,7 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="ArrowDownload" FontSize="14"
+                            <ic:SymbolIcon Symbol="ArrowDownload" FontSize="14"
                                            Foreground="{DynamicResource AppAccentBrush}"
                                            VerticalAlignment="Center" />
                             <TextBlock Margin="5,0,0,0" FontSize="11" FontWeight="SemiBold"
