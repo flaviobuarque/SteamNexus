@@ -4,6 +4,8 @@ namespace SteamSwitcher.Core.Services;
 
 public interface ISteamGameService
 {
+    IReadOnlyList<string> GetLibraryManifestDirectories();
+
     Task<IReadOnlyList<SteamGame>> GetInstalledGamesAsync(
         IReadOnlyList<SteamAccount> accounts,
         CancellationToken ct = default);

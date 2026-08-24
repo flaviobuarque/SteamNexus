@@ -4,10 +4,11 @@ public class SteamAccount
 {
     // Dados do loginusers.vdf
     public required string SteamId64 { get; init; }
-    public required string AccountName { get; init; }
+    public required string AccountName { get; set; }
     public string PersonaName { get; set; } = string.Empty;
     public bool RememberPassword { get; set; }
     public bool MostRecent { get; set; }
+    public bool AutoLogin { get; set; }
     public long Timestamp { get; set; }
     public bool WantsOfflineMode { get; set; }
 
@@ -20,6 +21,9 @@ public class SteamAccount
 
     // Preferência de status por conta
     public LoginState? LoginStateOverride { get; set; }
+
+    // Organização local do SteamSwitcher
+    public bool IsFavorite { get; set; }
 
     // Computed
     public string DisplayName => CustomDisplayName ?? PersonaName;

@@ -27,15 +27,15 @@
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
         <converters:EmptyStringToBoolConverter x:Key="EmptyStringToBool" />
 
-        <Style x:Key="DarkComboBoxStyle" TargetType="ComboBox"
+        <Style x:Key="DialogComboBoxStyle" TargetType="ComboBox"
            BasedOn="{StaticResource {x:Type ComboBox}}">
-            <Setter Property="Background" Value="#0D2135" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceAltBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
         </Style>
 
-        <Style x:Key="DarkComboBoxItemStyle" TargetType="ComboBoxItem">
-            <Setter Property="Background" Value="#0D2135" />
+        <Style x:Key="DialogComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
             <Setter Property="Padding" Value="8,6" />
             <Style.Triggers>
@@ -50,12 +50,12 @@
     </Window.Resources>
 
     <!-- Overlay escurecido cobrindo tudo -->
-    <Border Background="#66000000">
+    <Border Background="{DynamicResource AppDialogBackdropBrush}">
         <Border
             x:Name="DialogCard"
             Opacity="0"
-            Background="#0D2135"
-            BorderBrush="#1F456A"
+            Background="{DynamicResource AppChromeBrush}"
+            BorderBrush="{DynamicResource AppBorderBrush}"
             BorderThickness="1"
             CornerRadius="14"
             Padding="24"
@@ -75,14 +75,14 @@
                     <ic:SymbolIcon
                         Symbol="Edit"
                         FontSize="18"
-                        Foreground="#38D6C6"
+                        Foreground="{DynamicResource AppAccentAltBrush}"
                         Margin="0,0,10,0"
                         VerticalAlignment="Center" />
                     <TextBlock
                         Text="Editar conta"
                         FontSize="16"
                         FontWeight="SemiBold"
-                        Foreground="#EAF7FF"
+                        Foreground="{DynamicResource AppTextPrimaryBrush}"
                         VerticalAlignment="Center" />
                 </StackPanel>
 
@@ -101,7 +101,7 @@
                             Text="AVATAR"
                             FontSize="10"
                             FontWeight="Bold"
-                            Foreground="#6593B0"
+                            Foreground="{DynamicResource AppTextMutedBrush}"
                             Margin="0,0,0,10" />
 
                         <!-- Preview + botões -->
@@ -116,7 +116,7 @@
                                 Grid.Column="0"
                                 Width="60" Height="60"
                                 CornerRadius="30"
-                                BorderBrush="#1F456A"
+                                BorderBrush="{DynamicResource AppBorderStrongBrush}"
                                 BorderThickness="2">
                                 <Border.Background>
                                     <ImageBrush
@@ -154,16 +154,16 @@
                         <TextBlock
                             Text="⚠ Apenas neste app."
                             FontSize="10"
-                            Foreground="#6593B0"
+                            Foreground="{DynamicResource AppTextMutedBrush}"
                             Margin="0,0,0,20" />
 
-                        <Border Height="1" Background="#1F456A" Margin="0,0,0,16" />
+                        <Border Height="1" Background="{DynamicResource AppBorderBrush}" Margin="0,0,0,16" />
 
                         <TextBlock
                             Text="NOME DE EXIBIÇÃO"
                             FontSize="10"
                             FontWeight="Bold"
-                            Foreground="#6593B0"
+                            Foreground="{DynamicResource AppTextMutedBrush}"
                             Margin="0,0,0,8" />
 
                         <ui:TextBox
@@ -175,7 +175,7 @@
                         <TextBlock
                             Text="⚠ Apenas neste app."
                             FontSize="10"
-                            Foreground="#6593B0" />
+                            Foreground="{DynamicResource AppTextMutedBrush}" />
                     </StackPanel>
 
                     <!-- Coluna direita: Status -->
@@ -199,8 +199,8 @@
                             ItemsSource="{Binding LoginStateOptions}"
                             SelectedItem="{Binding SelectedLoginStateItem}"
                             HorizontalAlignment="Stretch"
-                            Style="{StaticResource DarkComboBoxStyle}"
-                            ItemContainerStyle="{StaticResource DarkComboBoxItemStyle}"
+                            Style="{StaticResource DialogComboBoxStyle}"
+                            ItemContainerStyle="{StaticResource DialogComboBoxItemStyle}"
                             Background="{DynamicResource AppSurfaceAltBrush}"
                             BorderBrush="{DynamicResource AppBorderBrush}"
                             Foreground="{DynamicResource AppTextPrimaryBrush}">
@@ -211,8 +211,24 @@
                         Symbol="{Binding Icon}"
                         FontSize="14"
                         Margin="0,0,8,0"
-                        VerticalAlignment="Center"
-                        Foreground="{Binding Color}" />
+                        VerticalAlignment="Center">
+                                            <ic:SymbolIcon.Style>
+                                                <Style TargetType="ic:SymbolIcon">
+                                                    <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Value}" Value="1">
+                                                            <Setter Property="Foreground" Value="{DynamicResource AppSuccessBrush}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Value}" Value="3">
+                                                            <Setter Property="Foreground" Value="{DynamicResource AppWarningBrush}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Value}" Value="7">
+                                                            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ic:SymbolIcon.Style>
+                                        </ic:SymbolIcon>
                                         <TextBlock
                         Text="{Binding Label}"
                         VerticalAlignment="Center"
@@ -232,7 +248,7 @@
                 </Grid>
 
                 <!-- Separador -->
-                <Border Height="1" Background="#1F456A" Margin="0,20,0,16" />
+                <Border Height="1" Background="{DynamicResource AppBorderBrush}" Margin="0,20,0,16" />
 
                 <!-- Botões -->
                 <Grid>

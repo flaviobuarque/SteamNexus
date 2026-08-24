@@ -6,103 +6,104 @@
     <!-- BACKGROUNDS -->
     <!-- ========================= -->
 
-    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F8FAFC"/>
-    <SolidColorBrush x:Key="AppChromeBrush" Color="#EEF3F7"/>
+    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F1F5F9"/>
+    <SolidColorBrush x:Key="AppChromeBrush" Color="#E6EDF5"/>
     <SolidColorBrush x:Key="AppSurfaceBrush" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="AppSurfaceAltBrush" Color="#F4F8FB"/>
-    <SolidColorBrush x:Key="AppSurfaceHoverBrush" Color="#F4F9FF"/>
+    <SolidColorBrush x:Key="AppSurfaceAltBrush" Color="#EDF2F7"/>
+    <SolidColorBrush x:Key="AppSurfaceHoverBrush" Color="#E8F1FC"/>
 
     <!-- ========================= -->
     <!-- BORDERS -->
     <!-- ========================= -->
 
-    <SolidColorBrush x:Key="AppBorderBrush" Color="#D4DEE7"/>
-    <SolidColorBrush x:Key="AppBorderStrongBrush" Color="#408EE3"/>
+    <SolidColorBrush x:Key="AppBorderBrush" Color="#B8C5D1"/>
+    <SolidColorBrush x:Key="AppBorderStrongBrush" Color="#2563EB"/>
 
     <!-- ========================= -->
     <!-- TEXT -->
     <!-- ========================= -->
 
-    <SolidColorBrush x:Key="AppTextPrimaryBrush" Color="#0F172A"/>
-    <SolidColorBrush x:Key="AppTextSecondaryBrush" Color="#475569"/>
-    <SolidColorBrush x:Key="AppTextMutedBrush" Color="#94A3B8"/>
+    <SolidColorBrush x:Key="AppTextPrimaryBrush" Color="#0B1220"/>
+    <SolidColorBrush x:Key="AppTextSecondaryBrush" Color="#334155"/>
+    <SolidColorBrush x:Key="AppTextMutedBrush" Color="#64748B"/>
 
     <!-- ========================= -->
     <!-- ACCENT -->
     <!-- ========================= -->
 
-    <SolidColorBrush x:Key="AppAccentBrush" Color="#408EE3"/>
-    <SolidColorBrush x:Key="AppAccentAltBrush" Color="#3CCEFD"/>
-    <SolidColorBrush x:Key="AppAccentSurfaceBrush" Color="#EAF4FF"/>
+    <SolidColorBrush x:Key="AppAccentBrush" Color="#2563EB"/>
+    <SolidColorBrush x:Key="AppAccentAltBrush" Color="#0891B2"/>
+    <SolidColorBrush x:Key="AppAccentSurfaceBrush" Color="#DBEAFE"/>
 
     <!-- ========================= -->
     <!-- SEMANTIC -->
     <!-- ========================= -->
 
-    <SolidColorBrush x:Key="AppDangerBrush" Color="#EF4444"/>
-    <SolidColorBrush x:Key="AppDangerSurfaceBrush" Color="#FEF2F2"/>
+    <SolidColorBrush x:Key="AppDangerBrush" Color="#DC2626"/>
+    <SolidColorBrush x:Key="AppDangerSurfaceBrush" Color="#FEE2E2"/>
 
-    <SolidColorBrush x:Key="AppSuccessBrush" Color="#22C55E"/>
+    <SolidColorBrush x:Key="AppSuccessBrush" Color="#15803D"/>
     <SolidColorBrush x:Key="AppSuccessSurfaceBrush" Color="#DCFCE7"/>
 
-    <SolidColorBrush x:Key="AppWarningBrush" Color="#F59E0B"/>
-    <SolidColorBrush x:Key="AppOverlayBrush" Color="#AAFFFFFF"/>
+    <SolidColorBrush x:Key="AppWarningBrush" Color="#B45309"/>
+    <SolidColorBrush x:Key="AppOverlayBrush" Color="#B8FFFFFF"/>
+    <SolidColorBrush x:Key="AppDialogBackdropBrush" Color="#660F172A"/>
 
     <!-- ========================= -->
     <!-- WPF UI ALIASES -->
     <!-- ========================= -->
 
-    <SolidColorBrush x:Key="ApplicationBackgroundBrush" Color="#F8FAFC"/>
+    <SolidColorBrush x:Key="ApplicationBackgroundBrush" Color="#F1F5F9"/>
 
     <SolidColorBrush x:Key="ControlFillColorDefaultBrush"
                      Color="#FFFFFF"/>
 
     <SolidColorBrush x:Key="ControlFillColorSecondaryBrush"
-                     Color="#F4F8FB"/>
+                     Color="#EDF2F7"/>
 
     <SolidColorBrush x:Key="ControlFillColorTertiaryBrush"
-                     Color="#E7F1F6"/>
+                     Color="#E2E8F0"/>
 
     <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush"
-                     Color="#D4DEE7"/>
+                     Color="#B8C5D1"/>
 
     <SolidColorBrush x:Key="ControlStrokeColorSecondaryBrush"
-                     Color="#E5EDF4"/>
+                     Color="#CBD5E1"/>
 
     <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush"
-                     Color="#408EE3"/>
+                     Color="#2563EB"/>
 
-    <Color x:Key="SystemAccentColor">#408EE3</Color>
+    <Color x:Key="SystemAccentColor">#2563EB</Color>
 
     <SolidColorBrush x:Key="TextFillColorPrimaryBrush"
-                     Color="#0F172A"/>
+                     Color="#0B1220"/>
 
     <SolidColorBrush x:Key="TextFillColorSecondaryBrush"
-                     Color="#475569"/>
+                     Color="#334155"/>
 
     <SolidColorBrush x:Key="TextFillColorTertiaryBrush"
-                     Color="#94A3B8"/>
+                     Color="#64748B"/>
 
     <SolidColorBrush x:Key="LayerFillColorDefaultBrush"
-                     Color="#F8FAFC"/>
+                     Color="#F1F5F9"/>
 
     <SolidColorBrush x:Key="LayerFillColorAltBrush"
-                     Color="#EEF3F7"/>
+                     Color="#E6EDF5"/>
 
     <SolidColorBrush x:Key="SolidBackgroundFillColorBaseBrush"
-                     Color="#F8FAFC"/>
+                     Color="#F1F5F9"/>
 
     <SolidColorBrush x:Key="SolidBackgroundFillColorSecondaryBrush"
-                     Color="#EEF3F7"/>
+                     Color="#E6EDF5"/>
 
     <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush"
-                     Color="#D4DEE7"/>
+                     Color="#B8C5D1"/>
 
     <SolidColorBrush x:Key="LayerOnMicaBaseAltFillColorDefaultBrush"
-                     Color="#EEF3F7"/>
+                     Color="#E6EDF5"/>
 
     <SolidColorBrush x:Key="LayerOnAcrylicFillColorDefaultBrush"
-                     Color="#EEF3F7"/>
+                     Color="#E6EDF5"/>
 
     <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground"
                      Color="#FFFFFF"/>
@@ -111,7 +112,7 @@
                      Color="#FFFFFF"/>
 
     <SolidColorBrush x:Key="NavigationViewTopPaneBackground"
-                     Color="#F8FAFC"/>
+                     Color="#F1F5F9"/>
 
     <!-- ========================= -->
     <!-- COMBOBOX -->
@@ -121,13 +122,13 @@
                      Color="#FFFFFF"/>
 
     <SolidColorBrush x:Key="ComboBoxItemForeground"
-                     Color="#0F172A"/>
+                     Color="#0B1220"/>
 
     <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected"
-                     Color="#EAF4FF"/>
+                     Color="#DBEAFE"/>
 
     <SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver"
-                     Color="#F4F8FB"/>
+                     Color="#E8F1FC"/>
 
     <SolidColorBrush x:Key="ComboBoxBackground"
                      Color="#FFFFFF"/>
@@ -136,10 +137,10 @@
                      Color="#FFFFFF"/>
 
     <SolidColorBrush x:Key="ComboBoxBorderBrush"
-                     Color="#D4DEE7"/>
+                     Color="#B8C5D1"/>
 
     <SolidColorBrush x:Key="ComboBoxForeground"
-                     Color="#0F172A"/>
+                     Color="#0B1220"/>
 
     <!-- ========================= -->
     <!-- CONTEXT MENU -->
@@ -149,28 +150,28 @@
                      Color="#FFFFFF"/>
 
     <SolidColorBrush x:Key="ContextMenuBorderBrush"
-                     Color="#D4DEE7"/>
+                     Color="#B8C5D1"/>
 
     <SolidColorBrush x:Key="MenuItemHighlightBrush"
-                     Color="#F1F7FE"/>
+                     Color="#E8F1FC"/>
 
     <SolidColorBrush x:Key="MenuItemHighlightedForeground"
-                     Color="#0F172A"/>
+                     Color="#0B1220"/>
 
     <!-- ========================= -->
     <!-- SCROLLBAR -->
     <!-- ========================= -->
 
     <SolidColorBrush x:Key="AppScrollThumbBrush"
-                     Color="#94A3B8"/>
+                     Color="#64748B"/>
 
     <SolidColorBrush x:Key="AccountCardHeaderBrush"
-                 Color="#F1F7FE"/>
+                 Color="#E8F1FC"/>
 
     <SolidColorBrush x:Key="AccountCardSeparatorBrush"
-                 Color="#CBD5E1"/>
+                 Color="#B8C5D1"/>
 
     <SolidColorBrush x:Key="OnlineBrush"
-                 Color="#22C55E"/>
+                 Color="#15803D"/>
 
 </ResourceDictionary>

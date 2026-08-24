@@ -1,14 +1,16 @@
-﻿using System.Windows;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SteamSwitcher.Core;
 using SteamSwitcher.Core.Extensions;
 using SteamSwitcher.Core.Services;
+using SteamSwitcher.Services.Updates;
 using SteamSwitcher.ViewModels;
 using SteamSwitcher.Views;
 using SteamSwitcher.Views.Onboarding;
 using SteamSwitcher.Views.Pages;
+using System.Windows;
+using Velopack;
 using Wpf.Ui;
 using Wpf.Ui.DependencyInjection;
 
@@ -17,6 +19,18 @@ namespace SteamSwitcher;
 public partial class App : Application
 {
     private IHost? _host;
+
+    [STAThread]
+    private static void Main(string[] args)
+    {
+        // Precisa executar antes do Host e de qualquer janela para que os hooks
+        // rápidos de instalação e atualização possam terminar sem carregar o WPF.
+        VelopackApp.Build().Run();
+
+        var app = new App();
+        app.InitializeComponent();
+        app.Run();
+    }
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -93,6 +107,10 @@ public partial class App : Application
             Shutdown();
         }
 
+        // Não bloqueia a abertura: versões instaladas consultam e preparam a
+        // atualização alguns segundos depois que a interface estiver pronta.
+        _ = PrepareUpdateInBackgroundAsync();
+
         // Arg --minimized (startup com Windows)
         if (e.Args.Contains("--minimized"))
             Application.Current.MainWindow?.Hide();
@@ -101,6 +119,40 @@ public partial class App : Application
         var switchArg = GetArgValue(e.Args, "--switch");
         if (!string.IsNullOrEmpty(switchArg))
             await HandleCliSwitchAsync(switchArg, GetArgValue(e.Args, "--state"));
+    }
+
+    private async Task PrepareUpdateInBackgroundAsync()
+    {
+        if (_host is null)
+            return;
+
+        var updateService = _host.Services.GetRequiredService<IUpdateService>();
+        if (!updateService.CanCheckForUpdates)
+            return;
+
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            await updateService.CheckForUpdatesAsync();
+            if (!updateService.IsUpdateAvailable)
+                return;
+
+            await updateService.DownloadUpdateAsync();
+            if (!updateService.IsUpdateReady)
+                return;
+
+            var snackbar = _host.Services.GetRequiredService<ISnackbarService>();
+            snackbar.Show(
+                "Atualização pronta",
+                $"A versão {updateService.AvailableVersion} será instalada quando você confirmar nas configurações.",
+                Wpf.Ui.Controls.ControlAppearance.Success,
+                null,
+                TimeSpan.FromSeconds(7));
+        }
+        catch
+        {
+            // Atualização automática nunca deve impedir o uso do aplicativo.
+        }
     }
 
     protected override async void OnExit(ExitEventArgs e)
@@ -112,9 +164,6 @@ public partial class App : Application
                 var modMonitor = _host.Services.GetRequiredService<IModMonitorService>();
                 modMonitor.StopWatching();
             }
-
-            if (_host.Services.GetService(typeof(IGameProcessService)) is IAsyncDisposable gameProcess)
-                await gameProcess.DisposeAsync();
 
             await _host.StopAsync(TimeSpan.FromSeconds(5));
             _host.Dispose();
@@ -133,6 +182,7 @@ public partial class App : Application
         services.AddSingleton<ISnackbarService, SnackbarService>();
         services.AddSingleton<IContentDialogService, ContentDialogService>();
         services.AddNavigationViewPageProvider();
+        services.AddSingleton<IUpdateService, VelopackUpdateService>();
 
         // ViewModels
         services.AddSingleton<MainViewModel>();
@@ -205,4 +255,4 @@ public partial class App : Application
         await accountService.SwitchAccountAsync(target, loginState);
         Shutdown();
     }
-} 
+}

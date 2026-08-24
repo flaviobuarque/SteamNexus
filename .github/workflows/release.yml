@@ -1,0 +1,99 @@
+name: Publicar SteamNexus
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versão SemVer, por exemplo 1.0.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  RELEASE_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Definir versão
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $version = "${{ inputs.version }}"
+          } else {
+            $version = "${{ github.ref_name }}".TrimStart("v")
+          }
+
+          if ($version -notmatch '^\d+\.\d+\.\d+([-.][0-9A-Za-z.-]+)?$') {
+            throw "Versão SemVer inválida: $version"
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Restaurar dependências
+        run: dotnet restore SteamSwitcher.sln
+
+      - name: Executar testes
+        run: dotnet test SteamSwitcher.Tests/SteamSwitcher.Tests.csproj -c Release --no-restore
+
+      - name: Publicar aplicação autocontida
+        shell: pwsh
+        run: |
+          dotnet publish SteamSwitcher/SteamSwitcher.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            --no-restore `
+            "-p:Version=${{ steps.version.outputs.version }}" `
+            "-p:SteamNexusUpdateUrl=$env:RELEASE_REPO_URL" `
+            -o publish
+
+      - name: Instalar Velopack CLI
+        run: dotnet tool install --global vpk --version 1.2.0
+
+      - name: Baixar release anterior para gerar delta
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          vpk download github `
+            --repoUrl "$env:RELEASE_REPO_URL" `
+            --token "${{ github.token }}" `
+            --outputDir Releases
+
+      - name: Criar instalador e pacotes
+        shell: pwsh
+        run: |
+          vpk pack `
+            --packId Flavio.SteamNexus `
+            --packVersion "${{ steps.version.outputs.version }}" `
+            --packDir publish `
+            --mainExe SteamSwitcher.exe `
+            --outputDir Releases
+
+      - name: Publicar release
+        shell: pwsh
+        run: |
+          vpk upload github `
+            --repoUrl "$env:RELEASE_REPO_URL" `
+            --token "${{ github.token }}" `
+            --outputDir Releases `
+            --publish `
+            --tag "v${{ steps.version.outputs.version }}" `
+            --releaseName "SteamNexus ${{ steps.version.outputs.version }}"

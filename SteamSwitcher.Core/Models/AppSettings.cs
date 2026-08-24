@@ -4,6 +4,10 @@ public class AppSettings
 {
     // Aparência
     public AppTheme Theme { get; set; } = AppTheme.System;
+    public AccountSortMode AccountSortMode { get; set; } = AccountSortMode.RecentUsage;
+    public AccountViewMode AccountViewMode { get; set; } = AccountViewMode.Grid;
+    public GameSortMode GameSortMode { get; set; } = GameSortMode.Alphabetical;
+    public GameViewMode GameViewMode { get; set; } = GameViewMode.Grid;
 
     // Comportamento após troca de conta
     public PostSwitchBehavior AfterAccountSwitch { get; set; } = PostSwitchBehavior.KeepOpen;
@@ -77,5 +81,9 @@ public sealed class HotkeyDefinition
 }
 
 public enum AppTheme { Light, Dark, System }
+public enum AccountSortMode { RecentUsage, Alphabetical }
+public enum AccountViewMode { Grid, Compact }
+public enum GameSortMode { Alphabetical, MostPlayed, LargestSize }
+public enum GameViewMode { Grid, Compact }
 public enum PostSwitchBehavior { MinimizeToTray, Close, KeepOpen }
 public enum SteamCloseMethod { Graceful, TaskKill }

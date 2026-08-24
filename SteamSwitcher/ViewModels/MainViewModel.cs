@@ -1,11 +1,10 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
-using SteamSwitcher.Core;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
+using System.Collections.ObjectModel;
+using System.Windows;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 
@@ -33,6 +32,13 @@ public partial class MainViewModel(
     [ObservableProperty] private bool _showLoginToggle;
     [ObservableProperty] private string _activeAccountAvatarPath = string.Empty;
     [ObservableProperty] private bool _isSwitchingAccount;
+
+    public bool IsDarkThemeSelected =>
+        settingsService.Current.Theme == AppTheme.Dark;
+    public bool IsLightThemeSelected =>
+        settingsService.Current.Theme == AppTheme.Light;
+    public bool IsSystemThemeSelected =>
+        settingsService.Current.Theme == AppTheme.System;
 
     public string TrayAccountStatusText => IsSwitchingAccount ? "Trocando conta..." : "Conta ativa";
 
@@ -86,7 +92,7 @@ public partial class MainViewModel(
         StatusBarVisible = true;
     }
 
-public async Task InitializeAsync(CancellationToken ct = default)
+    public async Task InitializeAsync(CancellationToken ct = default)
     {
         var steamPath = locatorService.FindSteamInstallPath();
         SteamNotFound = string.IsNullOrEmpty(steamPath);
@@ -106,10 +112,10 @@ public async Task InitializeAsync(CancellationToken ct = default)
 
         try
         {
-            var accounts = await accountService.GetAccountsAsync(ct);
-            TrayAccounts = new ObservableCollection<SteamAccount>(accounts);
-
-            await RefreshActiveAccountAsync(ct);
+            var snapshot = await accountService.GetSnapshotAsync(ct);
+            TrayAccounts = new ObservableCollection<SteamAccount>(snapshot.Accounts);
+            ApplyActiveAccount(snapshot.ActiveAccount
+                ?? snapshot.Accounts.FirstOrDefault(a => a.MostRecent));
         }
         catch (Exception ex)
         {
@@ -171,7 +177,7 @@ public async Task InitializeAsync(CancellationToken ct = default)
             ?? settingsService.Current.DefaultLoginStateOverride;
         StatusLoginState = appliedState?.ToString() ?? "Online";
 
-foreach (var a in TrayAccounts)
+        foreach (var a in TrayAccounts)
             a.IsActive = a.SteamId64 == active.SteamId64;
     }
 
@@ -185,7 +191,7 @@ foreach (var a in TrayAccounts)
             null,
             TimeSpan.FromSeconds(3));
 
-try
+        try
         {
             await accountService.SwitchAccountAsync(account);
             ApplyActiveAccount(account);
@@ -257,6 +263,14 @@ try
         current.Theme = theme;
         await settingsService.SaveAsync(current);
         App.ApplyTheme(theme);
+        RefreshThemeSelection();
+    }
+
+    public void RefreshThemeSelection()
+    {
+        OnPropertyChanged(nameof(IsDarkThemeSelected));
+        OnPropertyChanged(nameof(IsLightThemeSelected));
+        OnPropertyChanged(nameof(IsSystemThemeSelected));
     }
 
     [RelayCommand]

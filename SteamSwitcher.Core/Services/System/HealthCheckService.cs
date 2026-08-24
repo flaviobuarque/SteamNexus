@@ -1,7 +1,6 @@
-﻿using System.Text.Json.Nodes;
-using Microsoft.Extensions.Logging;
-using SteamSwitcher.Core;
+﻿using Microsoft.Extensions.Logging;
 using SteamSwitcher.Core.Models;
+using System.Text.Json.Nodes;
 
 namespace SteamSwitcher.Core.Services;
 

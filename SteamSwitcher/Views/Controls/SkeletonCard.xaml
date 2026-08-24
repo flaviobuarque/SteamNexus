@@ -5,22 +5,6 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Width="180" Height="220">
 
-    <UserControl.Resources>
-        <Storyboard x:Key="ShimmerAnimation" RepeatBehavior="Forever">
-            <DoubleAnimation
-                Storyboard.TargetName="ShimmerTranslate"
-                Storyboard.TargetProperty="X"
-                From="-300" To="300"
-                Duration="0:0:1.4" />
-        </Storyboard>
-    </UserControl.Resources>
-
-    <UserControl.Triggers>
-        <EventTrigger RoutedEvent="Loaded">
-            <BeginStoryboard Storyboard="{StaticResource ShimmerAnimation}" />
-        </EventTrigger>
-    </UserControl.Triggers>
-
     <Border
         CornerRadius="12"
         Background="{ui:ThemeResource ControlFillColorDefaultBrush}"

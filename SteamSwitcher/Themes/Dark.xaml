@@ -30,6 +30,7 @@
     <SolidColorBrush x:Key="AppSuccessSurfaceBrush" Color="#0D3324" />
     <SolidColorBrush x:Key="AppWarningBrush"        Color="#F2B84B" />
     <SolidColorBrush x:Key="AppOverlayBrush"        Color="#CC000000" />
+    <SolidColorBrush x:Key="AppDialogBackdropBrush" Color="#88000000" />
 
     <!-- Aliases WPF-UI -->
     <SolidColorBrush x:Key="ApplicationBackgroundBrush"              Color="#07111F" />

@@ -2,6 +2,7 @@
 using SteamSwitcher.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 
 namespace SteamSwitcher.Views.Pages;
 
@@ -53,5 +54,15 @@ public partial class AccountsPage : Page,
     {
         WeakReferenceMessenger.Default.Unregister<CacheCleared>(this);
         _messengerRegistered = false;
+    }
+
+    private void SortButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement element || element.ContextMenu is null)
+            return;
+
+        element.ContextMenu.PlacementTarget = element;
+        element.ContextMenu.Placement = PlacementMode.Bottom;
+        element.ContextMenu.IsOpen = true;
     }
 }

@@ -7,6 +7,7 @@
     xmlns:vm="clr-namespace:SteamSwitcher.ViewModels"
     xmlns:services="clr-namespace:SteamSwitcher.Core.Services;assembly=SteamSwitcher.Core"
     xmlns:converters="clr-namespace:SteamSwitcher.Converters"
+    xmlns:local="clr-namespace:SteamSwitcher.Views.Controls"
     >
 
     <Page.Resources>
@@ -370,7 +371,7 @@
 
             <!-- Loading -->
             <Grid Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}">
-                <ui:ProgressRing IsIndeterminate="True" Width="40" Height="40" />
+                <local:BusyRing Width="40" Height="40" />
             </Grid>
 
             <!-- Empty state -->

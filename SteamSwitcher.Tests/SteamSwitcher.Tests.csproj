@@ -14,5 +14,6 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\SteamSwitcher.Core\SteamSwitcher.Core.csproj" />
+        <ProjectReference Include="..\SteamSwitcher\SteamSwitcher.csproj" />
     </ItemGroup>
 </Project>

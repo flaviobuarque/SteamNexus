@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.Mvvm.Input;
-using SteamSwitcher.Core.Models;
+﻿using SteamSwitcher.Core.Models;
 
 namespace SteamSwitcher.Core.Services;
 

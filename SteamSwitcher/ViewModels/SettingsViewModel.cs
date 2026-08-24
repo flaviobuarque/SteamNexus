@@ -1,19 +1,16 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using SteamSwitcher.Core;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
+using SteamSwitcher.Services.Updates;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Input;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
-using System.Windows.Input;
-
-using WpfMessageBox = System.Windows.MessageBox;
-using WpfMessageBoxButton = System.Windows.MessageBoxButton;
-using WpfMessageBoxResult = System.Windows.MessageBoxResult;
 
 namespace SteamSwitcher.ViewModels;
 
@@ -21,10 +18,14 @@ public partial class SettingsViewModel(
     IAppSettingsService settingsService,
     ISystemService systemService,
     IImageCacheService imageCacheService,
+    ISteamAccountService accountService,
+    IAccountOverrideService accountOverrideService,
+    IUpdateService updateService,
     ISnackbarService snackbarService,
     MainViewModel mainViewModel) : ObservableObject
 {
     private readonly MainViewModel _mainViewModel = mainViewModel;
+    public IUpdateService UpdateService { get; } = updateService;
 
     [ObservableProperty] private AppTheme _theme;
     [ObservableProperty] private PostSwitchBehavior _afterAccountSwitch;
@@ -42,6 +43,7 @@ public partial class SettingsViewModel(
     [ObservableProperty] private bool _isCapturingHotkey;
     [ObservableProperty] private string _hotkeyDisplayText = "Nenhum atalho definido";
     [ObservableProperty] private string _hotkeyCaptureHint = string.Empty;
+    [ObservableProperty] private bool _isCleaningOldAccounts;
 
     private readonly HashSet<Key> _pressedHotkeyKeys = [];
     private Key _capturedMainKey = Key.None;
@@ -194,6 +196,105 @@ public partial class SettingsViewModel(
     }
 
     [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        await UpdateService.CheckForUpdatesAsync();
+        snackbarService.Show(
+            UpdateService.IsUpdateAvailable
+                ? "Atualização disponível"
+                : "Atualizações",
+            UpdateService.StatusText,
+            string.IsNullOrEmpty(UpdateService.ErrorText)
+                ? ControlAppearance.Success
+                : ControlAppearance.Danger,
+            null,
+            TimeSpan.FromSeconds(4));
+    }
+
+    [RelayCommand]
+    private async Task DownloadUpdateAsync()
+    {
+        await UpdateService.DownloadUpdateAsync();
+        if (!string.IsNullOrEmpty(UpdateService.ErrorText))
+        {
+            snackbarService.Show(
+                "Falha ao baixar atualização",
+                UpdateService.ErrorText,
+                ControlAppearance.Danger,
+                null,
+                TimeSpan.FromSeconds(5));
+        }
+    }
+
+    [RelayCommand]
+    private void ApplyUpdateAndRestart()
+    {
+        if (HasUnsavedChanges)
+        {
+            snackbarService.Show(
+                "Salve as configurações primeiro",
+                "Há alterações pendentes antes de reiniciar para atualizar.",
+                ControlAppearance.Caution,
+                null,
+                TimeSpan.FromSeconds(4));
+            return;
+        }
+
+        UpdateService.ApplyUpdateAndRestart();
+    }
+
+    public Task<IReadOnlyList<SteamAccount>> GetAccountsForCleanupAsync(
+        CancellationToken ct = default) => accountService.GetAccountsAsync(ct);
+
+    public async Task CleanupOldAccountsAsync(
+        IReadOnlyList<SteamAccount> accounts,
+        CancellationToken ct = default)
+    {
+        if (accounts.Count == 0 || IsCleaningOldAccounts) return;
+
+        IsCleaningOldAccounts = true;
+        try
+        {
+            var active = await accountService.GetActiveAccountAsync(ct);
+            var targets = accounts
+                .Where(account => !string.Equals(
+                    account.SteamId64,
+                    active?.SteamId64,
+                    StringComparison.Ordinal))
+                .ToList();
+
+            var removedIds = await accountService.ForgetAccountsAsync(
+                targets.Select(account => account.SteamId64).ToList(),
+                ct);
+
+            foreach (var steamId64 in removedIds)
+                await accountOverrideService.RemoveOverrideAsync(steamId64);
+
+            snackbarService.Show(
+                "Limpeza concluída",
+                removedIds.Count == 1
+                    ? "1 conta antiga foi removida."
+                    : $"{removedIds.Count} contas antigas foram removidas.",
+                ControlAppearance.Success,
+                null,
+                TimeSpan.FromSeconds(4));
+        }
+        catch (Exception ex)
+        {
+            snackbarService.Show(
+                "Erro ao limpar contas",
+                ex.Message,
+                ControlAppearance.Danger,
+                null,
+                TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            IsCleaningOldAccounts = false;
+        }
+    }
+
+    [RelayCommand]
     private void ResetAppData()
     {
         var confirmed = ConfirmFunc?.Invoke(
@@ -231,6 +332,10 @@ public partial class SettingsViewModel(
         return new AppSettings
         {
             Theme = Theme,
+            AccountSortMode = current.AccountSortMode,
+            AccountViewMode = current.AccountViewMode,
+            GameSortMode = current.GameSortMode,
+            GameViewMode = current.GameViewMode,
             AfterAccountSwitch = AfterAccountSwitch,
             AfterGameLaunch = AfterGameLaunch,
             DefaultLoginStateOverride = DefaultLoginStateOverride,

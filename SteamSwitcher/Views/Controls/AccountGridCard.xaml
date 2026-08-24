@@ -5,6 +5,7 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
     xmlns:converters="clr-namespace:SteamSwitcher.Converters"
+    xmlns:local="clr-namespace:SteamSwitcher.Views.Controls"
     ClipToBounds="False"
     Width="180">
 
@@ -110,6 +111,36 @@
                         </MenuItem.Icon>
                     </MenuItem>
 
+                    <MenuItem
+                        Command="{Binding PlacementTarget.Tag.ToggleFavoriteCommand,
+                            RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                        CommandParameter="{Binding}">
+                        <MenuItem.Style>
+                            <Style TargetType="MenuItem">
+                                <Setter Property="Header" Value="Adicionar aos favoritos" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                        <Setter Property="Header" Value="Remover dos favoritos" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </MenuItem.Style>
+                        <MenuItem.Icon>
+                            <ic:SymbolIcon Symbol="Star" Foreground="#F2B84B">
+                                <ic:SymbolIcon.Style>
+                                    <Style TargetType="ic:SymbolIcon">
+                                        <Setter Property="IconVariant" Value="Regular" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                <Setter Property="IconVariant" Value="Filled" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ic:SymbolIcon.Style>
+                            </ic:SymbolIcon>
+                        </MenuItem.Icon>
+                    </MenuItem>
+
                     <Separator Background="{DynamicResource AppBorderBrush}"
                    Margin="6,3" />
 
@@ -138,14 +169,28 @@
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <ic:SymbolIcon Symbol="Delete" FontSize="32" Foreground="{DynamicResource AppDangerBrush}" />
                         <TextBlock
-                        Text="Conta removida"
+                        Text="Conta será removida"
                         Foreground="White"
                         HorizontalAlignment="Center"
                         Margin="0,8,0,4" />
+                        <TextBlock
+                        Text="{Binding RemovalCountdownText}"
+                        Foreground="#CCFFFFFF"
+                        FontSize="11"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,6" />
+                        <ProgressBar
+                        Width="118"
+                        Height="4"
+                        Minimum="0"
+                        Maximum="100"
+                        Value="{Binding RemovalProgress}"
+                        Foreground="{DynamicResource AppAccentBrush}"
+                        Background="#33FFFFFF" />
                         <ui:Button
                         Content="Desfazer"
                         Appearance="Primary"
-                        Margin="12,4,12,0"
+                        Margin="12,10,12,0"
                         HorizontalAlignment="Center"
                         Command="{Binding CancelForgetCommand,
                             RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -160,7 +205,7 @@
                 Panel.ZIndex="9"
                 Visibility="{Binding IsSwitching, Converter={StaticResource BoolToVisibility}}">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <ui:ProgressRing IsIndeterminate="True" Width="32" Height="32" />
+                        <local:BusyRing Width="32" Height="32" />
                         <TextBlock
                         Text="Alternando..."
                         Foreground="White"

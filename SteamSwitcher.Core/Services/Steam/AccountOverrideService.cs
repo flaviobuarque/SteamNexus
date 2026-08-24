@@ -1,10 +1,12 @@
 ﻿using System.Text.Json;
-using SteamSwitcher.Core.Models;
+
+using Microsoft.Extensions.Logging;
 
 namespace SteamSwitcher.Core.Services;
 
 public class AccountOverrideService : IAccountOverrideService
 {
+    private readonly ILogger<AccountOverrideService> _logger;
     private static readonly string _overridesPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SteamSwitcher", "overrides.json");
@@ -16,8 +18,14 @@ public class AccountOverrideService : IAccountOverrideService
     };
 
     private Dictionary<string, AccountOverride> _overrides = [];
+    private readonly Task _initialLoadTask;
+    private readonly SemaphoreSlim _writeGate = new(1, 1);
 
-    public AccountOverrideService() => _ = LoadAsync();
+    public AccountOverrideService(ILogger<AccountOverrideService> logger)
+    {
+        _logger = logger;
+        _initialLoadTask = LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -28,31 +36,56 @@ public class AccountOverrideService : IAccountOverrideService
             _overrides = JsonSerializer.Deserialize<Dictionary<string, AccountOverride>>(
                 json, _jsonOptions) ?? [];
         }
-        catch { _overrides = []; }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Erro ao carregar overrides de contas");
+            _overrides = [];
+        }
     }
 
-    public Task<AccountOverride?> GetOverrideAsync(string steamId64)
+    public async Task<AccountOverride?> GetOverrideAsync(string steamId64)
     {
+        await _initialLoadTask;
         _overrides.TryGetValue(steamId64, out var o);
-        return Task.FromResult(o);
+        return o;
     }
 
     public async Task SaveOverrideAsync(string steamId64, AccountOverride data)
     {
-        _overrides[steamId64] = data;
-        await PersistAsync();
+        await _initialLoadTask;
+        await _writeGate.WaitAsync();
+        try
+        {
+            _overrides[steamId64] = data;
+            await PersistAsync();
+        }
+        finally
+        {
+            _writeGate.Release();
+        }
     }
 
     public async Task RemoveOverrideAsync(string steamId64)
     {
-        _overrides.Remove(steamId64);
-        await PersistAsync();
+        await _initialLoadTask;
+        await _writeGate.WaitAsync();
+        try
+        {
+            if (_overrides.Remove(steamId64))
+                await PersistAsync();
+        }
+        finally
+        {
+            _writeGate.Release();
+        }
     }
 
     private async Task PersistAsync()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_overridesPath)!);
         var json = JsonSerializer.Serialize(_overrides, _jsonOptions);
-        await File.WriteAllTextAsync(_overridesPath, json);
+        var tempPath = _overridesPath + ".tmp";
+        await File.WriteAllTextAsync(tempPath, json);
+        File.Move(tempPath, _overridesPath, overwrite: true);
     }
 }

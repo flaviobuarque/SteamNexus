@@ -1,9 +1,9 @@
-﻿using SteamSwitcher.Core;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using SteamSwitcher.Core;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
 using SteamSwitcher.ViewModels;
 using SteamSwitcher.Views.Pages;
-using CommunityToolkit.Mvvm.Messaging;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -166,6 +166,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
         if (sender is Border border)
         {
+            _viewModel.RefreshThemeSelection();
             border.ContextMenu!.DataContext = _viewModel;
             border.ContextMenu.PlacementTarget = border;
             border.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Right;

@@ -5,6 +5,7 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
     xmlns:local="clr-namespace:SteamSwitcher.Views.Pages"
+    xmlns:controls="clr-namespace:SteamSwitcher.Views.Controls"
     xmlns:tray="clr-namespace:Wpf.Ui.Tray.Controls;assembly=Wpf.Ui.Tray"
     Title="SteamSwitcher"
     Width="950"
@@ -117,17 +118,56 @@
                             </Border.Style>
                             <Border.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="Escuro" Command="{Binding ApplyThemeCommand}" CommandParameter="Dark">
+                                    <MenuItem Command="{Binding ApplyThemeCommand}" CommandParameter="Dark">
+                                        <MenuItem.Header>
+                                            <Grid Width="104">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Escuro" VerticalAlignment="Center" />
+                                                <ic:SymbolIcon Grid.Column="1" Symbol="Checkmark" FontSize="14"
+                                                    Foreground="{DynamicResource AppAccentBrush}"
+                                                    Visibility="{Binding IsDarkThemeSelected,
+                                                        Converter={StaticResource BoolToVisibility}}" />
+                                            </Grid>
+                                        </MenuItem.Header>
                                         <MenuItem.Icon>
                                             <ui:SymbolIcon Symbol="WeatherMoon24"/>
                                         </MenuItem.Icon>
                                     </MenuItem>
-                                    <MenuItem Header="Claro" Command="{Binding ApplyThemeCommand}" CommandParameter="Light">
+                                    <MenuItem Command="{Binding ApplyThemeCommand}" CommandParameter="Light">
+                                        <MenuItem.Header>
+                                            <Grid Width="104">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Claro" VerticalAlignment="Center" />
+                                                <ic:SymbolIcon Grid.Column="1" Symbol="Checkmark" FontSize="14"
+                                                    Foreground="{DynamicResource AppAccentBrush}"
+                                                    Visibility="{Binding IsLightThemeSelected,
+                                                        Converter={StaticResource BoolToVisibility}}" />
+                                            </Grid>
+                                        </MenuItem.Header>
                                         <MenuItem.Icon>
                                             <ui:SymbolIcon Symbol="WeatherSunny24"/>
                                         </MenuItem.Icon>
                                     </MenuItem>
-                                    <MenuItem Header="Sistema" Command="{Binding ApplyThemeCommand}" CommandParameter="System">
+                                    <MenuItem Command="{Binding ApplyThemeCommand}" CommandParameter="System">
+                                        <MenuItem.Header>
+                                            <Grid Width="104">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Sistema" VerticalAlignment="Center" />
+                                                <ic:SymbolIcon Grid.Column="1" Symbol="Checkmark" FontSize="14"
+                                                    Foreground="{DynamicResource AppAccentBrush}"
+                                                    Visibility="{Binding IsSystemThemeSelected,
+                                                        Converter={StaticResource BoolToVisibility}}" />
+                                            </Grid>
+                                        </MenuItem.Header>
                                         <MenuItem.Icon>
                                             <ui:SymbolIcon Symbol="Desktop24"/>
                                         </MenuItem.Icon>
@@ -406,9 +446,8 @@
                                         FontSize="13"
                                         Foreground="{DynamicResource AppTextPrimaryBrush}" />
                                     <StackPanel Orientation="Horizontal">
-                                        <ui:ProgressRing
+                                        <controls:BusyRing
                                         Width="10" Height="10"
-                                        IsIndeterminate="True"
                                         Margin="0,0,4,0"
                                         VerticalAlignment="Center"
                                         Visibility="{Binding IsSwitchingAccount,

@@ -82,6 +82,8 @@ public partial class EditAccountViewModel(
     {
         if (_account is null) return;
 
+        var existing = await overrideService.GetOverrideAsync(_account.SteamId64);
+
         var override_ = new AccountOverride
         {
             CustomDisplayName = string.IsNullOrWhiteSpace(CustomDisplayName)
@@ -91,6 +93,7 @@ public partial class EditAccountViewModel(
             LoginStateOverride = SelectedLoginStateItem?.Value is null or -1
                 ? null
                 : (LoginState?)SelectedLoginStateItem.Value,
+            IsFavorite = existing?.IsFavorite ?? _account.IsFavorite,
         };
 
         await overrideService.SaveOverrideAsync(_account.SteamId64, override_);

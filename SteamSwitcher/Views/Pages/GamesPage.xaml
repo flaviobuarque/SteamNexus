@@ -6,6 +6,7 @@
     xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
     xmlns:vm="clr-namespace:SteamSwitcher.ViewModels"
     xmlns:converters="clr-namespace:SteamSwitcher.Converters"
+    xmlns:local="clr-namespace:SteamSwitcher.Views.Controls"
     xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
     Loaded="Page_Loaded">
 
@@ -14,6 +15,65 @@
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
         <converters:PathToImageSourceConverter x:Key="PathToImageSource" />
         <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibility" />
+        <Style x:Key="GameFavoriteIconButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Opacity" Value="0.8" /></Trigger>
+                <Trigger Property="IsPressed" Value="True"><Setter Property="Opacity" Value="0.6" /></Trigger>
+                <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                    <Setter Property="Foreground" Value="#F2B84B" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="AccountFilterToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="8"
+                            Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background"
+                                    Value="{DynamicResource AppSurfaceHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Root" Property="Background"
+                                    Value="{DynamicResource AppAccentSurfaceBrush}" />
+                                <Setter TargetName="Root" Property="BorderBrush"
+                                    Value="{DynamicResource AppAccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Page.Resources>
 
     <Grid>
@@ -34,7 +94,11 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="16" />
-                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <ui:TextBox
                     Grid.Column="0"
@@ -46,11 +110,63 @@
                 </ui:TextBox>
                 <Grid Grid.Column="2">
                     <ToggleButton
-        x:Name="AccountFilterButton"
-        Foreground="{DynamicResource AppTextPrimaryBrush}"                
-        MinWidth="200"
-        IsChecked="{Binding IsAccountFilterOpen, Mode=TwoWay}"
-        Content="{Binding SelectedFilterAccount.DisplayName}" />
+                        x:Name="AccountFilterButton"
+                        MinWidth="220"
+                        Style="{StaticResource AccountFilterToggleStyle}"
+                        IsChecked="{Binding IsAccountFilterOpen, Mode=TwoWay}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid Width="24" Height="24"
+                                Margin="0,0,9,0" VerticalAlignment="Center">
+                                <Ellipse
+                                    Visibility="{Binding SelectedFilterAccount.HasAvatar,
+                                        Converter={StaticResource BoolToVisibility}}">
+                                    <Ellipse.Fill>
+                                        <ImageBrush
+                                            ImageSource="{Binding SelectedFilterAccount.AvatarImage}"
+                                            Stretch="UniformToFill" />
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                                <ic:SymbolIcon FontSize="16">
+                                    <ic:SymbolIcon.Style>
+                                        <Style TargetType="ic:SymbolIcon">
+                                            <Setter Property="Symbol" Value="Person" />
+                                            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedFilterAccount.SteamId64}" Value="">
+                                                    <Setter Property="Symbol" Value="People" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedFilterAccount.HasAvatar}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ic:SymbolIcon.Style>
+                                </ic:SymbolIcon>
+                            </Grid>
+                            <TextBlock Grid.Column="1"
+                                Text="{Binding SelectedFilterAccount.DisplayName}"
+                                FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                VerticalAlignment="Center" />
+                            <ui:SymbolIcon Grid.Column="2" FontSize="14" Margin="9,0,0,0">
+                                <ui:SymbolIcon.Style>
+                                    <Style TargetType="ui:SymbolIcon">
+                                        <Setter Property="Symbol" Value="ChevronDown20" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsAccountFilterOpen}" Value="True">
+                                                <Setter Property="Symbol" Value="ChevronUp20" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:SymbolIcon.Style>
+                            </ui:SymbolIcon>
+                        </Grid>
+                    </ToggleButton>
 
                     <Popup
         PlacementTarget="{Binding ElementName=AccountFilterButton}"
@@ -60,7 +176,7 @@
         IsOpen="{Binding IsAccountFilterOpen, Mode=TwoWay}">
 
                         <Border
-            Width="280"
+            Width="320"
             Margin="0,6,0,0"
             Padding="10"
             CornerRadius="10"
@@ -72,11 +188,21 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
 
+                                <TextBlock
+                                    Grid.Row="0"
+                                    Text="Filtrar por conta"
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                    Margin="4,1,0,0" />
+
                                 <ui:TextBox
-                    Grid.Row="0"
+                    Grid.Row="2"
                                     Foreground="{DynamicResource AppTextPrimaryBrush}"
                     PlaceholderText="Buscar conta..."
                     Text="{Binding FilterAccountSearchText,
@@ -86,14 +212,57 @@
                                     </ui:TextBox.Icon>
                                 </ui:TextBox>
 
-                                <ScrollViewer
-                    Grid.Row="2"
-                    MaxHeight="280"
-                    VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Disabled">
-
-                                    <ItemsControl ItemsSource="{Binding VisibleFilterAccounts}">
-                                        <ItemsControl.ItemTemplate>
+                                <ListBox
+                                    Grid.Row="4"
+                                    MaxHeight="280"
+                                    ItemsSource="{Binding VisibleFilterAccounts}"
+                                    SelectedItem="{Binding SelectedFilterAccount, Mode=TwoWay}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    ScrollViewer.CanContentScroll="True"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                    VirtualizingPanel.IsVirtualizing="True"
+                                    VirtualizingPanel.VirtualizationMode="Recycling"
+                                    VirtualizingPanel.CacheLength="1"
+                                    VirtualizingPanel.CacheLengthUnit="Page">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <VirtualizingStackPanel />
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0" />
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="BorderThickness" Value="0" />
+                                            <Setter Property="Focusable" Value="False" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border x:Name="ItemRoot"
+                                                            Background="Transparent"
+                                                            CornerRadius="7">
+                                                            <ContentPresenter />
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="ItemRoot" Property="Background"
+                                                                    Value="{DynamicResource AppSurfaceHoverBrush}" />
+                                                            </Trigger>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="ItemRoot" Property="Background"
+                                                                    Value="{DynamicResource AppAccentSurfaceBrush}" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
                                             <DataTemplate>
                                                 <Border
                                     Padding="10,8"
@@ -104,30 +273,204 @@
                                                         <MouseBinding
                                             MouseAction="LeftClick"
                                             Command="{Binding DataContext.SelectGameFilterAccountCommand,
-                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                RelativeSource={RelativeSource AncestorType=ListBox}}"
                                             CommandParameter="{Binding}" />
                                                     </Border.InputBindings>
 
-                                                    <StackPanel>
-                                                        <TextBlock
-    Text="{Binding DisplayName}"
-    FontWeight="SemiBold"
-    Foreground="{DynamicResource AppTextPrimaryBrush}" />
-
-                                                        <TextBlock
-    Text="{Binding AccountName}"
-    FontSize="11"
-    Foreground="{DynamicResource AppTextMutedBrush}" />
-                                                    </StackPanel>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="28" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="24" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid Width="24" Height="24"
+                                                            HorizontalAlignment="Left"
+                                                            VerticalAlignment="Center">
+                                                            <Ellipse
+                                                                Visibility="{Binding HasAvatar,
+                                                                    Converter={StaticResource BoolToVisibility}}">
+                                                                <Ellipse.Fill>
+                                                                    <ImageBrush ImageSource="{Binding AvatarImage}"
+                                                                        Stretch="UniformToFill" />
+                                                                </Ellipse.Fill>
+                                                            </Ellipse>
+                                                            <ic:SymbolIcon FontSize="16">
+                                                                <ic:SymbolIcon.Style>
+                                                                    <Style TargetType="ic:SymbolIcon">
+                                                                        <Setter Property="Symbol" Value="Person" />
+                                                                        <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding SteamId64}" Value="">
+                                                                                <Setter Property="Symbol" Value="People" />
+                                                                                <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding HasAvatar}" Value="True">
+                                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </ic:SymbolIcon.Style>
+                                                            </ic:SymbolIcon>
+                                                        </Grid>
+                                                        <StackPanel Grid.Column="1">
+                                                            <TextBlock Text="{Binding DisplayName}"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                                            <TextBlock Text="{Binding AccountName}"
+                                                                FontSize="11"
+                                                                Foreground="{DynamicResource AppTextMutedBrush}" />
+                                                        </StackPanel>
+                                                        <ic:SymbolIcon Grid.Column="2" Symbol="Checkmark" FontSize="14"
+                                                            Foreground="{DynamicResource AppAccentBrush}"
+                                                            HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                            <ic:SymbolIcon.Style>
+                                                                <Style TargetType="ic:SymbolIcon">
+                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsSelected,
+                                                                            RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                                                                            Value="True">
+                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </ic:SymbolIcon.Style>
+                                                        </ic:SymbolIcon>
+                                                    </Grid>
                                                 </Border>
                                             </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </ScrollViewer>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
                             </Grid>
                         </Border>
                     </Popup>
                 </Grid>
+
+                <Border
+                    Grid.Column="4"
+                    Padding="2"
+                    CornerRadius="8"
+                    Background="{DynamicResource AppSurfaceBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button Width="34" Height="32" Padding="0"
+                            ToolTip="Visualização em grade"
+                            Command="{Binding ShowGameGridViewCommand}">
+                            <ui:Button.Style>
+                                <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                    <Setter Property="Appearance" Value="Secondary" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsGameGridView}" Value="True">
+                                            <Setter Property="Appearance" Value="Primary" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:Button.Style>
+                            <ui:SymbolIcon Symbol="Grid24" />
+                        </ui:Button>
+                        <ui:Button Width="34" Height="32" Padding="0"
+                            ToolTip="Visualização compacta"
+                            Command="{Binding ShowGameCompactViewCommand}">
+                            <ui:Button.Style>
+                                <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                    <Setter Property="Appearance" Value="Secondary" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsGameCompactView}" Value="True">
+                                            <Setter Property="Appearance" Value="Primary" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:Button.Style>
+                            <ui:SymbolIcon Symbol="List24" />
+                        </ui:Button>
+                    </StackPanel>
+                </Border>
+
+                <ui:Button
+                    Grid.Column="6"
+                    Padding="12,7"
+                    Appearance="Secondary"
+                    ToolTip="Alterar ordenação dos jogos"
+                    Click="GameSortButton_Click">
+                    <ui:Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="ArrowSort24" Margin="0,0,7,0" />
+                            <TextBlock Text="{Binding GameSortLabel}" VerticalAlignment="Center" />
+                            <ui:SymbolIcon Symbol="ChevronDown20" Margin="7,0,0,0" />
+                        </StackPanel>
+                    </ui:Button.Content>
+                    <ui:Button.ContextMenu>
+                        <ContextMenu
+                            Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1" Padding="4">
+                            <MenuItem
+                                Command="{Binding PlacementTarget.DataContext.SortGamesAlphabeticallyCommand,
+                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                <MenuItem.Header>
+                                    <Grid Width="132">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Nome: A–Z" VerticalAlignment="Center" />
+                                        <ic:SymbolIcon Grid.Column="1" Symbol="Checkmark" FontSize="14"
+                                            Foreground="{DynamicResource AppAccentBrush}"
+                                            Visibility="{Binding PlacementTarget.DataContext.IsAlphabeticalGameSort,
+                                                RelativeSource={RelativeSource AncestorType=ContextMenu},
+                                                Converter={StaticResource BoolToVisibility}}" />
+                                    </Grid>
+                                </MenuItem.Header>
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="TextSortAscending24" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem
+                                Command="{Binding PlacementTarget.DataContext.SortGamesByMostPlayedCommand,
+                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                <MenuItem.Header>
+                                    <Grid Width="132">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Mais jogados" VerticalAlignment="Center" />
+                                        <ic:SymbolIcon Grid.Column="1" Symbol="Checkmark" FontSize="14"
+                                            Foreground="{DynamicResource AppAccentBrush}"
+                                            Visibility="{Binding PlacementTarget.DataContext.IsMostPlayedGameSort,
+                                                RelativeSource={RelativeSource AncestorType=ContextMenu},
+                                                Converter={StaticResource BoolToVisibility}}" />
+                                    </Grid>
+                                </MenuItem.Header>
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="History24" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem
+                                Command="{Binding PlacementTarget.DataContext.SortGamesByLargestSizeCommand,
+                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                <MenuItem.Header>
+                                    <Grid Width="132">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Maior tamanho" VerticalAlignment="Center" />
+                                        <ic:SymbolIcon Grid.Column="1" Symbol="Checkmark" FontSize="14"
+                                            Foreground="{DynamicResource AppAccentBrush}"
+                                            Visibility="{Binding PlacementTarget.DataContext.IsLargestSizeGameSort,
+                                                RelativeSource={RelativeSource AncestorType=ContextMenu},
+                                                Converter={StaticResource BoolToVisibility}}" />
+                                    </Grid>
+                                </MenuItem.Header>
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="HardDrive24" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </ui:Button.ContextMenu>
+                </ui:Button>
             </Grid>
         </Border>
 
@@ -143,7 +486,7 @@
                 ScrollViewer.CanContentScroll="True"
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibility}}">
+                Visibility="{Binding IsGameGridContentVisible, Converter={StaticResource BoolToVisibility}}">
                 <ItemsControl.Template>
                     <ControlTemplate TargetType="ItemsControl">
                         <ScrollViewer
@@ -180,6 +523,23 @@
                                 <Border.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem
+                                            Command="{Binding PlacementTarget.Tag.ToggleGameFavoriteCommand,
+                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                            CommandParameter="{Binding}">
+                                            <MenuItem.Style>
+                                                <Style TargetType="MenuItem">
+                                                    <Setter Property="Header" Value="Adicionar aos favoritos" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                            <Setter Property="Header" Value="Remover dos favoritos" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </MenuItem.Style>
+                                            <MenuItem.Icon><ic:SymbolIcon Symbol="Star" Foreground="#F2B84B" /></MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator />
+                                        <MenuItem
                                             Header="Alterar conta do jogo"
                                             Command="{Binding PlacementTarget.Tag.ChangeGameAccountCommand,
                                                 RelativeSource={RelativeSource AncestorType=ContextMenu}}"
@@ -210,28 +570,65 @@
                                 </Border.ContextMenu>
 
                                 <Grid>
+                                    <Button Style="{StaticResource GameFavoriteIconButtonStyle}"
+                                        Margin="0,8,8,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                        Panel.ZIndex="20" ToolTip="Favoritar jogo"
+                                        Command="{Binding DataContext.ToggleGameFavoriteCommand,
+                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}">
+                                        <ic:SymbolIcon Symbol="Star" FontSize="15">
+                                            <ic:SymbolIcon.Style>
+                                                <Style TargetType="ic:SymbolIcon">
+                                                    <Setter Property="IconVariant" Value="Regular" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                            <Setter Property="IconVariant" Value="Filled" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ic:SymbolIcon.Style>
+                                        </ic:SymbolIcon>
+                                    </Button>
                                     <!-- 2. Capa do jogo -->
                                     <Border
                                         CornerRadius="14,14,0,0"
                                         Height="240"
-                                        VerticalAlignment="Top">
-                                        <Border.Background>
-                                            <ImageBrush
-                                                ImageSource="{Binding CoverImage}"
+                                        VerticalAlignment="Top"
+                                        ClipToBounds="True">
+                                        <Grid>
+                                            <Image
+                                                Source="{Binding CoverImage}"
                                                 Stretch="UniformToFill" />
-                                        </Border.Background>
-                                        <Border
-                                            Background="{DynamicResource AppBackgroundBrush}"
-                                            CornerRadius="14,14,0,0"
-                                            Visibility="{Binding CoverPath,
-                                                Converter={StaticResource EmptyStringToVisibility}}">
-                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <Border
+                                                Background="{DynamicResource AppBackgroundBrush}"
+                                                CornerRadius="14,14,0,0"
+                                                Visibility="{Binding CoverPath,
+                                                    Converter={StaticResource EmptyStringToVisibility}}">
+                                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                                 <ic:SymbolIcon
                                                     Symbol="Games" FontSize="40"
                                                     Foreground="{DynamicResource AppTextMutedBrush}"
+                                                    HorizontalAlignment="Center">
+                                                    <ic:SymbolIcon.Style>
+                                                        <Style TargetType="ic:SymbolIcon">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding CoverMissing}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsCoverLoading}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </ic:SymbolIcon.Style>
+                                                </ic:SymbolIcon>
+                                                <local:BusyRing
+                                                    Width="30"
+                                                    Height="30"
                                                     HorizontalAlignment="Center"
-                                                    Visibility="{Binding CoverMissing,
-                                                        Converter={StaticResource InverseBoolToVisibility}}" />
+                                                    Visibility="{Binding IsCoverLoading,
+                                                        Converter={StaticResource BoolToVisibility}}" />
                                                 <ic:SymbolIcon
                                                     Symbol="ImageOff" FontSize="32"
                                                     Foreground="{DynamicResource AppWarningBrush}"
@@ -251,8 +648,9 @@
                                                     TextWrapping="Wrap" Margin="8,4,8,0"
                                                     Visibility="{Binding CoverMissing,
                                                         Converter={StaticResource BoolToVisibility}}" />
-                                            </StackPanel>
-                                        </Border>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
                                     </Border>
 
                                     <!-- 3. Overlay hover com botão -->
@@ -276,11 +674,17 @@
                                                     <ui:Button.Style>
                                                         <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
                                                             <Setter Property="Appearance" Value="Primary" />
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding HasOwner}" Value="False">
-                                                                    <Setter Property="Appearance" Value="Secondary" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding HasOwner}" Value="False">
+                                                                            <Setter Property="Appearance" Value="Secondary" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger
+                                                                            Binding="{Binding DataContext.IsGameLaunchInProgress,
+                                                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                            Value="True">
+                                                                            <Setter Property="IsEnabled" Value="False" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
                                                         </Style>
                                                     </ui:Button.Style>
                                                     <StackPanel Orientation="Horizontal">
@@ -330,24 +734,8 @@
                                         Height="240"
                                         VerticalAlignment="Top"
                                         Visibility="{Binding IsLaunching, Converter={StaticResource BoolToVisibility}}">
-                                        <ui:ProgressRing IsIndeterminate="True" Width="32" Height="32"
+                                        <local:BusyRing Width="32" Height="32"
                                             VerticalAlignment="Center" HorizontalAlignment="Center" />
-                                    </Border>
-
-                                    <!-- 6. Badge Rodando -->
-                                    <Border
-                                        VerticalAlignment="Top"
-                                        HorizontalAlignment="Left"
-                                        Margin="8,8,0,0"
-                                        Padding="6,3"
-                                        CornerRadius="6"
-                                        Background="{DynamicResource AppSuccessBrush}"
-                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}">
-                                                                            <TextBlock
-                                            Text="Rodando"
-                                            FontSize="9"
-                                            FontWeight="SemiBold"
-                                            Foreground="White" />
                                     </Border>
 
                                     <!-- 5. Área de texto -->
@@ -420,6 +808,192 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
+            <ListBox
+                Padding="20,16,20,88"
+                ItemsSource="{Binding Games}"
+                Background="Transparent"
+                BorderThickness="0"
+                ScrollViewer.CanContentScroll="True"
+                ScrollViewer.IsDeferredScrollingEnabled="False"
+                ScrollViewer.PanningMode="VerticalOnly"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                VirtualizingPanel.IsVirtualizing="True"
+                VirtualizingPanel.VirtualizationMode="Recycling"
+                VirtualizingPanel.ScrollUnit="Pixel"
+                Visibility="{Binding IsGameCompactContentVisible, Converter={StaticResource BoolToVisibility}}">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="Focusable" Value="False" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:GameCardViewModel}">
+                        <Border
+                            Margin="0,0,0,8"
+                            Padding="8"
+                            CornerRadius="10"
+                            Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}">
+                            <Border.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem
+                                        Command="{Binding PlacementTarget.Tag.ToggleGameFavoriteCommand,
+                                            RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}">
+                                        <MenuItem.Style>
+                                            <Style TargetType="MenuItem">
+                                                <Setter Property="Header" Value="Adicionar aos favoritos" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                        <Setter Property="Header" Value="Remover dos favoritos" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </MenuItem.Style>
+                                    </MenuItem>
+                                    <Separator />
+                                    <MenuItem Header="Alterar conta do jogo"
+                                        Command="{Binding PlacementTarget.Tag.ChangeGameAccountCommand,
+                                            RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                    <MenuItem Header="Adicionar capa..."
+                                        Command="{Binding PlacementTarget.Tag.AddCoverCommand,
+                                            RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                    <MenuItem Header="Remover capa manual"
+                                        Command="{Binding PlacementTarget.Tag.RemoveManualCoverCommand,
+                                            RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                </ContextMenu>
+                            </Border.ContextMenu>
+                            <Grid Height="60">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="44" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="130" />
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="68" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" CornerRadius="6" ClipToBounds="True"
+                                    Background="{DynamicResource AppBackgroundBrush}">
+                                    <Grid>
+                                        <Image Source="{Binding CoverImage}" Stretch="UniformToFill" />
+                                        <ic:SymbolIcon Symbol="Games" FontSize="20"
+                                            Foreground="{DynamicResource AppTextMutedBrush}"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            Visibility="{Binding CoverPath, Converter={StaticResource EmptyStringToVisibility}}" />
+                                        <local:BusyRing Width="20" Height="20"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            Visibility="{Binding IsCoverLoading, Converter={StaticResource BoolToVisibility}}" />
+                                    </Grid>
+                                </Border>
+
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Game.Name}" FontSize="13" FontWeight="SemiBold"
+                                        Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                        TextTrimming="CharacterEllipsis" ToolTip="{Binding Game.Name}" />
+                                    <TextBlock Text="{Binding Game.AppId, StringFormat=App {0}}" FontSize="10"
+                                        Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,3,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                                    <TextBlock Text="Conta" FontSize="9" Foreground="{DynamicResource AppTextMutedBrush}" />
+                                    <TextBlock Text="{Binding OwnerAccountName}" FontSize="11"
+                                        Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                        TextTrimming="CharacterEllipsis"
+                                        Visibility="{Binding HasOwner, Converter={StaticResource BoolToVisibility}}" />
+                                    <TextBlock Text="Não associada" FontSize="11" FontStyle="Italic"
+                                        Foreground="{DynamicResource AppTextMutedBrush}"
+                                        Visibility="{Binding HasOwner, Converter={StaticResource InverseBoolToVisibility}}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4" VerticalAlignment="Center">
+                                    <TextBlock Text="Tempo de jogo" FontSize="9" Foreground="{DynamicResource AppTextMutedBrush}" />
+                                    <TextBlock Text="{Binding Game.PlaytimeFormatted}" FontSize="11"
+                                        Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="5" VerticalAlignment="Center">
+                                    <TextBlock Text="Armazenamento" FontSize="9" Foreground="{DynamicResource AppTextMutedBrush}" />
+                                    <TextBlock Text="{Binding SizeAndDrive}" FontSize="11"
+                                        Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                </StackPanel>
+
+                                <Button Grid.Column="6" Style="{StaticResource GameFavoriteIconButtonStyle}"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    ToolTip="Favoritar jogo"
+                                    Command="{Binding DataContext.ToggleGameFavoriteCommand,
+                                        RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                    CommandParameter="{Binding}">
+                                    <ic:SymbolIcon Symbol="Star" FontSize="15">
+                                        <ic:SymbolIcon.Style>
+                                            <Style TargetType="ic:SymbolIcon">
+                                                <Setter Property="IconVariant" Value="Regular" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                        <Setter Property="IconVariant" Value="Filled" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ic:SymbolIcon.Style>
+                                    </ic:SymbolIcon>
+                                </Button>
+
+                                <ui:Button Grid.Column="7" Width="36" Height="36" Padding="0"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center" ToolTip="Jogar"
+                                    Command="{Binding DataContext.LaunchGameCommand,
+                                        RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                    CommandParameter="{Binding}">
+                                    <ui:Button.Style>
+                                        <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                            <Setter Property="Appearance" Value="Primary" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasOwner}" Value="False">
+                                                    <Setter Property="Appearance" Value="Secondary" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding DataContext.IsGameLaunchInProgress,
+                                                    RelativeSource={RelativeSource AncestorType=ListBox}}" Value="True">
+                                                    <Setter Property="IsEnabled" Value="False" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:Button.Style>
+                                    <ic:SymbolIcon FontSize="16">
+                                        <ic:SymbolIcon.Style>
+                                            <Style TargetType="ic:SymbolIcon">
+                                                <Setter Property="Symbol" Value="Play" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasOwner}" Value="False">
+                                                        <Setter Property="Symbol" Value="PersonAdd" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ic:SymbolIcon.Style>
+                                    </ic:SymbolIcon>
+                                </ui:Button>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
             <Border
     HorizontalAlignment="Center"
     VerticalAlignment="Bottom"
@@ -429,7 +1003,7 @@
     BorderBrush="{DynamicResource AppBorderBrush}"
     BorderThickness="1"
     CornerRadius="8"
-    Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibility}}">
+    Visibility="{Binding HasFilteredGames, Converter={StaticResource BoolToVisibility}}">
 
                 <StackPanel Orientation="Horizontal">
                     <ui:Button
@@ -453,17 +1027,40 @@
             </Border>
 
             <Grid Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}">
-                <ui:ProgressRing IsIndeterminate="True" Width="48" Height="48" />
+                <local:BusyRing Width="48" Height="48" />
             </Grid>
 
             <StackPanel
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center"
-                Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}">
-                <ic:SymbolIcon Symbol="Games" FontSize="64" Opacity="0.3" HorizontalAlignment="Center" />
-                <TextBlock Text="Nenhum jogo encontrado" FontSize="18" Foreground="{DynamicResource AppTextSecondaryBrush}"
+                Visibility="{Binding HasNoInstalledGames, Converter={StaticResource BoolToVisibility}}">
+                <ic:SymbolIcon Symbol="Games" FontSize="64" Opacity="0.55"
+                    Foreground="{DynamicResource AppTextSecondaryBrush}"
+                    HorizontalAlignment="Center" />
+                <TextBlock Text="Nenhum jogo instalado" FontSize="18" Foreground="{DynamicResource AppTextSecondaryBrush}"
                     HorizontalAlignment="Center" Margin="0,16,0,8" />
-                <TextBlock Text="Instale jogos no Steam para vê-los aqui." Foreground="{DynamicResource AppTextMutedBrush}" HorizontalAlignment="Center" />
+                <TextBlock Text="Instale um jogo pela Steam; a biblioteca será atualizada automaticamente."
+                    Foreground="{DynamicResource AppTextMutedBrush}" HorizontalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Visibility="{Binding HasNoFilterResults, Converter={StaticResource BoolToVisibility}}">
+                <ic:SymbolIcon Symbol="Search" FontSize="56" Opacity="0.55"
+                    Foreground="{DynamicResource AppTextSecondaryBrush}"
+                    HorizontalAlignment="Center" />
+                <TextBlock Text="Nenhum jogo corresponde aos filtros"
+                    FontSize="18" Foreground="{DynamicResource AppTextSecondaryBrush}"
+                    HorizontalAlignment="Center" Margin="0,16,0,8" />
+                <TextBlock Text="Tente outro nome ou selecione todas as contas."
+                    Foreground="{DynamicResource AppTextMutedBrush}" HorizontalAlignment="Center" />
+                <ui:Button
+                    Content="Limpar filtros"
+                    Appearance="Secondary"
+                    Command="{Binding ClearGameFiltersCommand}"
+                    HorizontalAlignment="Center"
+                    Margin="0,16,0,0" />
             </StackPanel>
         </Grid>
     </Grid>

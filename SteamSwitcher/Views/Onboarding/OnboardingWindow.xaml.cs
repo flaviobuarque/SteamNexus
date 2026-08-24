@@ -1,5 +1,4 @@
-﻿using System.Windows;
-using SteamSwitcher.ViewModels;
+﻿using SteamSwitcher.ViewModels;
 using SteamSwitcher.Views.Onboarding.Steps;
 using Wpf.Ui;
 

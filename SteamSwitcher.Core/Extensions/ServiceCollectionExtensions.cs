@@ -19,7 +19,6 @@ public static class ServiceCollectionExtensions
 
         // Jogos
         services.AddSingleton<ISteamGameService, SteamGameService>();
-        services.AddSingleton<IGameProcessService, GameProcessService>();
 
         // Sistema
         services.AddSingleton<ISystemService, SystemService>();

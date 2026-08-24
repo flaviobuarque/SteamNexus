@@ -1,7 +1,7 @@
-﻿using System.Windows;
-using System.Windows.Media.Animation;
-using SteamSwitcher.Core.Models;
+﻿using SteamSwitcher.Core.Models;
 using SteamSwitcher.ViewModels;
+using System.Windows;
+using System.Windows.Media.Animation;
 
 namespace SteamSwitcher.Views.Dialogs;
 

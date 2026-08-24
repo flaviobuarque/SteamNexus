@@ -1,7 +1,5 @@
-﻿using System.Text.Json;
-using Microsoft.Extensions.Logging;
-using SteamSwitcher.Core.Models;
-using ValveKeyValue;
+﻿using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace SteamSwitcher.Core.Services;
 

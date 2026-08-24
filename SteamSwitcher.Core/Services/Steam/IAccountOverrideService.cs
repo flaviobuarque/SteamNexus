@@ -14,4 +14,5 @@ public class AccountOverride
     public string? CustomDisplayName { get; set; }
     public string? CustomAvatarPath { get; set; }
     public LoginState? LoginStateOverride { get; set; }
+    public bool IsFavorite { get; set; }
 }

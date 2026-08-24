@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using SteamSwitcher.Core.Helpers;
 using SteamSwitcher.Core.Models;
 using ValveKeyValue;
 
@@ -11,6 +12,7 @@ public class SteamGameService(
     ILogger<SteamGameService> logger) : ISteamGameService
 {
     private readonly string _steamPath = locator.FindSteamInstallPath() ?? string.Empty;
+    private readonly SemaphoreSlim _launchGate = new(1, 1);
 
     private static readonly string _gameLoginStatesPath = System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -23,6 +25,13 @@ public class SteamGameService(
     public static readonly string ManualCoversDir = System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SteamSwitcher", "covers_manual");
+
+    public IReadOnlyList<string> GetLibraryManifestDirectories() =>
+        GetLibraryPaths()
+            .Select(path => Path.Combine(path, "steamapps"))
+            .Where(Directory.Exists)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
     public async Task<IReadOnlyList<SteamGame>> GetInstalledGamesAsync(
         IReadOnlyList<SteamAccount> accounts,
@@ -50,11 +59,22 @@ public class SteamGameService(
                 }
             }
 
-            // Carrega playtime para cada conta
-            foreach (var game in games)
+            // Cada localconfig.vdf e lido uma única vez, mesmo quando a conta
+            // possui centenas de jogos instalados.
+            foreach (var ownerGroup in games
+                .Where(g => g.OwnerAccount is not null)
+                .GroupBy(g => g.OwnerAccount!.SteamId32))
             {
-                if (game.OwnerAccount is not null)
-                    await LoadPlaytimeAsync(game, _steamPath, ct);
+                ct.ThrowIfCancellationRequested();
+                var localConfigPath = locator.GetLocalConfigVdfPath(
+                    _steamPath, ownerGroup.Key);
+                var playtimes = ReadPlaytimes(localConfigPath);
+
+                foreach (var game in ownerGroup)
+                {
+                    if (playtimes.TryGetValue(game.AppId, out var minutes))
+                        game.PlaytimeMinutes = minutes;
+                }
             }
 
             // Aplica preferência de status de login por jogo, se houver.
@@ -88,28 +108,51 @@ public class SteamGameService(
         SteamAccount account,
         CancellationToken ct = default)
     {
-        // Resolve precedência: per-game > per-account > global.
-        // null na camada inferior cai como Online garanteed no serviço, mas repassamos explicito.
-        var state = game.LoginStateOverride
-            ?? account.LoginStateOverride
-            ?? settingsService.Current.DefaultLoginStateOverride;
-
-        // Troca de conta primeiro (passando o estado resolvido).
-        await accountService.SwitchAccountAsync(account, state, ct);
-
-        // Aguarda Steam inicializar um pouco
-        await Task.Delay(2000, ct);
-
-        // Lança o jogo
-        var uri = $"steam://rungameid/{game.AppId}";
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        await _launchGate.WaitAsync(ct);
+        try
         {
-            FileName = uri,
-            UseShellExecute = true
-        });
+            // Resolve precedência: per-game > per-account > global.
+            // null na camada inferior cai como Online garanteed no serviço, mas repassamos explicito.
+            var state = game.LoginStateOverride
+                ?? account.LoginStateOverride
+                ?? settingsService.Current.DefaultLoginStateOverride;
 
-        logger.LogInformation("Jogo {Game} lançado na conta {Account} (estado {State})",
-            game.Name, account.AccountName, state);
+            var activeAccount = await accountService.GetActiveAccountAsync(ct);
+            var accountAlreadyActive = string.Equals(
+                activeAccount?.SteamId64,
+                account.SteamId64,
+                StringComparison.Ordinal);
+
+            if (!accountAlreadyActive)
+            {
+                // Troca de conta primeiro (passando o estado resolvido).
+                await accountService.SwitchAccountAsync(account, state, ct);
+
+                // Aguarda Steam inicializar um pouco somente após uma troca real.
+                await Task.Delay(2000, ct);
+            }
+            else
+            {
+                logger.LogInformation(
+                    "Conta {Account} já está ativa; reinicialização da Steam ignorada",
+                    account.AccountName);
+            }
+
+            // Lança o jogo
+            var uri = $"steam://rungameid/{game.AppId}";
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = uri,
+                UseShellExecute = true
+            });
+
+            logger.LogInformation("Jogo {Game} lançado na conta {Account} (estado {State})",
+                game.Name, account.AccountName, state);
+        }
+        finally
+        {
+            _launchGate.Release();
+        }
     }
 
     public async Task LoadPlaytimeAsync(
@@ -126,26 +169,111 @@ public class SteamGameService(
 
             if (!File.Exists(localConfigPath)) return;
 
-            try
-            {
-                using var stream = File.OpenRead(localConfigPath);
-                var kv = KVSerializer.Create(KVSerializationFormat.KeyValues1Text);
-                var data = kv.Deserialize(stream);
-
-                var appsNode = data["Software"]?["Valve"]?["Steam"]?["apps"];
-                if (appsNode is null) return;
-
-                var appNode = appsNode[game.AppId];
-                if (appNode is null) return;
-
-                if (int.TryParse(appNode["Playtime"]?.ToString(), out var minutes))
-                    game.PlaytimeMinutes = minutes;
-            }
-            catch (Exception ex)
-            {
-                logger.LogDebug(ex, "Erro ao ler playtime de {AppId}", game.AppId);
-            }
+            var playtimes = ReadPlaytimes(localConfigPath);
+            if (playtimes.TryGetValue(game.AppId, out var minutes))
+                game.PlaytimeMinutes = minutes;
         }, ct);
+    }
+
+    private static Dictionary<string, int> ReadPlaytimes(string path)
+    {
+        var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        if (!File.Exists(path)) return result;
+
+        try
+        {
+            var depth = 0;
+            var appsDepth = -1;
+            var appDepth = -1;
+            string? pendingSection = null;
+            string? pendingAppId = null;
+            string? currentAppId = null;
+
+            foreach (var rawLine in File.ReadLines(path))
+            {
+                var line = rawLine.Trim();
+                if (line.Length == 0 || line.StartsWith("//", StringComparison.Ordinal))
+                    continue;
+
+                if (line == "{")
+                {
+                    depth++;
+                    if (pendingSection == "apps")
+                    {
+                        appsDepth = depth;
+                        pendingSection = null;
+                    }
+                    else if (pendingAppId is not null)
+                    {
+                        currentAppId = pendingAppId;
+                        pendingAppId = null;
+                        appDepth = depth;
+                    }
+                    continue;
+                }
+
+                if (line == "}")
+                {
+                    if (depth == appDepth)
+                    {
+                        currentAppId = null;
+                        appDepth = -1;
+                    }
+                    if (depth == appsDepth)
+                        appsDepth = -1;
+                    depth = Math.Max(0, depth - 1);
+                    continue;
+                }
+
+                if (!TryReadVdfPair(line, out var key, out var value))
+                    continue;
+
+                if (value is null)
+                {
+                    if (string.Equals(key, "apps", StringComparison.OrdinalIgnoreCase))
+                        pendingSection = "apps";
+                    else if (appsDepth >= 0 && depth == appsDepth
+                        && key.All(char.IsDigit))
+                        pendingAppId = key;
+                    continue;
+                }
+
+                if (currentAppId is not null
+                    && string.Equals(key, "Playtime", StringComparison.OrdinalIgnoreCase)
+                    && int.TryParse(value, out var minutes))
+                {
+                    result[currentAppId] = minutes;
+                }
+            }
+        }
+        catch
+        {
+            // Playtime é informação complementar e não bloqueia a lista de jogos.
+        }
+
+        return result;
+    }
+
+    private static bool TryReadVdfPair(
+        string line,
+        out string key,
+        out string? value)
+    {
+        key = string.Empty;
+        value = null;
+        if (line.Length < 2 || line[0] != '"') return false;
+
+        var keyEnd = line.IndexOf('"', 1);
+        if (keyEnd < 0) return false;
+        key = line[1..keyEnd];
+
+        var remainder = line[(keyEnd + 1)..].TrimStart();
+        if (remainder.Length == 0 || remainder[0] != '"') return true;
+
+        var valueEnd = remainder.IndexOf('"', 1);
+        if (valueEnd < 0) return false;
+        value = remainder[1..valueEnd];
+        return true;
     }
 
     // --- Privados ---
@@ -246,71 +374,62 @@ public class SteamGameService(
 
     public async Task<Dictionary<string, int>> LoadGameLoginStatesAsync()
     {
-        try
-        {
-            if (!System.IO.File.Exists(_gameLoginStatesPath)) return [];
-            var raw = await System.IO.File.ReadAllTextAsync(_gameLoginStatesPath);
-            return System.Text.Json.JsonSerializer
-                .Deserialize<Dictionary<string, int>>(raw) ?? [];
-        }
-        catch { return []; }
+        return await AtomicJsonFile.ReadAsync(
+            _gameLoginStatesPath,
+            static () => new Dictionary<string, int>());
     }
 
     public async Task SetGameLoginStateAsync(string appId, LoginState? state, CancellationToken ct = default)
     {
-        var map = await LoadGameLoginStatesAsync();
-        if (state is null)
-            map.Remove(appId);
-        else
-            map[appId] = (int)state.Value;
-
-        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_gameLoginStatesPath)!);
-        await System.IO.File.WriteAllTextAsync(_gameLoginStatesPath,
-            System.Text.Json.JsonSerializer.Serialize(map,
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+        await AtomicJsonFile.UpdateAsync(
+            _gameLoginStatesPath,
+            static () => new Dictionary<string, int>(),
+            map =>
+            {
+                if (state is null) map.Remove(appId);
+                else map[appId] = (int)state.Value;
+            },
             ct);
     }
 
     public async Task<Dictionary<string, string>> LoadManualCoversAsync()
     {
-        try
-        {
-            if (!System.IO.File.Exists(_manualCoversPath)) return [];
-            var raw = await System.IO.File.ReadAllTextAsync(_manualCoversPath);
-            return System.Text.Json.JsonSerializer
-                .Deserialize<Dictionary<string, string>>(raw) ?? [];
-        }
-        catch { return []; }
+        return await AtomicJsonFile.ReadAsync(
+            _manualCoversPath,
+            static () => new Dictionary<string, string>());
     }
 
     public async Task SetManualCoverAsync(string appId, string? path, CancellationToken ct = default)
     {
-        var map = await LoadManualCoversAsync();
-        if (string.IsNullOrEmpty(path))
-            map.Remove(appId);
-        else
-            map[appId] = path;
-
-        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_manualCoversPath)!);
-        await System.IO.File.WriteAllTextAsync(_manualCoversPath,
-            System.Text.Json.JsonSerializer.Serialize(map,
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+        await AtomicJsonFile.UpdateAsync(
+            _manualCoversPath,
+            static () => new Dictionary<string, string>(),
+            map =>
+            {
+                if (string.IsNullOrEmpty(path)) map.Remove(appId);
+                else map[appId] = path;
+            },
             ct);
     }
 
     public async Task ClearManualCoverAsync(string appId, CancellationToken ct = default)
     {
-        var map = await LoadManualCoversAsync();
-        if (map.TryGetValue(appId, out var path))
-        {
-            try { if (System.IO.File.Exists(path)) System.IO.File.Delete(path); }
-            catch { }
-        }
-        map.Remove(appId);
-        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_manualCoversPath)!);
-        await System.IO.File.WriteAllTextAsync(_manualCoversPath,
-            System.Text.Json.JsonSerializer.Serialize(map,
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+        string? coverToDelete = null;
+        await AtomicJsonFile.UpdateAsync(
+            _manualCoversPath,
+            static () => new Dictionary<string, string>(),
+            map =>
+            {
+                map.TryGetValue(appId, out coverToDelete);
+                map.Remove(appId);
+            },
             ct);
+
+        try
+        {
+            if (!string.IsNullOrEmpty(coverToDelete) && File.Exists(coverToDelete))
+                File.Delete(coverToDelete);
+        }
+        catch { }
     }
 }

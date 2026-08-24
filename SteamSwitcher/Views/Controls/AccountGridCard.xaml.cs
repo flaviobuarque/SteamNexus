@@ -40,6 +40,9 @@ public partial class AccountGridCard : System.Windows.Controls.UserControl
     public static readonly DependencyProperty CopySteamIdCommandProperty =
         DependencyProperty.Register(nameof(CopySteamIdCommand), typeof(ICommand), typeof(AccountGridCard));
 
+    public static readonly DependencyProperty ToggleFavoriteCommandProperty =
+        DependencyProperty.Register(nameof(ToggleFavoriteCommand), typeof(ICommand), typeof(AccountGridCard));
+
     public ICommand? EditCommand
     {
         get => (ICommand?)GetValue(EditCommandProperty);
@@ -50,5 +53,11 @@ public partial class AccountGridCard : System.Windows.Controls.UserControl
     {
         get => (ICommand?)GetValue(CopySteamIdCommandProperty);
         set => SetValue(CopySteamIdCommandProperty, value);
+    }
+
+    public ICommand? ToggleFavoriteCommand
+    {
+        get => (ICommand?)GetValue(ToggleFavoriteCommandProperty);
+        set => SetValue(ToggleFavoriteCommandProperty, value);
     }
 }

@@ -12,6 +12,10 @@ public class SteamAccountService(
     ILogger<SteamAccountService> logger) : ISteamAccountService
 {
     private readonly string _steamPath = locator.FindSteamInstallPath() ?? string.Empty;
+    private readonly SemaphoreSlim _snapshotGate = new(1, 1);
+    private SteamAccountsSnapshot? _cachedSnapshot;
+    private long _cachedVdfLength = -1;
+    private long _cachedVdfWriteTicks = -1;
 
     // Regex pre-compiladas (热心 usado em cada linha do VDF) — evita compilar a
     // cada iteracao de SwitchAccountAsync (potencialmente centenas de linhas).
@@ -19,6 +23,8 @@ public class SteamAccountService(
         new(@"""7656\d{13}""", RegexOptions.Compiled);
     private static readonly Regex MostRecentRegex =
         new(@"""MostRecent""\s+""[^""]*""", RegexOptions.Compiled);
+    private static readonly Regex AutoLoginRegex =
+        new(@"""AutoLogin""\s+""[^""]*""", RegexOptions.Compiled);
     private static readonly Regex RememberPasswordRegex =
         new(@"""RememberPassword""\s+""[^""]*""", RegexOptions.Compiled);
     private static readonly Regex WantsOfflineModeRegex =
@@ -26,60 +32,72 @@ public class SteamAccountService(
     private static readonly Regex SkipOfflineModeWarningRegex =
         new(@"""SkipOfflineModeWarning""\s+""[^""]*""", RegexOptions.Compiled);
 
-    public async Task<IReadOnlyList<SteamAccount>> GetAccountsAsync(CancellationToken ct = default)
+    public async Task<SteamAccountsSnapshot> GetSnapshotAsync(CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(_steamPath))
         {
             logger.LogWarning("Steam não encontrado");
-            return [];
+            return SteamAccountsSnapshot.Empty;
         }
 
         var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
         if (!File.Exists(vdfPath))
         {
             logger.LogWarning("loginusers.vdf não encontrado em {Path}", vdfPath);
-            return [];
+            return SteamAccountsSnapshot.Empty;
         }
 
-        return await Task.Run(() =>
+        var fileInfo = new FileInfo(vdfPath);
+        if (_cachedSnapshot is not null
+            && _cachedVdfLength == fileInfo.Length
+            && _cachedVdfWriteTicks == fileInfo.LastWriteTimeUtc.Ticks)
         {
-            var accounts = new List<SteamAccount>();
-            try
-            {
-                using var stream = File.OpenRead(vdfPath);
-                var kv = KVSerializer.Create(KVSerializationFormat.KeyValues1Text);
-                var data = kv.Deserialize(stream);
+            return _cachedSnapshot;
+        }
 
-                foreach (var user in data)
+        await _snapshotGate.WaitAsync(ct);
+        try
+        {
+            fileInfo.Refresh();
+            if (_cachedSnapshot is not null
+                && _cachedVdfLength == fileInfo.Length
+                && _cachedVdfWriteTicks == fileInfo.LastWriteTimeUtc.Ticks)
+            {
+                return _cachedSnapshot;
+            }
+
+            var readLength = fileInfo.Length;
+            var readWriteTicks = fileInfo.LastWriteTimeUtc.Ticks;
+
+            var snapshot = await Task.Run(() =>
+            {
+                try
                 {
-                    var steamId64 = user.Name;
-                    var account = new SteamAccount
-                    {
-                        SteamId64 = steamId64,
-                        AccountName = user["AccountName"]?.ToString() ?? string.Empty,
-                        PersonaName = user["PersonaName"]?.ToString() ?? string.Empty,
-                        RememberPassword = user["RememberPassword"]?.ToString() == "1",
-                        MostRecent = user["MostRecent"]?.ToString() == "1",
-                        WantsOfflineMode = user["WantsOfflineMode"]?.ToString() == "1",
-                    };
-
-                    var tsStr = user["Timestamp"]?.ToString() ?? string.Empty;
-                    if (long.TryParse(tsStr, System.Globalization.NumberStyles.Integer,
-                            System.Globalization.CultureInfo.InvariantCulture, out long ts))
-                        account.Timestamp = ts;
-
-                    account.IsActive = account.MostRecent;
-                    accounts.Add(account);
+                    using var stream = File.OpenRead(vdfPath);
+                    return SteamAccountSnapshotParser.Parse(stream);
                 }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Erro ao ler loginusers.vdf");
-            }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Erro ao ler loginusers.vdf");
+                    return SteamAccountsSnapshot.Empty;
+                }
+            }, ct);
 
-            return (IReadOnlyList<SteamAccount>)accounts;
-        }, ct);
+            // Guarda a assinatura observada antes da leitura. Se a Steam alterar o
+            // arquivo durante o parsing, a próxima chamada detectará a divergência.
+            _cachedVdfLength = readLength;
+            _cachedVdfWriteTicks = readWriteTicks;
+            _cachedSnapshot = snapshot;
+            return snapshot;
+        }
+        finally
+        {
+            _snapshotGate.Release();
+        }
     }
+
+    public async Task<IReadOnlyList<SteamAccount>> GetAccountsAsync(CancellationToken ct = default)
+        => (await GetSnapshotAsync(ct)).Accounts;
 
     public async Task SwitchAccountAsync(
         SteamAccount account,
@@ -110,46 +128,249 @@ public class SteamAccountService(
 
     public async Task<SteamAccount?> GetActiveAccountAsync(CancellationToken ct = default)
     {
-        var accounts = await GetAccountsAsync(ct);
+        // Padrao TcNo-Acc-Switcher: o source of truth e o loginusers.vdf.
+        // O registry "ActiveProcess\ActiveUser" so e escrito pela Steam em execucao
+        // — useless em startup apos troca de conta (Steam ainda fechando/abrindo).
+        //
+        // Preferimos o campo "AutoLogin" (atual Steam); fallback "MostRecent" (legado).
+        // Exigimos EXATAMENTE UM usuario com a flag — retorna null se 0 ou 2+.
+        // Preferimos null em vez de adivinhar errado.
 
-        try
-        {
-            var activeUserValue = Registry.GetValue(
-                @"HKEY_CURRENT_USER\Software\Valve\Steam\ActiveProcess",
-                "ActiveUser",
-                null);
-
-            if (activeUserValue is not null &&
-                uint.TryParse(activeUserValue.ToString(), out var activeSteamId32) &&
-                activeSteamId32 != 0)
-            {
-                var activeAccount = accounts.FirstOrDefault(account =>
-                    uint.TryParse(account.SteamId32, out var accountSteamId32) &&
-                    accountSteamId32 == activeSteamId32);
-
-                if (activeAccount is not null)
-                    return activeAccount;
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogDebug(ex, "Não foi possível obter a conta Steam ativa pelo Registro");
-        }
-
-        return accounts.FirstOrDefault(account => account.MostRecent);
+        return (await GetSnapshotAsync(ct)).ActiveAccount;
     }
 
-    public void ForgetAccount(SteamAccount account)
+    public async Task ForgetAccountAsync(
+        SteamAccount account,
+        CancellationToken ct = default)
     {
-        // Remove do loginusers.vdf e salva backup
+        if (string.IsNullOrEmpty(_steamPath))
+            throw new InvalidOperationException("Steam não encontrada.");
+
         var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        if (!File.Exists(vdfPath))
+            throw new FileNotFoundException("loginusers.vdf não encontrado.", vdfPath);
+
+        await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
+
         var backupPath = vdfPath + ".bak";
+        var tempPath = vdfPath + ".tmp";
 
-        File.Copy(vdfPath, backupPath, overwrite: true);
+        await Task.Run(() =>
+        {
+            var lines = File.ReadAllLines(vdfPath).ToList();
+            var start = FindAccountBlockStart(lines, account.SteamId64);
+            if (start < 0)
+                throw new InvalidOperationException(
+                    $"A conta {account.AccountName} não foi encontrada no loginusers.vdf.");
 
-        // TODO: implementar remoção do VDF e backup do account
+            var openBrace = -1;
+            for (var i = start + 1; i < lines.Count; i++)
+            {
+                if (string.IsNullOrWhiteSpace(lines[i])) continue;
+                if (lines[i].Trim() == "{") openBrace = i;
+                break;
+            }
+
+            if (openBrace < 0)
+                throw new InvalidDataException("Bloco da conta está incompleto no loginusers.vdf.");
+
+            var depth = 0;
+            var end = -1;
+            for (var i = openBrace; i < lines.Count; i++)
+            {
+                depth += CountStructuralBraces(lines[i]);
+                if (depth == 0)
+                {
+                    end = i;
+                    break;
+                }
+            }
+
+            if (end < openBrace)
+                throw new InvalidDataException("Bloco da conta não possui fechamento válido.");
+
+            File.Copy(vdfPath, backupPath, overwrite: true);
+            lines.RemoveRange(start, end - start + 1);
+
+            try
+            {
+                File.WriteAllLines(tempPath, lines);
+                File.Move(tempPath, vdfPath, overwrite: true);
+            }
+            finally
+            {
+                if (File.Exists(tempPath)) File.Delete(tempPath);
+            }
+        }, ct);
+
+        var autoLoginUser = Registry.GetValue(
+            @"HKEY_CURRENT_USER\Software\Valve\Steam",
+            "AutoLoginUser",
+            string.Empty)?.ToString();
+
+        if (account.IsActive || account.MostRecent || account.AutoLogin
+            || string.Equals(autoLoginUser, account.AccountName,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            Registry.SetValue(
+                @"HKEY_CURRENT_USER\Software\Valve\Steam",
+                "AutoLoginUser",
+                string.Empty);
+            Registry.SetValue(
+                @"HKEY_CURRENT_USER\Software\Valve\Steam",
+                "RememberPassword",
+                0,
+                RegistryValueKind.DWord);
+        }
+
+        InvalidateSnapshot();
+
         logger.LogInformation("Conta {Account} esquecida, backup em {Backup}",
             account.AccountName, backupPath);
+    }
+
+    public async Task<IReadOnlyList<string>> ForgetAccountsAsync(
+        IReadOnlyCollection<string> steamIds64,
+        CancellationToken ct = default)
+    {
+        if (steamIds64.Count == 0) return [];
+        if (string.IsNullOrEmpty(_steamPath))
+            throw new InvalidOperationException("Steam não encontrada.");
+
+        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        if (!File.Exists(vdfPath))
+            throw new FileNotFoundException("loginusers.vdf não encontrado.", vdfPath);
+
+        var snapshot = await GetSnapshotAsync(ct);
+        var protectedIds = new HashSet<string>(StringComparer.Ordinal);
+        if (snapshot.ActiveAccount is not null)
+            protectedIds.Add(snapshot.ActiveAccount.SteamId64);
+
+        var autoLoginUser = Registry.GetValue(
+            @"HKEY_CURRENT_USER\Software\Valve\Steam",
+            "AutoLoginUser",
+            string.Empty)?.ToString();
+        var registryAccount = snapshot.Accounts.FirstOrDefault(account =>
+            string.Equals(
+                account.AccountName,
+                autoLoginUser,
+                StringComparison.OrdinalIgnoreCase));
+        if (registryAccount is not null)
+            protectedIds.Add(registryAccount.SteamId64);
+
+        var targets = steamIds64
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Where(id => !protectedIds.Contains(id))
+            .ToHashSet(StringComparer.Ordinal);
+        if (targets.Count == 0) return [];
+
+        await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
+
+        var backupPath = vdfPath + ".cleanup.bak";
+        var tempPath = vdfPath + ".cleanup.tmp";
+        var removedIds = await Task.Run<IReadOnlyList<string>>(() =>
+        {
+            var lines = File.ReadAllLines(vdfPath).ToList();
+            var ranges = new List<(string SteamId64, int Start, int End)>();
+
+            foreach (var steamId64 in targets)
+            {
+                var start = FindAccountBlockStart(lines, steamId64);
+                if (start < 0) continue;
+
+                var openBrace = -1;
+                for (var index = start + 1; index < lines.Count; index++)
+                {
+                    if (string.IsNullOrWhiteSpace(lines[index])) continue;
+                    if (lines[index].Trim() == "{") openBrace = index;
+                    break;
+                }
+                if (openBrace < 0) continue;
+
+                var depth = 0;
+                var end = -1;
+                for (var index = openBrace; index < lines.Count; index++)
+                {
+                    depth += CountStructuralBraces(lines[index]);
+                    if (depth == 0)
+                    {
+                        end = index;
+                        break;
+                    }
+                }
+                if (end >= openBrace) ranges.Add((steamId64, start, end));
+            }
+
+            if (ranges.Count == 0) return [];
+
+            File.Copy(vdfPath, backupPath, overwrite: true);
+            foreach (var range in ranges.OrderByDescending(range => range.Start))
+                lines.RemoveRange(range.Start, range.End - range.Start + 1);
+
+            try
+            {
+                File.WriteAllLines(tempPath, lines);
+                File.Move(tempPath, vdfPath, overwrite: true);
+            }
+            finally
+            {
+                if (File.Exists(tempPath)) File.Delete(tempPath);
+            }
+
+            return ranges.Select(range => range.SteamId64).ToList();
+        }, ct);
+
+        if (removedIds.Count > 0)
+        {
+            InvalidateSnapshot();
+            logger.LogInformation(
+                "{Count} contas antigas removidas; backup em {Backup}",
+                removedIds.Count,
+                backupPath);
+        }
+
+        return removedIds;
+    }
+
+    private static int FindAccountBlockStart(List<string> lines, string steamId64)
+    {
+        var pattern = $@"^\s*""{Regex.Escape(steamId64)}""\s*$";
+        for (var i = 0; i < lines.Count; i++)
+        {
+            if (Regex.IsMatch(lines[i], pattern)) return i;
+        }
+        return -1;
+    }
+
+    private static int CountStructuralBraces(string line)
+    {
+        var delta = 0;
+        var insideQuotes = false;
+        var escaped = false;
+
+        foreach (var character in line)
+        {
+            if (escaped)
+            {
+                escaped = false;
+                continue;
+            }
+            if (character == '\\' && insideQuotes)
+            {
+                escaped = true;
+                continue;
+            }
+            if (character == '"')
+            {
+                insideQuotes = !insideQuotes;
+                continue;
+            }
+            if (insideQuotes) continue;
+            if (character == '{') delta++;
+            else if (character == '}') delta--;
+        }
+
+        return delta;
     }
 
     // --- Privados ---
@@ -219,75 +440,83 @@ public class SteamAccountService(
     SteamAccount target,
     LoginState? state,
     CancellationToken ct)
-{
-    await Task.Run(() =>
     {
-        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
-        File.Copy(vdfPath, vdfPath + "_last", overwrite: true);
-
-        var lines = File.ReadAllLines(vdfPath).ToList();
-        string? currentSteamId = null;
-
-        // Interpreta null como Online: garante reset determinístico do modo offline
-        // em todo o loginusers.vdf, evitando resíduos de sessões anteriores offline.
-        var effectiveState = state ?? LoginState.Online;
-        var wantsOffline = effectiveState == LoginState.Offline;
-
-        for (int i = 0; i < lines.Count; i++)
+        await Task.Run(() =>
         {
-            var trimmed = lines[i].Trim().Trim('"');
+            var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+            File.Copy(vdfPath, vdfPath + "_last", overwrite: true);
 
-            if (trimmed == "}" && currentSteamId is not null)
+            var lines = File.ReadAllLines(vdfPath).ToList();
+            string? currentSteamId = null;
+
+            // Interpreta null como Online: garante reset determinístico do modo offline
+            // em todo o loginusers.vdf, evitando resíduos de sessões anteriores offline.
+            var effectiveState = state ?? LoginState.Online;
+            var wantsOffline = effectiveState == LoginState.Offline;
+
+            for (int i = 0; i < lines.Count; i++)
             {
-                currentSteamId = null;
-                continue;
+                var trimmed = lines[i].Trim().Trim('"');
+
+                if (trimmed == "}" && currentSteamId is not null)
+                {
+                    currentSteamId = null;
+                    continue;
+                }
+
+                // Detecta linha de SteamID (linha com só número de 17 dígitos entre aspas)
+                if (SteamIdLineRegex.IsMatch(lines[i].Trim()))
+                {
+                    currentSteamId = trimmed;
+                    continue;
+                }
+
+                if (currentSteamId is null) continue;
+
+                var isTarget = currentSteamId == target.SteamId64;
+
+                // MostRecent
+                if (lines[i].Contains("\"MostRecent\""))
+                {
+                    lines[i] = MostRecentRegex.Replace(
+                        lines[i], $"\"MostRecent\"\t\t\"{(isTarget ? "1" : "0")}\"");
+                }
+
+                // RememberPassword — garante 1 no target
+                if (isTarget && lines[i].Contains("\"RememberPassword\""))
+                {
+                    lines[i] = RememberPasswordRegex.Replace(
+                        lines[i], "\"RememberPassword\"\t\t\"1\"");
+                }
+
+                // WantsOfflineMode — escreve em TODOS os usuários quando Online,
+                // e apenas no target quando Offline.
+                if (lines[i].Contains("\"WantsOfflineMode\""))
+                {
+                    var newValue = (isTarget && wantsOffline) ? "1" : "0";
+                    lines[i] = WantsOfflineModeRegex.Replace(
+                        lines[i], $"\"WantsOfflineMode\"\t\t\"{newValue}\"");
+                }
+
+                if (lines[i].Contains("\"SkipOfflineModeWarning\""))
+                {
+                    var newValue = (isTarget && wantsOffline) ? "1" : "0";
+                    lines[i] = SkipOfflineModeWarningRegex.Replace(
+                        lines[i], $"\"SkipOfflineModeWarning\"\t\t\"{newValue}\"");
+                }
             }
 
-            // Detecta linha de SteamID (linha com só número de 17 dígitos entre aspas)
-            if (SteamIdLineRegex.IsMatch(lines[i].Trim()))
-            {
-                currentSteamId = trimmed;
-                continue;
-            }
+            File.WriteAllLines(vdfPath, lines);
+            InvalidateSnapshot();
+        }, ct);
+    }
 
-            if (currentSteamId is null) continue;
-
-            var isTarget = currentSteamId == target.SteamId64;
-
-            // MostRecent
-            if (lines[i].Contains("\"MostRecent\""))
-            {
-                lines[i] = MostRecentRegex.Replace(
-                    lines[i], $"\"MostRecent\"\t\t\"{(isTarget ? "1" : "0")}\"");
-            }
-
-            // RememberPassword — garante 1 no target
-            if (isTarget && lines[i].Contains("\"RememberPassword\""))
-            {
-                lines[i] = RememberPasswordRegex.Replace(
-                    lines[i], "\"RememberPassword\"\t\t\"1\"");
-            }
-
-            // WantsOfflineMode — escreve em TODOS os usuários quando Online,
-            // e apenas no target quando Offline.
-            if (lines[i].Contains("\"WantsOfflineMode\""))
-            {
-                var newValue = (isTarget && wantsOffline) ? "1" : "0";
-                lines[i] = WantsOfflineModeRegex.Replace(
-                    lines[i], $"\"WantsOfflineMode\"\t\t\"{newValue}\"");
-            }
-
-            if (lines[i].Contains("\"SkipOfflineModeWarning\""))
-            {
-                var newValue = (isTarget && wantsOffline) ? "1" : "0";
-                lines[i] = SkipOfflineModeWarningRegex.Replace(
-                    lines[i], $"\"SkipOfflineModeWarning\"\t\t\"{newValue}\"");
-            }
-        }
-
-        File.WriteAllLines(vdfPath, lines);
-    }, ct);
-}
+    private void InvalidateSnapshot()
+    {
+        _cachedSnapshot = null;
+        _cachedVdfLength = -1;
+        _cachedVdfWriteTicks = -1;
+    }
 
     private static void UpdateRegistry(SteamAccount account)
     {

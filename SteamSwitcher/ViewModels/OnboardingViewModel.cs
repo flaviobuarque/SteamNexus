@@ -1,8 +1,8 @@
-﻿using System.IO;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SteamSwitcher.Core.Services;
 using SteamSwitcher.Helpers;
+using System.IO;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 
@@ -156,7 +156,7 @@ public partial class OnboardingViewModel(
         ShowDriveSelector = false;
         SelectedDrive = null;
     }
-    
+
     [RelayCommand]
     private async Task InstallSteamAsync(CancellationToken ct)
     {

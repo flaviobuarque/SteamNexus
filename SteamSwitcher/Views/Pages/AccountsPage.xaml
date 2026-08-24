@@ -16,6 +16,35 @@
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+        <Style x:Key="FavoriteIconButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.8" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Opacity" Value="0.6" />
+                </Trigger>
+                <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                    <Setter Property="Foreground" Value="#F2B84B" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Page.Resources>
 
     <Grid>
@@ -36,6 +65,8 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <ui:TextBox
@@ -48,106 +79,137 @@
                     </ui:TextBox.Icon>
                 </ui:TextBox>
 
-                <Grid Grid.Column="1"
-                    RenderTransformOrigin="0.5,0.5">
+                <ui:Button Grid.Column="1" Width="36" Height="34" Padding="0"
+                    Margin="0,0,10,0" ToolTip="Mostrar somente favoritas"
+                    Command="{Binding ToggleFavoritesFilterCommand}">
+                    <ui:Button.Style>
+                        <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                            <Setter Property="Appearance" Value="Secondary" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowFavoritesOnly}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource AppAccentSurfaceBrush}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Button.Style>
+                    <ic:SymbolIcon Symbol="Star" />
+                </ui:Button>
 
-                    <Grid.RenderTransform>
-                        <ScaleTransform x:Name="AddButtonScale"
-                        ScaleX="1"
-                        ScaleY="1"/>
-                    </Grid.RenderTransform>
+                <Border
+                    Grid.Column="2"
+                    Margin="0,0,10,0"
+                    Padding="2"
+                    CornerRadius="8"
+                    Background="{DynamicResource AppSurfaceBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button
+                            Width="34" Height="32" Padding="0"
+                            Cursor="Hand"
+                            ToolTip="Visualização em grade"
+                            Command="{Binding ShowGridViewCommand}">
+                            <ui:Button.Style>
+                                <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                    <Setter Property="Appearance" Value="Secondary" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsGridView}" Value="True">
+                                            <Setter Property="Appearance" Value="Primary" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:Button.Style>
+                            <ui:SymbolIcon Symbol="Grid24" />
+                        </ui:Button>
+                        <ui:Button
+                            Width="34" Height="32" Padding="0"
+                            Cursor="Hand"
+                            ToolTip="Visualização em lista"
+                            Command="{Binding ShowCompactViewCommand}">
+                            <ui:Button.Style>
+                                <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                    <Setter Property="Appearance" Value="Secondary" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCompactView}" Value="True">
+                                            <Setter Property="Appearance" Value="Primary" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:Button.Style>
+                            <ui:SymbolIcon Symbol="List24" />
+                        </ui:Button>
+                    </StackPanel>
+                </Border>
 
-                    <Grid.Triggers>
-
-                        <!-- Hover In -->
-                        <EventTrigger RoutedEvent="MouseEnter">
-                            <BeginStoryboard>
-                                <Storyboard>
-
-                                    <DoubleAnimation
-                        Storyboard.TargetName="AddButtonScale"
-                        Storyboard.TargetProperty="ScaleX"
-                        To="1.02"
-Duration="0:0:0.15">
-                                        <DoubleAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-
-                                    <DoubleAnimation
-                        Storyboard.TargetName="AddButtonScale"
-                        Storyboard.TargetProperty="ScaleY"
-                        To="1.02"
-Duration="0:0:0.15">
-                                        <DoubleAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-
-                        <!-- Hover Out -->
-                        <EventTrigger RoutedEvent="MouseLeave">
-                            <BeginStoryboard>
-                                <Storyboard>
-
-                                    <DoubleAnimation
-                        Storyboard.TargetName="AddButtonScale"
-                        Storyboard.TargetProperty="ScaleX"
-                        To="1"
-                        Duration="0:0:0.18">
-                                        <DoubleAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-
-                                    <DoubleAnimation
-                        Storyboard.TargetName="AddButtonScale"
-                        Storyboard.TargetProperty="ScaleY"
-                        To="1"
-                        Duration="0:0:0.18">
-                                        <DoubleAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-
-                    </Grid.Triggers>
-
-                    <ui:Button
-                        Content="Adicionar"
-                        Cursor="Hand"
-                        Command="{Binding AddAccountCommand}">
-
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="PersonAdd24" />
-                        </ui:Button.Icon>
-
-                        <ui:Button.Style>
-                            <Style TargetType="ui:Button"
-                   BasedOn="{StaticResource {x:Type ui:Button}}">
-                                <Setter Property="Background"
-                        Value="{DynamicResource AppAccentBrush}" />
-
-                                <Setter Property="MouseOverBackground"
-                        Value="{DynamicResource AppAccentAltBrush}" />
-
-                                <Setter Property="PressedBackground"
-                        Value="#2F7AD0" />
-
-                                <Setter Property="Foreground"
-                        Value="White" />
-                            </Style>
-                        </ui:Button.Style>
-
-                    </ui:Button>
-
-                </Grid>
+                <ui:Button
+                    x:Name="SortButton"
+                    Grid.Column="3"
+                    Margin="0,0,10,0"
+                    Padding="12,7"
+                    Cursor="Hand"
+                    Appearance="Secondary"
+                    Click="SortButton_Click"
+                    ToolTip="Alterar ordenação das contas">
+                    <ui:Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="ArrowSort24" Margin="0,0,7,0" />
+                            <TextBlock Text="{Binding SortLabel}" VerticalAlignment="Center" />
+                            <ui:SymbolIcon Symbol="ChevronDown20" Margin="7,0,0,0" />
+                        </StackPanel>
+                    </ui:Button.Content>
+                    <ui:Button.ContextMenu>
+                        <ContextMenu
+                            Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            Padding="4">
+                            <MenuItem
+                                Command="{Binding PlacementTarget.DataContext.SortByRecentUsageCommand,
+                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                <MenuItem.Header>
+                                    <Grid Width="126">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Uso recente" VerticalAlignment="Center" />
+                                        <ic:SymbolIcon Grid.Column="1" Symbol="Checkmark" FontSize="14"
+                                            Foreground="{DynamicResource AppAccentBrush}"
+                                            Visibility="{Binding PlacementTarget.DataContext.IsRecentUsageSort,
+                                                RelativeSource={RelativeSource AncestorType=ContextMenu},
+                                                Converter={StaticResource BoolToVisibility}}" />
+                                    </Grid>
+                                </MenuItem.Header>
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="History24" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem
+                                Command="{Binding PlacementTarget.DataContext.SortAlphabeticallyCommand,
+                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                <MenuItem.Header>
+                                    <Grid Width="126">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Nome: A–Z" VerticalAlignment="Center" />
+                                        <ic:SymbolIcon Grid.Column="1" Symbol="Checkmark" FontSize="14"
+                                            Foreground="{DynamicResource AppAccentBrush}"
+                                            Visibility="{Binding PlacementTarget.DataContext.IsAlphabeticalSort,
+                                                RelativeSource={RelativeSource AncestorType=ContextMenu},
+                                                Converter={StaticResource BoolToVisibility}}" />
+                                    </Grid>
+                                </MenuItem.Header>
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="TextSortAscending24" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </ui:Button.ContextMenu>
+                </ui:Button>
 
             </Grid>
         </Border>
@@ -176,7 +238,7 @@ Duration="0:0:0.15">
             <!-- Grid View (virtualizado) -->
             <ItemsControl
                 x:Name="AccountsItemsControl"
-                Padding="20"
+                Padding="20,20,20,88"
                 ItemsSource="{Binding AccountsView}"
                 Focusable="False"
                 ClipToBounds="True"
@@ -185,7 +247,7 @@ Duration="0:0:0.15">
                 ScrollViewer.CanContentScroll="True"
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibility}}">
+                Visibility="{Binding IsGridContentVisible, Converter={StaticResource BoolToVisibility}}">
                 <ItemsControl.Template>
                     <ControlTemplate TargetType="ItemsControl">
                         <ScrollViewer
@@ -208,19 +270,219 @@ Duration="0:0:0.15">
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:AccountCardViewModel}">
-                        <local:AccountGridCard
-                            DataContext="{Binding}"
-                            Margin="0,0,16,12"
-                            SwitchCommand="{Binding DataContext.SwitchAccountCommand,
-                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                            EditCommand="{Binding DataContext.EditAccountCommand,
-                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                            CopySteamIdCommand="{Binding DataContext.CopySteamIdCommand,
-                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                            ForgetCommand="{Binding DataContext.ForgetAccountCommand,
-                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                            CancelForgetCommand="{Binding DataContext.CancelForgetAccountCommand,
-                                RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                        <Grid Margin="0,0,16,12">
+                            <local:AccountGridCard
+                                DataContext="{Binding}"
+                                SwitchCommand="{Binding DataContext.SwitchAccountCommand,
+                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                EditCommand="{Binding DataContext.EditAccountCommand,
+                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                CopySteamIdCommand="{Binding DataContext.CopySteamIdCommand,
+                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                ToggleFavoriteCommand="{Binding DataContext.ToggleFavoriteCommand,
+                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                ForgetCommand="{Binding DataContext.ForgetAccountCommand,
+                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                CancelForgetCommand="{Binding DataContext.CancelForgetAccountCommand,
+                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                            <Button Style="{StaticResource FavoriteIconButtonStyle}" Margin="0,9,9,0"
+                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                ToolTip="Favoritar conta" Panel.ZIndex="20"
+                                Command="{Binding DataContext.ToggleFavoriteCommand,
+                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                CommandParameter="{Binding}">
+                                <ic:SymbolIcon Symbol="Star" FontSize="14">
+                                    <ic:SymbolIcon.Style>
+                                        <Style TargetType="ic:SymbolIcon">
+                                            <Setter Property="IconVariant" Value="Regular" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                    <Setter Property="IconVariant" Value="Filled" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ic:SymbolIcon.Style>
+                                </ic:SymbolIcon>
+                            </Button>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Lista compacta (virtualizada) -->
+            <ItemsControl
+                Padding="20,16,20,88"
+                ItemsSource="{Binding AccountsView}"
+                VirtualizingPanel.IsVirtualizing="True"
+                VirtualizingPanel.VirtualizationMode="Recycling"
+                ScrollViewer.CanContentScroll="True"
+                Visibility="{Binding IsCompactContentVisible, Converter={StaticResource BoolToVisibility}}">
+                <ItemsControl.Template>
+                    <ControlTemplate TargetType="ItemsControl">
+                        <ScrollViewer
+                            CanContentScroll="True"
+                            VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Padding="{TemplateBinding Padding}">
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ItemsControl.Template>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:AccountCardViewModel}">
+                        <Border
+                            Height="72"
+                            Margin="0,0,0,7"
+                            Padding="12,7"
+                            CornerRadius="10"
+                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+                                    <Setter Property="BorderThickness" Value="1" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource AppAccentSurfaceBrush}" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
+                                            <Setter Property="BorderThickness" Value="2" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Border.ContextMenu>
+                                <ContextMenu
+                                    DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                    <MenuItem Header="Trocar para esta conta"
+                                        Command="{Binding PlacementTarget.Tag.SwitchAccountCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}">
+                                        <MenuItem.Style>
+                                            <Style TargetType="MenuItem">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </MenuItem.Style>
+                                    </MenuItem>
+                                    <MenuItem Header="Editar conta"
+                                        Command="{Binding PlacementTarget.Tag.EditAccountCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                    <MenuItem Header="Copiar SteamID64"
+                                        Command="{Binding PlacementTarget.Tag.CopySteamIdCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                    <MenuItem
+                                        Command="{Binding PlacementTarget.Tag.ToggleFavoriteCommand,
+                                            RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}">
+                                        <MenuItem.Style>
+                                            <Style TargetType="MenuItem">
+                                                <Setter Property="Header" Value="Adicionar aos favoritos" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                        <Setter Property="Header" Value="Remover dos favoritos" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </MenuItem.Style>
+                                    </MenuItem>
+                                    <Separator />
+                                    <MenuItem Header="Esquecer conta"
+                                        Foreground="{DynamicResource AppDangerBrush}"
+                                        Command="{Binding PlacementTarget.Tag.ForgetAccountCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                </ContextMenu>
+                            </Border.ContextMenu>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="48" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Grid Width="40" Height="40" VerticalAlignment="Center">
+                                    <Ellipse Fill="{DynamicResource AccountCardHeaderBrush}" />
+                                    <Ellipse Margin="2">
+                                        <Ellipse.Fill>
+                                            <ImageBrush ImageSource="{Binding AvatarImage}" Stretch="UniformToFill" />
+                                        </Ellipse.Fill>
+                                    </Ellipse>
+                                    <ic:SymbolIcon Symbol="Person" FontSize="21"
+                                        Foreground="{DynamicResource AppTextMutedBrush}"
+                                        Visibility="{Binding HasAvatar, Converter={StaticResource InverseBoolToVisibility}}" />
+                                </Grid>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"
+                                        Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                        TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding AccountName, StringFormat=@{0}}" FontSize="11"
+                                        Foreground="{DynamicResource AppTextMutedBrush}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding LastLoginFormatted}" FontSize="11"
+                                        Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                    <Border
+                                        Margin="0,3,0,0"
+                                        Padding="7,2"
+                                        HorizontalAlignment="Left"
+                                        CornerRadius="6"
+                                        Background="{DynamicResource AppAccentSurfaceBrush}"
+                                        BorderBrush="{DynamicResource AppAccentBrush}"
+                                        BorderThickness="1"
+                                        Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibility}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="6" Height="6" Margin="0,0,5,0"
+                                                VerticalAlignment="Center"
+                                                Fill="{DynamicResource AppSuccessBrush}" />
+                                            <TextBlock Text="CONTA ATIVA" FontSize="9" FontWeight="Bold"
+                                                Foreground="{DynamicResource AppAccentBrush}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource FavoriteIconButtonStyle}" Margin="0,0,6,0"
+                                        ToolTip="Favoritar conta"
+                                        Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}">
+                                        <ic:SymbolIcon Symbol="Star">
+                                            <ic:SymbolIcon.Style>
+                                                <Style TargetType="ic:SymbolIcon">
+                                                    <Setter Property="IconVariant" Value="Regular" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                            <Setter Property="IconVariant" Value="Filled" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ic:SymbolIcon.Style>
+                                        </ic:SymbolIcon>
+                                    </Button>
+                                    <ui:Button Width="34" Height="34" Padding="0" Margin="0,0,6,0"
+                                        ToolTip="Editar conta"
+                                        Command="{Binding DataContext.EditAccountCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}">
+                                        <ui:SymbolIcon Symbol="Edit24" />
+                                    </ui:Button>
+                                    <ui:Button Width="34" Height="34" Padding="0"
+                                        ToolTip="Trocar para esta conta"
+                                        Command="{Binding DataContext.SwitchAccountCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}"
+                                        Visibility="{Binding IsActive, Converter={StaticResource InverseBoolToVisibility}}">
+                                        <ui:SymbolIcon Symbol="ArrowSwap24" />
+                                    </ui:Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -246,6 +508,61 @@ Duration="0:0:0.15">
                     Opacity="0.35"
                     HorizontalAlignment="Center" />
             </StackPanel>
+
+            <!-- Busca sem resultados -->
+            <StackPanel
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Visibility="{Binding HasNoSearchResults, Converter={StaticResource BoolToVisibility}}">
+                <ic:SymbolIcon
+                    Symbol="PeopleSearch"
+                    FontSize="56"
+                    Opacity="0.55"
+                    Foreground="{DynamicResource AppTextSecondaryBrush}"
+                    HorizontalAlignment="Center" />
+                <TextBlock
+                    Text="Nenhuma conta corresponde aos filtros"
+                    FontSize="17"
+                    Foreground="{DynamicResource AppTextSecondaryBrush}"
+                    HorizontalAlignment="Center"
+                    Margin="0,14,0,5" />
+                <TextBlock
+                    Text="Tente outro nome ou desative o filtro de favoritas."
+                    Foreground="{DynamicResource AppTextMutedBrush}"
+                    HorizontalAlignment="Center" />
+                <ui:Button
+                    Content="Limpar filtros"
+                    Appearance="Secondary"
+                    Command="{Binding ClearAccountFiltersCommand}"
+                    HorizontalAlignment="Center"
+                    Margin="0,14,0,0" />
+            </StackPanel>
+
+            <!-- Ação flutuante para adicionar conta -->
+            <ui:Button
+                Width="52"
+                Height="52"
+                Margin="0,0,24,24"
+                Padding="0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Panel.ZIndex="20"
+                Cursor="Hand"
+                CornerRadius="26"
+                Appearance="Primary"
+                Command="{Binding AddAccountCommand}"
+                ToolTip="Adicionar conta Steam"
+                ToolTipService.InitialShowDelay="300"
+                AutomationProperties.Name="Adicionar conta Steam">
+                <ui:Button.Effect>
+                    <DropShadowEffect
+                        BlurRadius="14"
+                        ShadowDepth="3"
+                        Opacity="0.35"
+                        Color="Black" />
+                </ui:Button.Effect>
+                <ui:SymbolIcon Symbol="PersonAdd24" FontSize="22" />
+            </ui:Button>
 
         </Grid>
     </Grid>

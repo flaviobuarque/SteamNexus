@@ -3,8 +3,9 @@ using SteamSwitcher.ViewModels;
 using SteamSwitcher.Views.Dialogs;
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Navigation;
 using System.Windows.Input;
+using System.Windows.Navigation;
+using System.Windows.Threading;
 
 namespace SteamSwitcher.Views.Pages;
 
@@ -21,8 +22,6 @@ public partial class SettingsPage : System.Windows.Controls.Page,
         DataContext = ViewModel;
         ApplyFeatureVisibility();
         Loaded += Page_Loaded;
-
-        this.Unloaded += (_, _) => ViewModel.ConfirmNavigateAway();
     }
 
     private void ApplyFeatureVisibility()
@@ -56,6 +55,7 @@ public partial class SettingsPage : System.Windows.Controls.Page,
             SteamApiKeyBox.Password = ViewModel.SteamApiKey;
         SteamGridDbApiKeyBox.Password = ViewModel.SteamGridDbApiKey;
         _loadingPasswords = false;
+        UpdateActiveSettingsSection(AccountNavButton);
     }
 
     private void SteamApiKeyBox_PasswordChanged(object sender, RoutedEventArgs e)
@@ -101,6 +101,95 @@ public partial class SettingsPage : System.Windows.Controls.Page,
         finally
         {
             ViewModel.IsCapturingHotkey = false;
+        }
+    }
+
+    private async void CleanupOldAccounts_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.IsCleaningOldAccounts) return;
+
+        var button = sender as FrameworkElement;
+        if (button is not null) button.IsEnabled = false;
+        try
+        {
+            var accounts = await ViewModel.GetAccountsForCleanupAsync();
+            var dialog = new CleanupOldAccountsDialog(accounts)
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            if (dialog.ShowDialog() == true)
+                await ViewModel.CleanupOldAccountsAsync(dialog.CandidateAccounts);
+        }
+        finally
+        {
+            if (button is not null) button.IsEnabled = true;
+        }
+    }
+
+    private void SettingsNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Wpf.Ui.Controls.Button button) return;
+
+        var target = button.Tag?.ToString() switch
+        {
+            "Steam" => SteamSection,
+            "Integrations" => IntegrationsSection,
+            "Maintenance" => MaintenanceSection,
+            "Updates" => UpdatesSection,
+            "Danger" => DangerSection,
+            _ => AccountSection
+        };
+
+        var offset = target.TranslatePoint(new Point(0, 0), SettingsContent).Y;
+        SettingsScrollViewer.ScrollToVerticalOffset(Math.Max(0, offset - 8));
+        UpdateActiveSettingsSection(button);
+    }
+
+    private void SettingsScrollViewer_ScrollChanged(
+        object sender,
+        System.Windows.Controls.ScrollChangedEventArgs e)
+    {
+        if (!IsLoaded) return;
+
+        var sections = GetSettingsSections();
+        if (SettingsScrollViewer.VerticalOffset >= SettingsScrollViewer.ScrollableHeight - 2)
+        {
+            UpdateActiveSettingsSection(DangerNavButton);
+            return;
+        }
+
+        var marker = SettingsScrollViewer.VerticalOffset + 72;
+        var active = sections[0].Button;
+        foreach (var section in sections)
+        {
+            var offset = section.Element
+                .TranslatePoint(new Point(0, 0), SettingsContent).Y;
+            if (offset > marker) break;
+            active = section.Button;
+        }
+
+        UpdateActiveSettingsSection(active);
+    }
+
+    private (Wpf.Ui.Controls.Button Button, FrameworkElement Element)[]
+        GetSettingsSections() =>
+        [
+            (AccountNavButton, AccountSection),
+            (SteamNavButton, SteamSection),
+            (IntegrationsNavButton, IntegrationsSection),
+            (MaintenanceNavButton, MaintenanceSection),
+            (UpdatesNavButton, UpdatesSection),
+            (DangerNavButton, DangerSection)
+        ];
+
+    private void UpdateActiveSettingsSection(Wpf.Ui.Controls.Button activeButton)
+    {
+        foreach (var section in GetSettingsSections())
+        {
+            section.Button.Appearance = ReferenceEquals(section.Button, activeButton)
+                ? Wpf.Ui.Controls.ControlAppearance.Primary
+                : Wpf.Ui.Controls.ControlAppearance.Secondary;
         }
     }
 

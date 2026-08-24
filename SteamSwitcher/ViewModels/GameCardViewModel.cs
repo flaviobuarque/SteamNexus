@@ -6,17 +6,19 @@ namespace SteamSwitcher.ViewModels;
 
 public partial class GameCardViewModel : ObservableObject
 {
-    public SteamGame Game { get; }
+    public SteamGame Game { get; private set; }
 
     [ObservableProperty] private string _coverPath = string.Empty;
     [ObservableProperty] private ImageSource? _coverImage;
     [ObservableProperty] private bool _isLaunching;
     [ObservableProperty] private bool _coverMissing;
-    [ObservableProperty] private bool _isRunning;
+    [ObservableProperty] private bool _isCoverLoading;
+    [ObservableProperty] private bool _isFavorite;
 
-    public GameCardViewModel(SteamGame game)
+    public GameCardViewModel(SteamGame game, bool isFavorite = false)
     {
         Game = game;
+        IsFavorite = isFavorite;
     }
 
     public string OwnerAccountName =>
@@ -25,6 +27,15 @@ public partial class GameCardViewModel : ObservableObject
     public bool HasOwner => Game.OwnerAccount is not null;
 
     public string SizeAndDrive => Game.SizeAndDrive;
+
+    public void ApplySnapshot(SteamGame game)
+    {
+        Game = game;
+        OnPropertyChanged(nameof(Game));
+        OnPropertyChanged(nameof(OwnerAccountName));
+        OnPropertyChanged(nameof(HasOwner));
+        OnPropertyChanged(nameof(SizeAndDrive));
+    }
 
     public void OnOwnerChanged()
     {

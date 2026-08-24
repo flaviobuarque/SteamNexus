@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
+using SteamSwitcher.Helpers;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -24,12 +25,26 @@ public partial class AccountsViewModel(
     IServiceProvider serviceProvider,
     MainViewModel mainViewModel) : ObservableObject
 {
-    private readonly ObservableCollection<AccountCardViewModel> _accounts = [];
+    private readonly RangeObservableCollection<AccountCardViewModel> _accounts = [];
     private ICollectionView? _accountsView;
 
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private AccountCardViewModel? _switchingAccount;
     [ObservableProperty] private string _searchText = string.Empty;
+    [ObservableProperty] private int _filteredAccountsCount;
+    [ObservableProperty] private bool _showFavoritesOnly;
+
+    public AccountSortMode AccountSortMode => settingsService.Current.AccountSortMode;
+    public string SortLabel => AccountSortMode == AccountSortMode.RecentUsage
+        ? "Recentes"
+        : "Nome: A–Z";
+    public bool IsRecentUsageSort => AccountSortMode == AccountSortMode.RecentUsage;
+    public bool IsAlphabeticalSort => AccountSortMode == AccountSortMode.Alphabetical;
+    public AccountViewMode AccountViewMode => settingsService.Current.AccountViewMode;
+    public bool IsGridView => AccountViewMode == AccountViewMode.Grid;
+    public bool IsCompactView => AccountViewMode == AccountViewMode.Compact;
+    public bool IsGridContentVisible => !IsLoading && IsGridView;
+    public bool IsCompactContentVisible => !IsLoading && IsCompactView;
 
     public ICollectionView AccountsView
     {
@@ -38,19 +53,110 @@ public partial class AccountsViewModel(
             if (_accountsView is null)
             {
                 var view = CollectionViewSource.GetDefaultView(_accounts);
-                view.SortDescriptions.Add(new SortDescription(
-                    nameof(AccountCardViewModel.IsActive),
-                    ListSortDirection.Descending));
                 view.Filter = AccountFilter;
                 _accountsView = view;
+                ApplySorting();
             }
             return _accountsView;
         }
     }
 
+    private void ApplySorting()
+    {
+        if (_accountsView is null)
+            return;
+
+        using (_accountsView.DeferRefresh())
+        {
+            _accountsView.SortDescriptions.Clear();
+            _accountsView.SortDescriptions.Add(new SortDescription(
+                nameof(AccountCardViewModel.IsActive),
+                ListSortDirection.Descending));
+            _accountsView.SortDescriptions.Add(new SortDescription(
+                nameof(AccountCardViewModel.IsFavorite),
+                ListSortDirection.Descending));
+
+            if (AccountSortMode == AccountSortMode.RecentUsage)
+            {
+                _accountsView.SortDescriptions.Add(new SortDescription(
+                    nameof(AccountCardViewModel.Timestamp),
+                    ListSortDirection.Descending));
+            }
+            else
+            {
+                _accountsView.SortDescriptions.Add(new SortDescription(
+                    nameof(AccountCardViewModel.DisplayName),
+                    ListSortDirection.Ascending));
+            }
+
+            // Desempate estável quando duas contas têm o mesmo nome ou timestamp.
+            _accountsView.SortDescriptions.Add(new SortDescription(
+                nameof(AccountCardViewModel.AccountName),
+                ListSortDirection.Ascending));
+        }
+    }
+
+    [RelayCommand]
+    private async Task SortByRecentUsageAsync()
+        => await SetSortModeAsync(AccountSortMode.RecentUsage);
+
+    [RelayCommand]
+    private async Task SortAlphabeticallyAsync()
+        => await SetSortModeAsync(AccountSortMode.Alphabetical);
+
+    private async Task SetSortModeAsync(AccountSortMode mode)
+    {
+        if (AccountSortMode == mode)
+            return;
+
+        settingsService.Current.AccountSortMode = mode;
+        ApplySorting();
+
+        OnPropertyChanged(nameof(AccountSortMode));
+        OnPropertyChanged(nameof(SortLabel));
+        OnPropertyChanged(nameof(IsRecentUsageSort));
+        OnPropertyChanged(nameof(IsAlphabeticalSort));
+
+        await settingsService.SaveAsync(settingsService.Current);
+    }
+
+    [RelayCommand]
+    private async Task ShowGridViewAsync()
+        => await SetAccountViewModeAsync(AccountViewMode.Grid);
+
+    [RelayCommand]
+    private async Task ShowCompactViewAsync()
+        => await SetAccountViewModeAsync(AccountViewMode.Compact);
+
+    private async Task SetAccountViewModeAsync(AccountViewMode mode)
+    {
+        if (AccountViewMode == mode) return;
+
+        settingsService.Current.AccountViewMode = mode;
+        OnPropertyChanged(nameof(AccountViewMode));
+        OnPropertyChanged(nameof(IsGridView));
+        OnPropertyChanged(nameof(IsCompactView));
+        OnPropertyChanged(nameof(IsGridContentVisible));
+        OnPropertyChanged(nameof(IsCompactContentVisible));
+        await settingsService.SaveAsync(settingsService.Current);
+    }
+
     public int AccountsCount => _accounts.Count;
 
     public bool HasNoAccounts => !IsLoading && _accounts.Count == 0;
+    public bool HasNoSearchResults =>
+        !IsLoading
+        && _accounts.Count > 0
+        && FilteredAccountsCount == 0
+        && HasActiveFilters;
+
+    private bool HasActiveFilters =>
+        !string.IsNullOrWhiteSpace(SearchText)
+        || ShowFavoritesOnly;
+
+    public string AccountsCountText => HasActiveFilters
+        ? $"{FilteredAccountsCount} de {FormatAccountCount(AccountsCount)}"
+        : FormatAccountCount(AccountsCount);
 
     private FileSystemWatcher? _vdfWatcher;
     private CancellationTokenSource? _vdfReloadCts;
@@ -73,18 +179,20 @@ public partial class AccountsViewModel(
         await _initLock.WaitAsync(ct);
         try
         {
+            var isInitialLoad = _accounts.Count == 0;
             var avatarLoadCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             var previousAvatarLoadCts = Interlocked.Exchange(ref _avatarLoadCts, avatarLoadCts);
 
             previousAvatarLoadCts?.Cancel();
             previousAvatarLoadCts?.Dispose();
 
-            IsLoading = true;
+            if (isInitialLoad)
+                IsLoading = true;
             try
             {
-                var rawAccounts = await accountService.GetAccountsAsync(ct);
-
-                var activeAccount = await accountService.GetActiveAccountAsync(ct)
+                var snapshot = await accountService.GetSnapshotAsync(ct);
+                var rawAccounts = snapshot.Accounts;
+                var activeAccount = snapshot.ActiveAccount
                     ?? rawAccounts.FirstOrDefault(a => a.MostRecent);
 
                 System.Diagnostics.Debug.WriteLine(
@@ -95,8 +203,6 @@ public partial class AccountsViewModel(
                     account.IsActive = account.SteamId64 == activeAccount?.SteamId64;
                 }
 
-                var cards = new List<AccountCardViewModel>();
-
                 foreach (var account in rawAccounts)
                 {
                     var ovr = await overrideService.GetOverrideAsync(account.SteamId64);
@@ -105,28 +211,29 @@ public partial class AccountsViewModel(
                         account.CustomDisplayName = ovr.CustomDisplayName;
                         account.CustomAvatarPath = ovr.CustomAvatarPath;
                         account.LoginStateOverride = ovr.LoginStateOverride;
+                        account.IsFavorite = ovr.IsFavorite;
                     }
 
-                    var card = new AccountCardViewModel(account);
-                    cards.Add(card);
-                    _ = LoadAvatarAsync(card, account, avatarLoadCts.Token);
                 }
 
-                // Reaproveita a mesma coleção: clera + Fill mantém
-                // a ICollectionView (default view) que está bound ao ItemsControl.
-                _accounts.Clear();
-                foreach (var c in cards)
-                    _accounts.Add(c);
+                ApplyAccountsIncrementally(rawAccounts);
 
                 AccountsView.Refresh();
-                OnPropertyChanged(nameof(AccountsCount));
-                OnPropertyChanged(nameof(HasNoAccounts));
+                UpdateAccountCounts();
+
+                // Carrega gradualmente todas as contas na mesma ordem exibida.
+                // Apenas quatro workers percorrem a fila; não são criadas N tarefas.
+                var avatarQueue = AccountsView
+                    .Cast<AccountCardViewModel>()
+                    .ToList();
+                _ = LoadAvatarsLazilyAsync(avatarQueue, avatarLoadCts.Token);
 
                 StartWatchingLoginUsers();
             }
             finally
             {
-                IsLoading = false;
+                if (isInitialLoad)
+                    IsLoading = false;
                 RefreshStatusBar();
             }
         }
@@ -138,8 +245,9 @@ public partial class AccountsViewModel(
 
     private bool AccountFilter(object item)
     {
-        if (string.IsNullOrWhiteSpace(SearchText)) return true;
         if (item is not AccountCardViewModel a) return false;
+        if (ShowFavoritesOnly && !a.IsFavorite) return false;
+        if (string.IsNullOrWhiteSpace(SearchText)) return true;
         return a.DisplayName.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
             || a.AccountName.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
     }
@@ -147,13 +255,66 @@ public partial class AccountsViewModel(
     partial void OnSearchTextChanged(string value)
     {
         AccountsView.Refresh();
-        OnPropertyChanged(nameof(AccountsCount));
+        UpdateAccountCounts();
+        RefreshStatusBar();
     }
+
+    partial void OnShowFavoritesOnlyChanged(bool value) => RefreshAccountFilters();
+
+    [RelayCommand]
+    private void ToggleFavoritesFilter() => ShowFavoritesOnly = !ShowFavoritesOnly;
+
+    [RelayCommand]
+    private void ClearAccountFilters()
+    {
+        SearchText = string.Empty;
+        ShowFavoritesOnly = false;
+        RefreshAccountFilters();
+    }
+
+    private void RefreshAccountFilters()
+    {
+        AccountsView.Refresh();
+        UpdateAccountCounts();
+        RefreshStatusBar();
+    }
+
+    [RelayCommand]
+    private void ClearSearch() => SearchText = string.Empty;
+
+    [RelayCommand]
+    private async Task ToggleFavoriteAsync(AccountCardViewModel card)
+    {
+        card.IsFavorite = !card.IsFavorite;
+        await SaveOrganizationAsync(card);
+        ApplySorting();
+        RefreshAccountFilters();
+    }
+
+    private async Task SaveOrganizationAsync(AccountCardViewModel card)
+    {
+        var current = await overrideService.GetOverrideAsync(card.SteamId64)
+            ?? new AccountOverride();
+        current.IsFavorite = card.IsFavorite;
+        await overrideService.SaveOverrideAsync(card.SteamId64, current);
+    }
+
+    private void UpdateAccountCounts()
+    {
+        FilteredAccountsCount = AccountsView.Cast<object>().Count();
+        OnPropertyChanged(nameof(AccountsCount));
+        OnPropertyChanged(nameof(HasNoAccounts));
+        OnPropertyChanged(nameof(HasNoSearchResults));
+        OnPropertyChanged(nameof(AccountsCountText));
+    }
+
+    private static string FormatAccountCount(int count)
+        => count == 1 ? "1 conta" : $"{count} contas";
 
     public void RefreshStatusBar()
     {
         mainViewModel.UpdateStatusBar(
-            $"{AccountsCount} contas",
+            AccountsCountText,
             showLoginToggle: true);
     }
 
@@ -311,6 +472,68 @@ public partial class AccountsViewModel(
         }
     }
 
+    private void ApplyAccountsIncrementally(IReadOnlyList<SteamAccount> incoming)
+    {
+        var existingById = _accounts.ToDictionary(
+            c => c.Account.SteamId64,
+            StringComparer.Ordinal);
+        var reconciled = new List<AccountCardViewModel>(incoming.Count);
+
+        foreach (var account in incoming)
+        {
+            if (existingById.TryGetValue(account.SteamId64, out var existing))
+            {
+                existing.ApplySnapshot(account);
+                existing.PrepareAvatarReloadIfMissing();
+                reconciled.Add(existing);
+            }
+            else
+            {
+                reconciled.Add(new AccountCardViewModel(account));
+            }
+        }
+
+        var membershipChanged = _accounts.Count != reconciled.Count
+            || !_accounts.Select(c => c.Account.SteamId64)
+                .SequenceEqual(reconciled.Select(c => c.Account.SteamId64),
+                    StringComparer.Ordinal);
+
+        if (membershipChanged)
+            _accounts.ReplaceAll(reconciled);
+    }
+
+    private async Task LoadAvatarIfNeededAsync(
+        AccountCardViewModel card,
+        CancellationToken ct)
+    {
+        if (!card.TryBeginAvatarLoad())
+            return;
+
+        await LoadAvatarAsync(card, card.Account, ct);
+    }
+
+    private async Task LoadAvatarsLazilyAsync(
+        IReadOnlyList<AccountCardViewModel> cards,
+        CancellationToken ct)
+    {
+        try
+        {
+            await BoundedWorkQueue.RunAsync(
+                cards,
+                workerCount: 4,
+                async (card, token) =>
+                {
+                    await LoadAvatarIfNeededAsync(card, token);
+                    await Task.Yield();
+                },
+                ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Uma recarga mais recente substituiu esta fila.
+        }
+    }
+
     [RelayCommand]
     private async Task SwitchAccountAsync(AccountCardViewModel cardVm)
     {
@@ -331,6 +554,7 @@ public partial class AccountsViewModel(
 
         cardVm.IsActive = true;
         cardVm.Account.IsActive = true;
+        AccountsView.Refresh();
 
         try
         {
@@ -351,7 +575,7 @@ public partial class AccountsViewModel(
                 ref _ignoreVdfChangesUntilUtcTicks,
                 DateTime.UtcNow.AddSeconds(8).Ticks);
 
-await accountService.SwitchAccountAsync(cardVm.Account);
+            await accountService.SwitchAccountAsync(cardVm.Account);
 
             watchdogService.EndSwitch();
 
@@ -377,6 +601,7 @@ await accountService.SwitchAccountAsync(cardVm.Account);
             // Reverte UI
             cardVm.IsActive = false;
             if (previousActive is not null) previousActive.IsActive = true;
+            AccountsView.Refresh();
             mainViewModel.NotifyAccountSwitchFinished();
             watchdogService.EndSwitch();
 
@@ -397,24 +622,75 @@ await accountService.SwitchAccountAsync(cardVm.Account);
     [RelayCommand]
     private async Task ForgetAccountAsync(AccountCardViewModel cardVm)
     {
-        // Undo disponível por 5s
+        if (cardVm.IsPendingRemoval) return;
+
+        const double undoSeconds = 5;
         cardVm.IsPendingRemoval = true;
-        await Task.Delay(5000);
+        cardVm.RemovalProgress = 100;
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        while (cardVm.IsPendingRemoval && stopwatch.Elapsed.TotalSeconds < undoSeconds)
+        {
+            var remaining = Math.Max(0, undoSeconds - stopwatch.Elapsed.TotalSeconds);
+            cardVm.RemovalProgress = remaining / undoSeconds * 100;
+            cardVm.RemovalCountdownText = $"Removendo em {remaining:F1}s";
+            await Task.Delay(100);
+        }
 
         if (!cardVm.IsPendingRemoval) return; // usuário cancelou
 
-        accountService.ForgetAccount(cardVm.Account);
-        _accounts.Remove(cardVm);
-        OnPropertyChanged(nameof(AccountsCount));
-        OnPropertyChanged(nameof(HasNoAccounts));
+        cardVm.RemovalProgress = 0;
+        cardVm.RemovalCountdownText = "Removendo...";
+
+        try
+        {
+            var wasActive = cardVm.IsActive;
+            await accountService.ForgetAccountAsync(cardVm.Account);
+            await overrideService.RemoveOverrideAsync(cardVm.Account.SteamId64);
+
+            _accounts.Remove(cardVm);
+            AccountsView.Refresh();
+            UpdateAccountCounts();
+            RefreshStatusBar();
+
+            if (wasActive)
+                mainViewModel.ApplyActiveAccount(null);
+
+            snackbarService.Show(
+                "Conta esquecida",
+                $"{cardVm.DisplayName} foi removida deste computador.",
+                ControlAppearance.Success,
+                null,
+                TimeSpan.FromSeconds(4));
+        }
+        catch (Exception ex)
+        {
+            cardVm.IsPendingRemoval = false;
+            cardVm.RemovalProgress = 100;
+            cardVm.RemovalCountdownText = string.Empty;
+            snackbarService.Show(
+                "Erro ao esquecer conta",
+                ex.Message,
+                ControlAppearance.Danger,
+                null,
+                TimeSpan.FromSeconds(5));
+        }
     }
 
-    partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(HasNoAccounts));
+    partial void OnIsLoadingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(HasNoAccounts));
+        OnPropertyChanged(nameof(HasNoSearchResults));
+        OnPropertyChanged(nameof(IsGridContentVisible));
+        OnPropertyChanged(nameof(IsCompactContentVisible));
+    }
 
     [RelayCommand]
     private void CancelForgetAccount(AccountCardViewModel cardVm)
     {
         cardVm.IsPendingRemoval = false;
+        cardVm.RemovalProgress = 100;
+        cardVm.RemovalCountdownText = string.Empty;
     }
 
     private void ApplyPostSwitchBehavior(PostSwitchBehavior behavior)
@@ -447,6 +723,7 @@ await accountService.SwitchAccountAsync(cardVm.Account);
         {
             cardVm.AvatarPath = cardVm.Account.CustomAvatarPath ?? cardVm.AvatarPath;
             cardVm.RefreshDisplayName();
+            AccountsView.Refresh();
         }
     }
 

@@ -15,11 +15,12 @@
 
 		<!-- Configurações de publicação -->
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-		<SelfContained>false</SelfContained>
+		<SelfContained>true</SelfContained>
 		<PublishSingleFile>false</PublishSingleFile>
 		<EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
 		<PublishReadyToRun>true</PublishReadyToRun>
 		<IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+		<SteamNexusUpdateUrl Condition="'$(SteamNexusUpdateUrl)' == ''"></SteamNexusUpdateUrl>
 	</PropertyGroup>
     <ItemGroup>
         <PackageReference Include="VirtualizingWrapPanel" Version="2.5.4" />
@@ -29,6 +30,7 @@
         <PackageReference Include="FluentIcons.Wpf" Version="2.*" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.*" />
+        <PackageReference Include="Velopack" Version="1.2.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\SteamSwitcher.Core\SteamSwitcher.Core.csproj" />
@@ -43,5 +45,12 @@
 	<ItemGroup>
 		<Resource Include="Assets\icon.ico" />
 		<Resource Include="Assets\logo.png" />
+	</ItemGroup>
+	<ItemGroup>
+		<AssemblyMetadata Include="SteamNexusUpdateUrl" Value="$(SteamNexusUpdateUrl)" />
+	</ItemGroup>
+	<ItemGroup>
+		<ApplicationDefinition Remove="App.xaml" />
+		<Page Include="App.xaml" />
 	</ItemGroup>
 </Project>

@@ -46,7 +46,10 @@ public class ImageCacheService(ILogger<ImageCacheService> logger) : IImageCacheS
 
         try
         {
-            var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            using var response = await _http.GetAsync(
+                url,
+                HttpCompletionOption.ResponseHeadersRead,
+                ct);
 
             if (!response.IsSuccessStatusCode)
                 return null;
@@ -58,6 +61,12 @@ public class ImageCacheService(ILogger<ImageCacheService> logger) : IImageCacheS
 
             await File.WriteAllBytesAsync(localPath, bytes, ct);
             return localPath;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Cancelar downloads que deixaram de pertencer à página visível é
+            // parte normal do lazy loading; não registra stack trace como erro.
+            return null;
         }
         catch (Exception ex)
         {

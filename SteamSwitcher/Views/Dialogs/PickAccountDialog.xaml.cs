@@ -2,9 +2,9 @@
 using CommunityToolkit.Mvvm.Input;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.ViewModels;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Media.Animation;
-using System.Collections.ObjectModel;
 
 namespace SteamSwitcher.Views.Dialogs;
 

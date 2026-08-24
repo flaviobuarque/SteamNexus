@@ -1,11 +1,14 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Input;
-using SteamSwitcher.Core;
+using CommunityToolkit.Mvvm.Messaging;
+using SteamSwitcher.Core.Helpers;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
+using SteamSwitcher.Helpers;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Net.Http;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 
@@ -17,33 +20,84 @@ public partial class GamesViewModel(
     IImageCacheService imageCacheService,
     ISnackbarService snackbarService,
     IAppSettingsService settingsService,
-    IGameProcessService gameProcessService,
     MainViewModel mainViewModel) : ObservableObject
 {
     private IReadOnlyList<GameCardViewModel> _allGames = [];
     private IReadOnlyList<GameCardViewModel> _filteredGames = [];
     private const int GamesPerPage = 60;
     private IReadOnlyList<SteamAccount> _allAccounts = [];
-    private bool _processHandlerRegistered;
     private readonly SemaphoreSlim _coverLoadGate = new(6, 6);
+    private CancellationTokenSource? _visibleCoverLoadCts;
+    private readonly ConcurrentDictionary<string, Lazy<Task>> _activeCoverLoads =
+        new(StringComparer.Ordinal);
+    private readonly SemaphoreSlim _initializeGate = new(1, 1);
+    private bool _initialized;
+    private CancellationTokenSource? _gameSearchDebounceCts;
+    private CancellationTokenSource? _accountSearchDebounceCts;
+    private int _launchOperationActive;
+    private readonly SemaphoreSlim _libraryRefreshGate = new(1, 1);
+    private readonly List<FileSystemWatcher> _libraryWatchers = [];
+    private CancellationTokenSource? _libraryRefreshDebounceCts;
+    private Dictionary<string, string> _savedOwners = new(StringComparer.Ordinal);
+    private HashSet<string> _favoriteGameIds = new(StringComparer.Ordinal);
+    private static readonly HttpClient FilterAvatarHttp = new()
+    {
+        Timeout = TimeSpan.FromSeconds(5)
+    };
+    private static readonly System.Text.RegularExpressions.Regex AvatarUrlRegex =
+        new(@"<avatarFull><!\[CDATA\[(.+?)\]\]></avatarFull>",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
 
     [ObservableProperty] private ObservableCollection<GameCardViewModel> _games = [];
-    [ObservableProperty] private ObservableCollection<SteamAccount> _filterAccounts = [];
-    [ObservableProperty] private SteamAccount? _selectedFilterAccount;
+    [ObservableProperty] private ObservableCollection<AccountCardViewModel> _filterAccounts = [];
+    [ObservableProperty] private AccountCardViewModel? _selectedFilterAccount;
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private bool _isLoading;
 
-    [ObservableProperty] private ObservableCollection<SteamAccount> _visibleFilterAccounts = [];
+    [ObservableProperty] private ObservableCollection<AccountCardViewModel> _visibleFilterAccounts = [];
     [ObservableProperty] private string _filterAccountSearchText = string.Empty;
     [ObservableProperty] private bool _isAccountFilterOpen;
+    [ObservableProperty] private bool _isGameLaunchInProgress;
+
+    public GameSortMode GameSortMode => settingsService.Current.GameSortMode;
+    public string GameSortLabel => GameSortMode switch
+    {
+        GameSortMode.MostPlayed => "Mais jogados",
+        GameSortMode.LargestSize => "Maior tamanho",
+        _ => "Nome: A–Z"
+    };
+    public bool IsAlphabeticalGameSort => GameSortMode == GameSortMode.Alphabetical;
+    public bool IsMostPlayedGameSort => GameSortMode == GameSortMode.MostPlayed;
+    public bool IsLargestSizeGameSort => GameSortMode == GameSortMode.LargestSize;
+    public GameViewMode GameViewMode => settingsService.Current.GameViewMode;
+    public bool IsGameGridView => GameViewMode == GameViewMode.Grid;
+    public bool IsGameCompactView => GameViewMode == GameViewMode.Compact;
+    public bool IsGameGridContentVisible => HasFilteredGames && IsGameGridView;
+    public bool IsGameCompactContentVisible => HasFilteredGames && IsGameCompactView;
 
     [ObservableProperty] private int _currentPage = 1;
 
-    partial void OnSearchTextChanged(string value) => ApplyFilters();
-    partial void OnSelectedFilterAccountChanged(SteamAccount? value) => ApplyFilters();
-    public bool IsEmpty => !IsLoading && Games.Count == 0;
-    partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsEmpty));
-    partial void OnGamesChanged(ObservableCollection<GameCardViewModel> value) => OnPropertyChanged(nameof(IsEmpty));
+    partial void OnSearchTextChanged(string value)
+    {
+        var nextCts = new CancellationTokenSource();
+        var previousCts = Interlocked.Exchange(ref _gameSearchDebounceCts, nextCts);
+        previousCts?.Cancel();
+        previousCts?.Dispose();
+        _ = ApplyGameSearchDebouncedAsync(nextCts.Token);
+    }
+    partial void OnSelectedFilterAccountChanged(AccountCardViewModel? value) => ApplyFilters();
+    partial void OnIsAccountFilterOpenChanged(bool value)
+    {
+        if (value)
+            StartFilterAvatarLoading();
+    }
+    public bool HasNoInstalledGames => !IsLoading && _allGames.Count == 0;
+    public bool HasNoFilterResults =>
+        !IsLoading && _allGames.Count > 0 && _filteredGames.Count == 0;
+    public bool HasFilteredGames => !IsLoading && _filteredGames.Count > 0;
+
+    partial void OnIsLoadingChanged(bool value) => NotifyEmptyStates();
+    partial void OnGamesChanged(ObservableCollection<GameCardViewModel> value) => NotifyEmptyStates();
 
     public int TotalPages => Math.Max(
     1,
@@ -64,6 +118,26 @@ public partial class GamesViewModel(
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
+        if (_initialized)
+            return;
+
+        await _initializeGate.WaitAsync(ct);
+        try
+        {
+            if (_initialized)
+                return;
+
+            await InitializeCoreAsync(ct);
+            _initialized = true;
+        }
+        finally
+        {
+            _initializeGate.Release();
+        }
+    }
+
+    private async Task InitializeCoreAsync(CancellationToken ct)
+    {
         if (!WeakReferenceMessenger.Default.IsRegistered<SteamGridDbKeyChanged>(this))
             WeakReferenceMessenger.Default.Register<SteamGridDbKeyChanged>(this, async (_, _) =>
                 await RetryMissingCoversAsync());
@@ -80,6 +154,13 @@ public partial class GamesViewModel(
                         card.CoverMissing = false;
                     }
 
+                    foreach (var account in FilterAccounts)
+                    {
+                        account.AvatarPath = string.Empty;
+                        account.AvatarImage = null;
+                        account.PrepareAvatarReloadIfMissing();
+                    }
+
                     // Re-kickoff para a página visível: após o reset, capas que
                     // existiam voltam a faltar e disparam nova carga.
                     KickoffMissingCoverLoads(Games);
@@ -93,28 +174,33 @@ public partial class GamesViewModel(
             _allAccounts = accounts;
 
             // Monta lista de filtros
-            FilterAccounts = new ObservableCollection<SteamAccount>(
+            FilterAccounts = new ObservableCollection<AccountCardViewModel>(
                 accounts.Prepend(new SteamAccount
                 {
                     SteamId64 = string.Empty,
-                    AccountName = string.Empty,
+                    AccountName = "Sem filtro de conta",
                     PersonaName = "Todas as contas"
-                }));
+                }).Select(account => new AccountCardViewModel(account)));
             SelectedFilterAccount = FilterAccounts.First();
 
-            VisibleFilterAccounts = new ObservableCollection<SteamAccount>(FilterAccounts);
+            VisibleFilterAccounts = new ObservableCollection<AccountCardViewModel>(FilterAccounts);
 
             // Carrega jogos
             var rawGames = await gameService.GetInstalledGamesAsync(accounts, ct);
-            var cards = rawGames.Select(g => new GameCardViewModel(g)).ToList();
+            _favoriteGameIds = await LoadFavoriteGameIdsAsync();
+            var cards = rawGames
+                .Select(game => new GameCardViewModel(
+                    game,
+                    _favoriteGameIds.Contains(game.AppId)))
+                .ToList();
             _allGames = cards;
 
-            var savedOwners = await LoadGameOwnersAsync();
-            if (savedOwners.Count > 0)
+            _savedOwners = await LoadGameOwnersAsync();
+            if (_savedOwners.Count > 0)
             {
                 foreach (var card in cards)
                 {
-                    if (savedOwners.TryGetValue(card.Game.AppId, out var savedId))
+                    if (_savedOwners.TryGetValue(card.Game.AppId, out var savedId))
                     {
                         var owner = _allAccounts.FirstOrDefault(a => a.SteamId64 == savedId);
                         if (owner is not null)
@@ -127,54 +213,9 @@ public partial class GamesViewModel(
                 }
             }
 
-            // Fase 1: resolve cache local imediatamente (sem rede)
-            var cacheDir = imageCacheService.GetCacheDirectory();
-
-            var cachedCovers = await Task.Run(() =>
-            {
-                return cards
-                    .Select(card =>
-                    {
-                        var steamUrl =
-                            $"https://cdn.akamai.steamstatic.com/steam/apps/{card.Game.AppId}/library_600x900.jpg";
-
-                        var hash = Convert.ToHexString(
-                            System.Security.Cryptography.SHA256.HashData(
-                                System.Text.Encoding.UTF8.GetBytes(steamUrl)))[..16];
-
-                        var path = Path.Combine(cacheDir, hash + ".jpg");
-
-                        return new
-                        {
-                            Card = card,
-                            Path = File.Exists(path) && new FileInfo(path).Length > 1024
-                                ? path
-                                : null
-                        };
-                    })
-                    .Where(x => x.Path is not null)
-                    .ToList();
-            }, ct);
-
-            foreach (var cached in cachedCovers)
-            {
-                cached.Card.CoverPath = cached.Path!;
-                var img = await Helpers.ImageLoader.LoadCoverAsync(cached.Path);
-                cached.Card.CoverImage = img;
-            }
-
             ApplyFilters();
+            StartLibraryWatchers();
 
-            var tracked = cards
-                .Where(c => !string.IsNullOrEmpty(c.Game.InstallFullPath))
-                .Select(c => $"{c.Game.AppId}|{c.Game.InstallFullPath}");
-
-            gameProcessService.SetTrackedGames(tracked);
-            if (!_processHandlerRegistered)
-            {
-                gameProcessService.GameStateChanged += OnGameStateChanged;
-                _processHandlerRegistered = true;
-            }
         }
         finally
         {
@@ -182,11 +223,45 @@ public partial class GamesViewModel(
         }
     }
 
-    partial void OnFilterAccountSearchTextChanged(string value) =>
-    ApplyAccountFilterSearch();
+    partial void OnFilterAccountSearchTextChanged(string value)
+    {
+        var nextCts = new CancellationTokenSource();
+        var previousCts = Interlocked.Exchange(ref _accountSearchDebounceCts, nextCts);
+        previousCts?.Cancel();
+        previousCts?.Dispose();
+        _ = ApplyAccountSearchDebouncedAsync(nextCts.Token);
+    }
+
+    private async Task ApplyGameSearchDebouncedAsync(CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(250), ct);
+            if (!ct.IsCancellationRequested)
+                RunOnUi(() => ApplyFilters());
+        }
+        catch (OperationCanceledException)
+        {
+            // Uma tecla mais recente substituiu esta busca.
+        }
+    }
+
+    private async Task ApplyAccountSearchDebouncedAsync(CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(180), ct);
+            if (!ct.IsCancellationRequested)
+                RunOnUi(ApplyAccountFilterSearch);
+        }
+        catch (OperationCanceledException)
+        {
+            // Uma tecla mais recente substituiu esta busca.
+        }
+    }
 
     [RelayCommand]
-    private void SelectGameFilterAccount(SteamAccount account)
+    private void SelectGameFilterAccount(AccountCardViewModel account)
     {
         SelectedFilterAccount = account;
         IsAccountFilterOpen = false;
@@ -202,7 +277,104 @@ public partial class GamesViewModel(
             account.AccountName.Contains(FilterAccountSearchText,
                 StringComparison.OrdinalIgnoreCase));
 
-        VisibleFilterAccounts = new ObservableCollection<SteamAccount>(filtered);
+        VisibleFilterAccounts = new ObservableCollection<AccountCardViewModel>(filtered);
+    }
+
+    private void StartFilterAvatarLoading()
+    {
+        var accounts = FilterAccounts
+            .Where(account => !string.IsNullOrEmpty(account.SteamId64))
+            .ToList();
+
+        if (accounts.Count == 0)
+            return;
+
+        _ = LoadFilterAvatarsAsync(accounts);
+    }
+
+    private async Task LoadFilterAvatarsAsync(
+        IReadOnlyList<AccountCardViewModel> accounts)
+    {
+        try
+        {
+            await BoundedWorkQueue.RunAsync(
+                accounts,
+                workerCount: 4,
+                LoadFilterAvatarIfNeededAsync,
+                CancellationToken.None);
+        }
+        catch
+        {
+            // Uma falha de imagem não deve impedir o uso do filtro.
+        }
+    }
+
+    private async Task LoadFilterAvatarIfNeededAsync(
+        AccountCardViewModel card,
+        CancellationToken ct)
+    {
+        if (!card.TryBeginAvatarLoad())
+            return;
+
+        try
+        {
+            var account = card.Account;
+            string? localPath;
+
+            if (!string.IsNullOrWhiteSpace(account.CustomAvatarPath))
+            {
+                localPath = account.CustomAvatarPath;
+            }
+            else
+            {
+                var avatarUrlKey = $"avatar-url:{account.SteamId64}";
+                var avatarUrl = await imageCacheService.GetStringAsync(avatarUrlKey);
+
+                if (string.IsNullOrWhiteSpace(avatarUrl))
+                {
+                    var profileUrl =
+                        $"https://steamcommunity.com/profiles/{account.SteamId64}/?xml=1";
+                    var xml = await FilterAvatarHttp.GetStringAsync(profileUrl, ct);
+                    var match = AvatarUrlRegex.Match(xml);
+
+                    if (!match.Success)
+                        return;
+
+                    avatarUrl = match.Groups[1].Value;
+                    var expiryDays = account.IsActive
+                        ? 1
+                        : Math.Max(1, settingsService.Current.AvatarCacheExpiryDays);
+
+                    await imageCacheService.SetStringAsync(
+                        avatarUrlKey,
+                        avatarUrl,
+                        TimeSpan.FromDays(expiryDays));
+                }
+
+                localPath = await imageCacheService.GetCachedPathAsync(avatarUrl, ct);
+            }
+
+            if (string.IsNullOrWhiteSpace(localPath))
+                return;
+
+            var avatar = await Helpers.ImageLoader.LoadAvatarAsync(localPath);
+            if (avatar is null)
+                return;
+
+            RunOnUi(() =>
+            {
+                card.AvatarPath = localPath;
+                card.AvatarImage = avatar;
+            });
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // A fila foi cancelada durante o fechamento do aplicativo.
+        }
+        catch
+        {
+            // Mantém o ícone de fallback para perfis indisponíveis.
+        }
     }
 
     private async Task RetryMissingCoversAsync()
@@ -291,12 +463,54 @@ public partial class GamesViewModel(
 
     private async Task LoadGameDataAsync(GameCardViewModel card, CancellationToken ct)
     {
+        while (!ct.IsCancellationRequested)
+        {
+            var candidate = new Lazy<Task>(
+                () => LoadGameDataCoreAsync(card, ct),
+                LazyThreadSafetyMode.ExecutionAndPublication);
+            var active = _activeCoverLoads.GetOrAdd(card.Game.AppId, candidate);
+
+            try
+            {
+                await active.Value.WaitAsync(ct);
+                return;
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                // A operação compartilhada pertencia à página anterior. Remove
+                // a entrada concluída e repete usando o token da página atual.
+            }
+            finally
+            {
+                if (active.IsValueCreated && active.Value.IsCompleted)
+                {
+                    _activeCoverLoads.TryRemove(
+                        new KeyValuePair<string, Lazy<Task>>(card.Game.AppId, active));
+                }
+            }
+
+            await Task.Yield();
+        }
+    }
+
+    private async Task LoadGameDataCoreAsync(GameCardViewModel card, CancellationToken ct)
+    {
         // Limita concorrência: múltiplos cards sem capa não disparam todas
         // as HTTPs de uma vez.
         await _coverLoadGate.WaitAsync(ct);
+        RunOnUi(() => card.IsCoverLoading = true);
 
         try
         {
+            // Ao retornar para uma página, reutiliza o caminho já resolvido sem
+            // repetir consultas de rede ou de cache persistente.
+            if (!string.IsNullOrEmpty(card.CoverPath) && File.Exists(card.CoverPath))
+            {
+                var knownImg = await Helpers.ImageLoader.LoadCoverAsync(card.CoverPath);
+                RunOnUi(() => card.CoverImage = knownImg);
+                return;
+            }
+
             // Capa manual tem precedencia sobre cache e SteamGridDB.
             if (!string.IsNullOrEmpty(card.Game.ManualCoverPath)
                 && File.Exists(card.Game.ManualCoverPath))
@@ -315,12 +529,20 @@ public partial class GamesViewModel(
             var steamUrl = $"https://cdn.akamai.steamstatic.com/steam/apps/{card.Game.AppId}/library_600x900.jpg";
             var localPath = await imageCacheService.GetCachedPathAsync(steamUrl, ct);
 
+            // O download pode ter sido cancelado porque o usuário mudou de
+            // página, filtro ou busca. Nesse caso não marca a capa como ausente.
+            if (ct.IsCancellationRequested)
+                return;
+
             if (string.IsNullOrEmpty(localPath))
             {
                 var sgdbKey = settingsService.Current.SteamGridDbApiKey;
                 if (!string.IsNullOrEmpty(sgdbKey))
                     localPath = await FetchSteamGridDbCoverAsync(card.Game.AppId, sgdbKey, ct);
             }
+
+            if (ct.IsCancellationRequested)
+                return;
 
             if (string.IsNullOrEmpty(localPath))
             {
@@ -337,6 +559,7 @@ public partial class GamesViewModel(
         }
         finally
         {
+            RunOnUi(() => card.IsCoverLoading = false);
             _coverLoadGate.Release();
         }
     }
@@ -374,6 +597,7 @@ public partial class GamesViewModel(
         cardVm.Game.OwnerAccount = dialog.SelectedAccount;
         cardVm.Game.OwnerSteamId64 = dialog.SelectedAccount.SteamId64;
         cardVm.Game.LoginStateOverride = dialog.SelectedLoginState;
+        _savedOwners[cardVm.Game.AppId] = dialog.SelectedAccount.SteamId64;
         cardVm.OnOwnerChanged();
 
         await PersistGameOwnerAsync(
@@ -459,25 +683,23 @@ public partial class GamesViewModel(
     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
     "SteamSwitcher", "game_owners.json");
 
+    private static readonly string _favoriteGamesPath = System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "SteamSwitcher", "favorite_games.json");
+
+    private static async Task<HashSet<string>> LoadFavoriteGameIdsAsync()
+    {
+        return await AtomicJsonFile.ReadAsync(
+            _favoriteGamesPath,
+            static () => new HashSet<string>(StringComparer.Ordinal));
+    }
+
     private static async Task PersistGameOwnerAsync(string appId, string steamId64)
     {
-        Dictionary<string, string> map;
-        try
-        {
-            if (File.Exists(_gameOwnersPath))
-            {
-                var raw = await File.ReadAllTextAsync(_gameOwnersPath);
-                map = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(raw) ?? [];
-            }
-            else map = [];
-        }
-        catch { map = []; }
-
-        map[appId] = steamId64;
-        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_gameOwnersPath)!);
-        await File.WriteAllTextAsync(_gameOwnersPath,
-            System.Text.Json.JsonSerializer.Serialize(map,
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        await AtomicJsonFile.UpdateAsync(
+            _gameOwnersPath,
+            static () => new Dictionary<string, string>(),
+            map => map[appId] = steamId64);
     }
 
     private static void RunOnUi(Action action)
@@ -489,34 +711,129 @@ public partial class GamesViewModel(
             dispatcher.Invoke(action);
     }
 
-    private static async Task<Dictionary<string, string>> LoadGameOwnersAsync()
+    private void StartLibraryWatchers()
+    {
+        var watchedDirectories = _libraryWatchers
+            .Select(watcher => watcher.Path)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var directory in gameService.GetLibraryManifestDirectories())
+        {
+            if (watchedDirectories.Contains(directory)) continue;
+
+            try
+            {
+                var watcher = new FileSystemWatcher(directory, "appmanifest_*.acf")
+                {
+                    NotifyFilter = NotifyFilters.FileName
+                        | NotifyFilters.LastWrite
+                        | NotifyFilters.Size,
+                    IncludeSubdirectories = false,
+                    EnableRaisingEvents = true
+                };
+                watcher.Created += OnLibraryManifestChanged;
+                watcher.Changed += OnLibraryManifestChanged;
+                watcher.Deleted += OnLibraryManifestChanged;
+                watcher.Renamed += OnLibraryManifestChanged;
+                _libraryWatchers.Add(watcher);
+            }
+            catch
+            {
+                // Uma biblioteca removível ou de rede pode estar indisponível.
+            }
+        }
+    }
+
+    private void OnLibraryManifestChanged(object sender, FileSystemEventArgs e)
+    {
+        var nextCts = new CancellationTokenSource();
+        var previousCts = Interlocked.Exchange(
+            ref _libraryRefreshDebounceCts,
+            nextCts);
+        previousCts?.Cancel();
+        previousCts?.Dispose();
+        _ = RefreshLibraryDebouncedAsync(nextCts.Token);
+    }
+
+    private async Task RefreshLibraryDebouncedAsync(CancellationToken ct)
     {
         try
         {
-            if (!File.Exists(_gameOwnersPath)) return [];
-            var raw = await File.ReadAllTextAsync(_gameOwnersPath);
-            return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(raw) ?? [];
+            await Task.Delay(TimeSpan.FromSeconds(1), ct);
+            await _libraryRefreshGate.WaitAsync(ct);
+            try
+            {
+                var rawGames = await gameService.GetInstalledGamesAsync(_allAccounts, ct);
+                RunOnUi(() => ApplyLibrarySnapshot(rawGames));
+            }
+            finally
+            {
+                _libraryRefreshGate.Release();
+            }
         }
-        catch { return []; }
+        catch (OperationCanceledException)
+        {
+            // Outro evento de manifest reiniciou o debounce.
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[GamesViewModel] Falha ao atualizar biblioteca: {ex.Message}");
+        }
+    }
+
+    private void ApplyLibrarySnapshot(IReadOnlyList<SteamGame> rawGames)
+    {
+        var existing = _allGames.ToDictionary(
+            card => card.Game.AppId,
+            StringComparer.Ordinal);
+        var updated = new List<GameCardViewModel>(rawGames.Count);
+
+        foreach (var game in rawGames)
+        {
+            if (_savedOwners.TryGetValue(game.AppId, out var savedId))
+            {
+                var owner = _allAccounts.FirstOrDefault(account =>
+                    account.SteamId64 == savedId);
+                if (owner is not null)
+                {
+                    game.OwnerAccount = owner;
+                    game.OwnerSteamId64 = savedId;
+                }
+            }
+
+            if (existing.TryGetValue(game.AppId, out var card))
+            {
+                card.ApplySnapshot(game);
+                updated.Add(card);
+            }
+            else
+            {
+                updated.Add(new GameCardViewModel(
+                    game,
+                    _favoriteGameIds.Contains(game.AppId)));
+            }
+        }
+
+        _allGames = updated;
+        ApplyFilters(resetPage: false);
+        StartLibraryWatchers();
+    }
+
+    private static async Task<Dictionary<string, string>> LoadGameOwnersAsync()
+    {
+        return await AtomicJsonFile.ReadAsync(
+            _gameOwnersPath,
+            static () => new Dictionary<string, string>());
     }
 
     private void ApplyFilters(bool resetPage = true)
     {
-        var filtered = _allGames.AsEnumerable();
-
-        if (!string.IsNullOrEmpty(SelectedFilterAccount?.SteamId64))
-        {
-            filtered = filtered.Where(game =>
-                game.Game.OwnerSteamId64 == SelectedFilterAccount.SteamId64);
-        }
-
-        if (!string.IsNullOrWhiteSpace(SearchText))
-        {
-            filtered = filtered.Where(game =>
-                game.Game.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
-        }
-
-        _filteredGames = filtered.ToList();
+        _filteredGames = Helpers.GameLibraryProjection.FilterAndSort(
+            _allGames,
+            SelectedFilterAccount?.SteamId64,
+            SearchText,
+            GameSortMode);
 
         if (resetPage)
             CurrentPage = 1;
@@ -525,16 +842,113 @@ public partial class GamesViewModel(
             CurrentPage = TotalPages;
 
         UpdateVisiblePage();
+        NotifyEmptyStates();
+    }
+
+    [RelayCommand]
+    private void ClearGameFilters()
+    {
+        SearchText = string.Empty;
+        SelectedFilterAccount = FilterAccounts.FirstOrDefault();
+        ApplyFilters();
+    }
+
+    [RelayCommand]
+    private async Task ToggleGameFavoriteAsync(GameCardViewModel card)
+    {
+        card.IsFavorite = !card.IsFavorite;
+        if (card.IsFavorite)
+            _favoriteGameIds.Add(card.Game.AppId);
+        else
+            _favoriteGameIds.Remove(card.Game.AppId);
+
+        await AtomicJsonFile.UpdateAsync(
+            _favoriteGamesPath,
+            static () => new HashSet<string>(StringComparer.Ordinal),
+            favorites =>
+            {
+                if (card.IsFavorite)
+                    favorites.Add(card.Game.AppId);
+                else
+                    favorites.Remove(card.Game.AppId);
+            });
+
+        ApplyFilters(resetPage: false);
+    }
+
+    [RelayCommand]
+    private async Task SortGamesAlphabeticallyAsync() =>
+        await SetGameSortModeAsync(GameSortMode.Alphabetical);
+
+    [RelayCommand]
+    private async Task SortGamesByMostPlayedAsync() =>
+        await SetGameSortModeAsync(GameSortMode.MostPlayed);
+
+    [RelayCommand]
+    private async Task SortGamesByLargestSizeAsync() =>
+        await SetGameSortModeAsync(GameSortMode.LargestSize);
+
+    private async Task SetGameSortModeAsync(GameSortMode mode)
+    {
+        if (GameSortMode == mode) return;
+
+        settingsService.Current.GameSortMode = mode;
+        OnPropertyChanged(nameof(GameSortMode));
+        OnPropertyChanged(nameof(GameSortLabel));
+        OnPropertyChanged(nameof(IsAlphabeticalGameSort));
+        OnPropertyChanged(nameof(IsMostPlayedGameSort));
+        OnPropertyChanged(nameof(IsLargestSizeGameSort));
+        ApplyFilters();
+        await settingsService.SaveAsync(settingsService.Current);
+    }
+
+    [RelayCommand]
+    private async Task ShowGameGridViewAsync() =>
+        await SetGameViewModeAsync(GameViewMode.Grid);
+
+    [RelayCommand]
+    private async Task ShowGameCompactViewAsync() =>
+        await SetGameViewModeAsync(GameViewMode.Compact);
+
+    private async Task SetGameViewModeAsync(GameViewMode mode)
+    {
+        if (GameViewMode == mode) return;
+
+        settingsService.Current.GameViewMode = mode;
+        OnPropertyChanged(nameof(GameViewMode));
+        OnPropertyChanged(nameof(IsGameGridView));
+        OnPropertyChanged(nameof(IsGameCompactView));
+        OnPropertyChanged(nameof(IsGameGridContentVisible));
+        OnPropertyChanged(nameof(IsGameCompactContentVisible));
+        await settingsService.SaveAsync(settingsService.Current);
+    }
+
+    private void NotifyEmptyStates()
+    {
+        OnPropertyChanged(nameof(HasNoInstalledGames));
+        OnPropertyChanged(nameof(HasNoFilterResults));
+        OnPropertyChanged(nameof(HasFilteredGames));
+        OnPropertyChanged(nameof(IsGameGridContentVisible));
+        OnPropertyChanged(nameof(IsGameCompactContentVisible));
     }
 
     private void UpdateVisiblePage()
     {
-        var skippedItems = (CurrentPage - 1) * GamesPerPage;
+        var nextPage = Helpers.GameLibraryProjection.GetPage(
+            _filteredGames,
+            CurrentPage,
+            GamesPerPage);
+        var nextCards = nextPage.ToHashSet();
 
-        Games = new ObservableCollection<GameCardViewModel>(
-            _filteredGames
-                .Skip(skippedItems)
-                .Take(GamesPerPage));
+        // As imagens fora da página deixam de ser referenciadas pela VM. O cache
+        // LRU mantém apenas as capas visitadas mais recentemente.
+        foreach (var oldCard in Games)
+        {
+            if (!nextCards.Contains(oldCard))
+                oldCard.CoverImage = null;
+        }
+
+        Games = new ObservableCollection<GameCardViewModel>(nextPage);
 
         OnPropertyChanged(nameof(TotalPages));
         OnPropertyChanged(nameof(CanGoPreviousPage));
@@ -550,10 +964,33 @@ public partial class GamesViewModel(
 
     private void KickoffMissingCoverLoads(IEnumerable<GameCardViewModel> cards)
     {
-        foreach (var card in cards)
+        var pending = cards
+            .Where(card => card.CoverImage is null && !card.CoverMissing)
+            .ToList();
+
+        var nextCts = new CancellationTokenSource();
+        var previousCts = Interlocked.Exchange(ref _visibleCoverLoadCts, nextCts);
+        previousCts?.Cancel();
+        previousCts?.Dispose();
+
+        _ = LoadVisibleCoversAsync(pending, nextCts.Token);
+    }
+
+    private async Task LoadVisibleCoversAsync(
+        IReadOnlyList<GameCardViewModel> cards,
+        CancellationToken ct)
+    {
+        try
         {
-            if (string.IsNullOrEmpty(card.CoverPath) && !card.CoverMissing)
-                _ = LoadGameDataAsync(card, CancellationToken.None);
+            await Helpers.BoundedWorkQueue.RunAsync(
+                cards,
+                workerCount: 6,
+                LoadGameDataAsync,
+                ct);
+        }
+        catch (OperationCanceledException)
+        {
+            // Esperado quando busca, filtro ou paginação troca a página visível.
         }
     }
 
@@ -573,14 +1010,8 @@ public partial class GamesViewModel(
 
     public void RefreshStatusBar()
     {
-        var running = _allGames.Count(game => game.IsRunning);
         var total = _filteredGames.Count;
-
-        var left = running > 0
-            ? $"{total} jogos · {running} em execução"
-            : $"{total} jogos";
-
-        mainViewModel.UpdateStatusBar(left, showLoginToggle: true);
+        mainViewModel.UpdateStatusBar($"{total} jogos", showLoginToggle: true);
     }
 
     [RelayCommand]
@@ -617,10 +1048,16 @@ public partial class GamesViewModel(
             cardVm.Game.OwnerAccount = dialog.SelectedAccount;
             cardVm.Game.OwnerSteamId64 = dialog.SelectedAccount.SteamId64;
             cardVm.Game.LoginStateOverride = dialog.SelectedLoginState;
+            _savedOwners[cardVm.Game.AppId] = dialog.SelectedAccount.SteamId64;
             cardVm.OnOwnerChanged();
 
-            _ = PersistGameOwnerAsync(cardVm.Game.AppId, dialog.SelectedAccount.SteamId64);
-            _ = gameService.SetGameLoginStateAsync(cardVm.Game.AppId, dialog.SelectedLoginState);
+            await Task.WhenAll(
+                PersistGameOwnerAsync(
+                    cardVm.Game.AppId,
+                    dialog.SelectedAccount.SteamId64),
+                gameService.SetGameLoginStateAsync(
+                    cardVm.Game.AppId,
+                    dialog.SelectedLoginState));
 
             snackbarService.Show(
                 "Conta associada",
@@ -632,10 +1069,22 @@ public partial class GamesViewModel(
             return;
         }
 
+        if (Interlocked.CompareExchange(ref _launchOperationActive, 1, 0) != 0)
+        {
+            snackbarService.Show(
+                "Lançamento em andamento",
+                "Aguarde o jogo atual terminar de ser preparado.",
+                ControlAppearance.Caution,
+                null,
+                TimeSpan.FromSeconds(3));
+            return;
+        }
+
         cardVm.IsLaunching = true;
+        IsGameLaunchInProgress = true;
         snackbarService.Show(
             "Iniciando jogo",
-            $"Trocando para {account.DisplayName} e abrindo {cardVm.Game.Name}...",
+            $"Preparando {cardVm.Game.Name} com {account.DisplayName}...",
             ControlAppearance.Secondary,
             null,
             TimeSpan.FromSeconds(5));
@@ -662,25 +1111,8 @@ public partial class GamesViewModel(
         finally
         {
             cardVm.IsLaunching = false;
+            IsGameLaunchInProgress = false;
+            Volatile.Write(ref _launchOperationActive, 0);
         }
-    }
-    private void OnGameStateChanged(object? sender, GameStateChangedEventArgs e)
-    {
-        var card = _allGames.FirstOrDefault(c => c.Game.AppId == e.AppId);
-        if (card is null) return;
-
-        // Atualiza na UI thread
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
-        {
-            card.IsRunning = e.IsRunning;
-            RefreshStatusBar();
-        });
-    }
-
-    /// <summary>Chamado pela GamesPage quando a página entra/sai de foco.</summary>
-    public void SetPollingActive(bool active)
-    {
-        if (active) gameProcessService.Resume();
-        else gameProcessService.Pause();
     }
 }
