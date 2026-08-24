@@ -169,6 +169,12 @@ Encontrou um erro ou tem uma sugestão? Abra uma [issue](https://github.com/flav
 
 Pull requests são bem-vindos. Antes de enviar uma alteração, compile a solução e execute os testes.
 
+## 📄 Licença
+
+O SteamNexus é disponibilizado sob a [licença MIT](LICENSE). Você pode usar,
+modificar e distribuir o projeto, desde que preserve o aviso de copyright e os
+termos da licença.
+
 ## 🗺️ Próximos passos
 
 - Expandir a cobertura de testes automatizados.
