@@ -5,6 +5,7 @@ using SteamSwitcher.Core;
 using SteamSwitcher.Core.Extensions;
 using SteamSwitcher.Core.Services;
 using SteamSwitcher.Services.Updates;
+using SteamSwitcher.Services.Notifications;
 using SteamSwitcher.ViewModels;
 using SteamSwitcher.Views;
 using SteamSwitcher.Views.Onboarding;
@@ -179,7 +180,7 @@ public partial class App : Application
 
         // WPF-UI
         services.AddSingleton<IThemeService, ThemeService>();
-        services.AddSingleton<ISnackbarService, SnackbarService>();
+        services.AddSingleton<ISnackbarService, ModernSnackbarService>();
         services.AddSingleton<IContentDialogService, ContentDialogService>();
         services.AddNavigationViewPageProvider();
         services.AddSingleton<IUpdateService, VelopackUpdateService>();
