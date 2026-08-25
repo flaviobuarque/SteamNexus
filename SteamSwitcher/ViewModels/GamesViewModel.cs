@@ -366,6 +366,19 @@ public partial class GamesViewModel(
                 card.AvatarPath = localPath;
                 card.AvatarImage = avatar;
             });
+
+        if (!WeakReferenceMessenger.Default.IsRegistered<SteamInstallationChanged>(this))
+            WeakReferenceMessenger.Default.Register<SteamInstallationChanged>(this, async (_, _) =>
+            {
+                _visibleCoverLoadCts?.Cancel();
+                _gameSearchDebounceCts?.Cancel();
+                _accountSearchDebounceCts?.Cancel();
+                _initialized = false;
+                await Application.Current.Dispatcher
+                    .InvokeAsync(() => InitializeAsync())
+                    .Task
+                    .Unwrap();
+            });
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

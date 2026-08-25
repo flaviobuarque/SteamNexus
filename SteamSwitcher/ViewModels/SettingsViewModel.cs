@@ -220,6 +220,7 @@ public partial class SettingsViewModel(
         {
             await installationService.SelectAsync(installation.Id);
             RefreshSteamInstallations();
+            WeakReferenceMessenger.Default.Send(new SteamInstallationChanged());
             snackbarService.Show("Instalação alterada", installation.RootPath,
                 ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
         }
@@ -247,6 +248,7 @@ public partial class SettingsViewModel(
         {
             await installationService.AddCustomPathAsync(dialog.FileName);
             RefreshSteamInstallations();
+            WeakReferenceMessenger.Default.Send(new SteamInstallationChanged());
             snackbarService.Show("Instalação adicionada", dialog.FileName,
                 ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
         }
@@ -278,6 +280,7 @@ public partial class SettingsViewModel(
         if (SelectedSteamInstallation is not { IsCustom: true } installation) return;
         await installationService.RemoveCustomPathAsync(installation.Id);
         RefreshSteamInstallations();
+        WeakReferenceMessenger.Default.Send(new SteamInstallationChanged());
     }
 
     [RelayCommand]

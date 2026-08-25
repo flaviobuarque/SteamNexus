@@ -38,6 +38,16 @@ public partial class AccountsPage : Page,
                         .Unwrap();
                 });
 
+            WeakReferenceMessenger.Default.Register<SteamInstallationChanged>(
+                this,
+                async (_, _) =>
+                {
+                    await Application.Current.Dispatcher
+                        .InvokeAsync(() => ViewModel.InitializeAsync())
+                        .Task
+                        .Unwrap();
+                });
+
             _messengerRegistered = true;
         }
 
@@ -53,6 +63,7 @@ public partial class AccountsPage : Page,
     private void Page_Unloaded(object sender, RoutedEventArgs e)
     {
         WeakReferenceMessenger.Default.Unregister<CacheCleared>(this);
+        WeakReferenceMessenger.Default.Unregister<SteamInstallationChanged>(this);
         _messengerRegistered = false;
     }
 

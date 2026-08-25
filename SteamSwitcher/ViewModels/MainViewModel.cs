@@ -113,6 +113,17 @@ public partial class MainViewModel(
             });
         }
 
+        if (!WeakReferenceMessenger.Default.IsRegistered<SteamInstallationChanged>(this))
+        {
+            WeakReferenceMessenger.Default.Register<SteamInstallationChanged>(this, async (_, _) =>
+            {
+                await Application.Current.Dispatcher
+                    .InvokeAsync(() => InitializeAsync())
+                    .Task
+                    .Unwrap();
+            });
+        }
+
         try
         {
             var snapshot = await accountService.GetSnapshotAsync(ct);

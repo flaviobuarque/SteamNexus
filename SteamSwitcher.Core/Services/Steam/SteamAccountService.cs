@@ -16,11 +16,19 @@ public class SteamAccountService(
     private readonly SemaphoreSlim _snapshotGate = new(1, 1);
     private readonly SemaphoreSlim _steamMutationGate = new(1, 1);
     private SteamAccountsSnapshot? _cachedSnapshot;
+    private string? _cachedInstallationId;
     private long _cachedVdfLength = -1;
     private long _cachedVdfWriteTicks = -1;
 
     public async Task<SteamAccountsSnapshot> GetSnapshotAsync(CancellationToken ct = default)
     {
+        var installationId = installationService.SelectedInstallation?.Id;
+        if (!string.Equals(_cachedInstallationId, installationId, StringComparison.Ordinal))
+        {
+            InvalidateSnapshot();
+            _cachedInstallationId = installationId;
+        }
+
         if (string.IsNullOrEmpty(SteamPath))
         {
             logger.LogWarning("Steam não encontrado");
