@@ -147,6 +147,63 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="300" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
+                                <TextBlock Text="Instalação controlada" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                <TextBlock Text="Contas, jogos e trocas usam somente esta instalação."
+                                           FontSize="12" Margin="0,3,0,0"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                            </StackPanel>
+                            <ComboBox Grid.Column="1"
+                                      ItemsSource="{Binding SteamInstallations}"
+                                      SelectedItem="{Binding SelectedSteamInstallation, Mode=TwoWay}"
+                                      MinHeight="40" Padding="10,6">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding RootPath}" FontSize="11" Opacity="0.7"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource TileMiddleStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SelectedSteamInstallation.StatusText, TargetNullValue=Nenhuma instalação encontrada}"
+                                           FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                <TextBlock Text="{Binding SelectedSteamInstallation.RootPath}"
+                                           FontSize="12" Margin="0,3,20,0" TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <ui:Button Command="{Binding BrowseSteamInstallationCommand}" Padding="12,8" Margin="0,0,8,0">
+                                    <ic:SymbolIcon Symbol="FolderAdd" FontSize="15" />
+                                </ui:Button>
+                                <ui:Button Command="{Binding OpenSteamInstallationFolderCommand}" Padding="12,8" Margin="0,0,8,0">
+                                    <ic:SymbolIcon Symbol="FolderOpen" FontSize="15" />
+                                </ui:Button>
+                                <ui:Button Command="{Binding DetectSteamInstallationsCommand}" Padding="12,8">
+                                    <ic:SymbolIcon Symbol="ArrowSync" FontSize="15" />
+                                </ui:Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource TileMiddleStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Center">

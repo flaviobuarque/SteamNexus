@@ -6,6 +6,7 @@ using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
 using SteamSwitcher.Services.Updates;
 using System.Diagnostics;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -20,6 +21,7 @@ public partial class SettingsViewModel(
     IImageCacheService imageCacheService,
     ISteamAccountService accountService,
     IAccountOverrideService accountOverrideService,
+    ISteamInstallationService installationService,
     IUpdateService updateService,
     ISnackbarService snackbarService,
     MainViewModel mainViewModel) : ObservableObject
@@ -44,6 +46,8 @@ public partial class SettingsViewModel(
     [ObservableProperty] private string _hotkeyDisplayText = "Nenhum atalho definido";
     [ObservableProperty] private string _hotkeyCaptureHint = string.Empty;
     [ObservableProperty] private bool _isCleaningOldAccounts;
+    [ObservableProperty] private ObservableCollection<SteamInstallation> _steamInstallations = [];
+    [ObservableProperty] private SteamInstallation? _selectedSteamInstallation;
 
     private readonly HashSet<Key> _pressedHotkeyKeys = [];
     private Key _capturedMainKey = Key.None;
@@ -61,6 +65,12 @@ public partial class SettingsViewModel(
     partial void OnStartWithWindowsChanged(bool value) => CheckDirty();
     partial void OnSteamApiKeyChanged(string value) => CheckDirty();
     partial void OnSteamGridDbApiKeyChanged(string value) => CheckDirty();
+    partial void OnSelectedSteamInstallationChanged(SteamInstallation? value)
+    {
+        if (_initializing || value is null || value.Id == installationService.SelectedInstallation?.Id)
+            return;
+        _ = SelectSteamInstallationAsync(value);
+    }
 
     private bool _initializing;
 
@@ -100,6 +110,7 @@ public partial class SettingsViewModel(
         GlobalHotkey = s.GlobalHotkey;
         HotkeyDisplayText = s.GlobalHotkey?.DisplayText ?? "Nenhum atalho definido";
         HotkeyCaptureHint = string.Empty;
+        RefreshSteamInstallations();
         HasUnsavedChanges = false;
         _initializing = false;
         RefreshStatusBar();
@@ -193,6 +204,80 @@ public partial class SettingsViewModel(
             ControlAppearance.Success,
             null,
             TimeSpan.FromSeconds(3));
+    }
+
+    private void RefreshSteamInstallations()
+    {
+        SteamInstallations = new ObservableCollection<SteamInstallation>(
+            installationService.Installations);
+        SelectedSteamInstallation = SteamInstallations.FirstOrDefault(i =>
+            i.Id == installationService.SelectedInstallation?.Id);
+    }
+
+    private async Task SelectSteamInstallationAsync(SteamInstallation installation)
+    {
+        try
+        {
+            await installationService.SelectAsync(installation.Id);
+            RefreshSteamInstallations();
+            snackbarService.Show("Instalação alterada", installation.RootPath,
+                ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
+        }
+        catch (Exception ex)
+        {
+            RefreshSteamInstallations();
+            snackbarService.Show("Não foi possível alterar a Steam", ex.Message,
+                ControlAppearance.Danger, null, TimeSpan.FromSeconds(5));
+        }
+    }
+
+    [RelayCommand]
+    private async Task BrowseSteamInstallationAsync()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Selecione o Steam.exe",
+            Filter = "Steam (Steam.exe)|Steam.exe|Executáveis (*.exe)|*.exe",
+            CheckFileExists = true,
+            Multiselect = false,
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            await installationService.AddCustomPathAsync(dialog.FileName);
+            RefreshSteamInstallations();
+            snackbarService.Show("Instalação adicionada", dialog.FileName,
+                ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
+        }
+        catch (Exception ex)
+        {
+            snackbarService.Show("Instalação inválida", ex.Message,
+                ControlAppearance.Danger, null, TimeSpan.FromSeconds(5));
+        }
+    }
+
+    [RelayCommand]
+    private async Task DetectSteamInstallationsAsync()
+    {
+        await installationService.DiscoverAsync();
+        RefreshSteamInstallations();
+    }
+
+    [RelayCommand]
+    private void OpenSteamInstallationFolder()
+    {
+        var path = SelectedSteamInstallation?.RootPath;
+        if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) return;
+        Process.Start(new ProcessStartInfo("explorer.exe", $"\"{path}\"") { UseShellExecute = true });
+    }
+
+    [RelayCommand]
+    private async Task RemoveSteamInstallationAsync()
+    {
+        if (SelectedSteamInstallation is not { IsCustom: true } installation) return;
+        await installationService.RemoveCustomPathAsync(installation.Id);
+        RefreshSteamInstallations();
     }
 
     [RelayCommand]
@@ -345,6 +430,7 @@ public partial class SettingsViewModel(
                 ? (string.IsNullOrWhiteSpace(SteamApiKey) ? null : SteamApiKey)
                 : null,
             SteamInstallPath = current.SteamInstallPath,
+            KnownSteamInstallPaths = [.. current.KnownSteamInstallPaths],
             AvatarCacheExpiryDays = current.AvatarCacheExpiryDays,
             CoverCacheExpiryDays = current.CoverCacheExpiryDays,
             SteamGridDbApiKey = string.IsNullOrWhiteSpace(SteamGridDbApiKey) ? null : SteamGridDbApiKey,
