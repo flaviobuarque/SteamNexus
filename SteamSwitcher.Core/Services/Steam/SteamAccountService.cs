@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SteamSwitcher.Core.Models;
 using System.Diagnostics;
@@ -8,10 +8,11 @@ namespace SteamSwitcher.Core.Services;
 
 public class SteamAccountService(
     ISteamLocatorService locator,
+    ISteamInstallationService installationService,
     IAppSettingsService settingsService,
     ILogger<SteamAccountService> logger) : ISteamAccountService
 {
-    private readonly string _steamPath = locator.FindSteamInstallPath() ?? string.Empty;
+    private string SteamPath => installationService.SelectedInstallation?.RootPath ?? string.Empty;
     private readonly SemaphoreSlim _snapshotGate = new(1, 1);
     private readonly SemaphoreSlim _steamMutationGate = new(1, 1);
     private SteamAccountsSnapshot? _cachedSnapshot;
@@ -20,13 +21,13 @@ public class SteamAccountService(
 
     public async Task<SteamAccountsSnapshot> GetSnapshotAsync(CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(_steamPath))
+        if (string.IsNullOrEmpty(SteamPath))
         {
             logger.LogWarning("Steam não encontrado");
             return SteamAccountsSnapshot.Empty;
         }
 
-        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
         if (!File.Exists(vdfPath))
         {
             logger.LogWarning("loginusers.vdf não encontrado em {Path}", vdfPath);
@@ -188,14 +189,14 @@ public class SteamAccountService(
     {
         ct.ThrowIfCancellationRequested();
 
-        if (string.IsNullOrWhiteSpace(_steamPath) || !Directory.Exists(_steamPath))
+        if (string.IsNullOrWhiteSpace(SteamPath) || !Directory.Exists(SteamPath))
             throw new InvalidOperationException("A instalação da Steam não foi encontrada.");
 
-        var steamExe = locator.GetSteamExePath(_steamPath);
+        var steamExe = locator.GetSteamExePath(SteamPath);
         if (!File.Exists(steamExe))
             throw new FileNotFoundException("O executável da Steam não foi encontrado.", steamExe);
 
-        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
         if (!File.Exists(vdfPath))
             throw new FileNotFoundException("O arquivo loginusers.vdf não foi encontrado.", vdfPath);
 
@@ -281,10 +282,10 @@ public class SteamAccountService(
         SteamAccount account,
         CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(_steamPath))
+        if (string.IsNullOrEmpty(SteamPath))
             throw new InvalidOperationException("Steam não encontrada.");
 
-        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
         if (!File.Exists(vdfPath))
             throw new FileNotFoundException("loginusers.vdf não encontrado.", vdfPath);
 
@@ -379,10 +380,10 @@ public class SteamAccountService(
         CancellationToken ct)
     {
         if (steamIds64.Count == 0) return [];
-        if (string.IsNullOrEmpty(_steamPath))
+        if (string.IsNullOrEmpty(SteamPath))
             throw new InvalidOperationException("Steam não encontrada.");
 
-        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
         if (!File.Exists(vdfPath))
             throw new FileNotFoundException("loginusers.vdf não encontrado.", vdfPath);
 
@@ -537,7 +538,7 @@ public class SteamAccountService(
             method, initialProcesses.Count);
         DisposeProcesses(initialProcesses);
 
-        var steamExe = locator.GetSteamExePath(_steamPath);
+        var steamExe = locator.GetSteamExePath(SteamPath);
         if (method == SteamCloseMethod.Graceful && File.Exists(steamExe))
         {
             try
@@ -546,7 +547,7 @@ public class SteamAccountService(
                 {
                     FileName = steamExe,
                     Arguments = "-shutdown",
-                    WorkingDirectory = _steamPath,
+                    WorkingDirectory = SteamPath,
                     UseShellExecute = false,
                     CreateNoWindow = true,
                 });
@@ -655,7 +656,7 @@ public class SteamAccountService(
 
     private async Task WaitForVdfReleaseAsync(CancellationToken ct)
     {
-        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
         var deadline = DateTime.UtcNow.AddSeconds(5);
         Exception? lastError = null;
 
@@ -687,7 +688,7 @@ public class SteamAccountService(
     {
         return await Task.Run(() =>
         {
-            var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+            var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
             var originalVdf = File.ReadAllBytes(vdfPath);
             var previousAutoLoginUser = Registry.GetValue(
                 @"HKEY_CURRENT_USER\Software\Valve\Steam",
@@ -800,7 +801,7 @@ public class SteamAccountService(
         bool validateRegistry,
         CancellationToken ct)
     {
-        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
         SteamAccountsSnapshot? snapshot = null;
         Exception? lastError = null;
 
@@ -875,7 +876,7 @@ public class SteamAccountService(
 
     private async Task StartSteamAsync(AppSettings settings, LoginState? state, CancellationToken ct)
     {
-        var steamExe = locator.GetSteamExePath(_steamPath);
+        var steamExe = locator.GetSteamExePath(SteamPath);
         if (!File.Exists(steamExe)) return;
 
         var args = new List<string>();
@@ -939,7 +940,7 @@ public class SteamAccountService(
             RegistryValueKind.DWord);
 
         // 3. Abre Steam sem argumentos (cai na tela de login)
-        var steamExe = locator.GetSteamExePath(_steamPath);
+        var steamExe = locator.GetSteamExePath(SteamPath);
         if (!File.Exists(steamExe)) return;
 
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo

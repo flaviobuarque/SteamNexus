@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using SteamSwitcher.Core.Helpers;
 using SteamSwitcher.Core.Models;
 using ValveKeyValue;
@@ -7,11 +7,12 @@ namespace SteamSwitcher.Core.Services;
 
 public class SteamGameService(
     ISteamLocatorService locator,
+    ISteamInstallationService installationService,
     ISteamAccountService accountService,
     IAppSettingsService settingsService,
     ILogger<SteamGameService> logger) : ISteamGameService
 {
-    private readonly string _steamPath = locator.FindSteamInstallPath() ?? string.Empty;
+    private string SteamPath => installationService.SelectedInstallation?.RootPath ?? string.Empty;
     private readonly SemaphoreSlim _launchGate = new(1, 1);
 
     private static readonly string _gameLoginStatesPath = System.IO.Path.Combine(
@@ -37,7 +38,7 @@ public class SteamGameService(
         IReadOnlyList<SteamAccount> accounts,
         CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(_steamPath)) return [];
+        if (string.IsNullOrEmpty(SteamPath)) return [];
 
         return await Task.Run(async () =>
         {
@@ -67,7 +68,7 @@ public class SteamGameService(
             {
                 ct.ThrowIfCancellationRequested();
                 var localConfigPath = locator.GetLocalConfigVdfPath(
-                    _steamPath, ownerGroup.Key);
+                    SteamPath, ownerGroup.Key);
                 var playtimes = ReadPlaytimes(localConfigPath);
 
                 foreach (var game in ownerGroup)
@@ -280,9 +281,9 @@ public class SteamGameService(
 
     private List<string> GetLibraryPaths()
     {
-        var paths = new List<string> { _steamPath };
+        var paths = new List<string> { SteamPath };
 
-        var libraryFoldersVdf = locator.GetLibraryFoldersVdfPath(_steamPath);
+        var libraryFoldersVdf = locator.GetLibraryFoldersVdfPath(SteamPath);
         if (!File.Exists(libraryFoldersVdf)) return paths;
 
         try
