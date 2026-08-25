@@ -126,9 +126,23 @@ public class SteamAccountService(
             UpdateRegistry(account);
             LogSwitchPhase("registry-updated", operation, account.SteamId64);
 
+            await ValidateSwitchStateAsync(
+                account,
+                targetState ?? LoginState.Online,
+                validateRegistry: true,
+                ct);
+            LogSwitchPhase("state-validated", operation, account.SteamId64);
+
             // 4. Abre Steam
             await StartSteamAsync(settings, targetState, ct);
             LogSwitchPhase("steam-started", operation, account.SteamId64);
+
+            await ValidateSwitchStateAsync(
+                account,
+                targetState ?? LoginState.Online,
+                validateRegistry: false,
+                ct);
+            LogSwitchPhase("post-start-validated", operation, account.SteamId64);
         }
         catch
         {
@@ -136,6 +150,7 @@ public class SteamAccountService(
             {
                 try
                 {
+                    await CloseSteamAsync(SteamCloseMethod.Graceful, CancellationToken.None);
                     await RestoreSwitchBackupAsync(backup);
                     logger.LogWarning(
                         "Troca Steam revertida após falha. Target={Target}",
@@ -753,6 +768,85 @@ public class SteamAccountService(
             RegistryValueKind.DWord);
     }
 
+    private async Task ValidateSwitchStateAsync(
+        SteamAccount target,
+        LoginState state,
+        bool validateRegistry,
+        CancellationToken ct)
+    {
+        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        SteamAccountsSnapshot? snapshot = null;
+        Exception? lastError = null;
+
+        for (var attempt = 1; attempt <= 5; attempt++)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                await using var stream = new FileStream(
+                    vdfPath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete,
+                    bufferSize: 4096,
+                    useAsync: true);
+                snapshot = SteamAccountSnapshotParser.Parse(stream);
+                break;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                lastError = ex;
+                await Task.Delay(250, ct);
+            }
+        }
+
+        if (snapshot is null)
+            throw new IOException("Não foi possível validar o loginusers.vdf após a troca.", lastError);
+
+        var autoLoginAccounts = snapshot.Accounts.Where(a => a.AutoLogin).ToList();
+        var mostRecentAccounts = snapshot.Accounts.Where(a => a.MostRecent).ToList();
+        var selected = snapshot.Accounts.FirstOrDefault(a =>
+            string.Equals(a.SteamId64, target.SteamId64, StringComparison.Ordinal));
+
+        if (selected is null
+            || autoLoginAccounts.Count != 1
+            || mostRecentAccounts.Count != 1
+            || !string.Equals(autoLoginAccounts[0].SteamId64, target.SteamId64, StringComparison.Ordinal)
+            || !string.Equals(mostRecentAccounts[0].SteamId64, target.SteamId64, StringComparison.Ordinal)
+            || !selected.RememberPassword)
+        {
+            throw new InvalidDataException(
+                "A Steam não confirmou a conta selecionada no loginusers.vdf.");
+        }
+
+        var expectsOffline = state == LoginState.Offline;
+        if (selected.WantsOfflineMode != expectsOffline
+            || snapshot.Accounts.Any(a =>
+                a.SteamId64 != target.SteamId64 && a.WantsOfflineMode))
+        {
+            throw new InvalidDataException(
+                "O modo de entrada da conta não foi persistido corretamente.");
+        }
+
+        if (!validateRegistry) return;
+
+        var registryAccount = Registry.GetValue(
+            @"HKEY_CURRENT_USER\Software\Valve\Steam",
+            "AutoLoginUser",
+            null)?.ToString();
+        var rememberPassword = Registry.GetValue(
+            @"HKEY_CURRENT_USER\Software\Valve\Steam",
+            "RememberPassword",
+            null);
+
+        if (!string.Equals(registryAccount, target.AccountName, StringComparison.OrdinalIgnoreCase)
+            || Convert.ToInt32(rememberPassword ?? 0) != 1)
+        {
+            throw new InvalidDataException(
+                "O Registro da Steam não confirmou a conta selecionada.");
+        }
+    }
+
     private async Task StartSteamAsync(AppSettings settings, LoginState? state, CancellationToken ct)
     {
         var steamExe = locator.GetSteamExePath(_steamPath);
@@ -771,8 +865,21 @@ public class SteamAccountService(
             Verb = settings.StartAsAdmin ? "runas" : string.Empty,
         };
 
-        System.Diagnostics.Process.Start(psi);
-        await Task.Delay(1000, ct); // aguarda Steam inicializar
+        using var process = Process.Start(psi)
+            ?? throw new InvalidOperationException("A Steam não pôde ser iniciada.");
+        await Task.Delay(1500, ct);
+
+        try
+        {
+            if (process.HasExited)
+                throw new InvalidOperationException(
+                    "A Steam foi iniciada, mas encerrou antes de concluir a troca.");
+        }
+        catch (InvalidOperationException) when (Process.GetProcessesByName("steam").Length > 0)
+        {
+            // UseShellExecute pode entregar um processo intermediário enquanto a
+            // instância real da Steam já está em execução.
+        }
     }
 
     public async Task AddAccountAsync(CancellationToken ct = default)
