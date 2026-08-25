@@ -29,8 +29,8 @@ public static class SteamLoginUsersEditor
             foundTarget |= isTarget;
 
             SetString(user, "MostRecent", isTarget ? "1" : "0");
-            if (isTarget)
-                SetString(user, "RememberPassword", "1");
+            SetString(user, "AutoLogin", isTarget ? "1" : "0");
+            SetString(user, "RememberPassword", isTarget ? "1" : "0");
 
             SetString(user, "WantsOfflineMode", isTarget && wantsOffline ? "1" : "0");
             SetString(user, "SkipOfflineModeWarning", isTarget && wantsOffline ? "1" : "0");
