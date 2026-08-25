@@ -196,6 +196,10 @@
                                 <ui:Button Command="{Binding DetectSteamInstallationsCommand}" Padding="12,8">
                                     <ic:SymbolIcon Symbol="ArrowSync" FontSize="15" />
                                 </ui:Button>
+                                <ui:Button Command="{Binding RemoveSteamInstallationCommand}" Padding="12,8" Margin="8,0,0,0"
+                                           IsEnabled="{Binding SelectedSteamInstallation.IsCustom}">
+                                    <ic:SymbolIcon Symbol="Delete" FontSize="15" />
+                                </ui:Button>
                             </StackPanel>
                         </Grid>
                     </Border>

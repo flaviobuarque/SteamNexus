@@ -113,6 +113,13 @@ public sealed class SteamInstallationService(
             ? SelectedInstallation
             : throw new InvalidOperationException("Nenhuma instalação válida da Steam está selecionada.");
 
+        if (!File.Exists(installation.SteamExePath)
+            || !File.Exists(installation.LoginUsersPath))
+        {
+            throw new InvalidOperationException(
+                "A instalação selecionada foi removida ou está desconectada. Selecione outra instalação.");
+        }
+
         return new SteamOperationContext(
             installation.Id,
             installation.RootPath,
@@ -178,10 +185,10 @@ public sealed class SteamInstallationService(
     {
         var steamExe = Path.Combine(rootPath, "Steam.exe");
         var loginUsers = Path.Combine(rootPath, "config", "loginusers.vdf");
-        if (!Directory.Exists(rootPath)) return null;
+        if (!Directory.Exists(rootPath) && !custom) return null;
 
         var accountCount = 0;
-        if (File.Exists(loginUsers))
+        if (Directory.Exists(rootPath) && File.Exists(loginUsers))
         {
             try
             {
