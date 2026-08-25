@@ -469,65 +469,164 @@ public class SteamAccountService(
 
     // --- Privados ---
 
+    private static readonly string[] SteamProcessNames =
+        ["steam", "steamwebhelper", "GameOverlayUI"];
+
     private async Task CloseSteamAsync(SteamCloseMethod method, CancellationToken ct)
     {
-        var processes = System.Diagnostics.Process
-            .GetProcesses()
-            .Where(p => p.ProcessName.StartsWith("steam", StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        if (!processes.Any()) return;
-
-        // Sempre tenta gracioso primeiro (-shutdown eh o proprio metodo de fechamento do Steam).
-        var steamExe = locator.GetSteamExePath(_steamPath);
-        if (File.Exists(steamExe))
+        var initialProcesses = GetSteamProcesses();
+        if (initialProcesses.Count == 0)
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = steamExe,
-                Arguments = "-shutdown",
-                UseShellExecute = true
-            });
+            await WaitForVdfReleaseAsync(ct);
+            return;
+        }
 
-            // Aguarda ate 8s o Steam fechar voluntariamente (sem enumerar/matando processos).
-            var deadline = DateTime.UtcNow.AddSeconds(8);
-            while (DateTime.UtcNow < deadline)
+        logger.LogInformation(
+            "Encerrando Steam. Method={Method}, Processes={ProcessCount}",
+            method, initialProcesses.Count);
+        DisposeProcesses(initialProcesses);
+
+        var steamExe = locator.GetSteamExePath(_steamPath);
+        if (method == SteamCloseMethod.Graceful && File.Exists(steamExe))
+        {
+            try
             {
-                await Task.Delay(400, ct);
-                var still = System.Diagnostics.Process
-                    .GetProcessesByName("steam")
-                    .Length > 0;
-                if (!still) goto done;
+                using var shutdown = Process.Start(new ProcessStartInfo
+                {
+                    FileName = steamExe,
+                    Arguments = "-shutdown",
+                    WorkingDirectory = _steamPath,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Falha ao solicitar shutdown nativo da Steam");
+            }
+
+            if (await WaitForSteamExitAsync(TimeSpan.FromSeconds(10), ct))
+            {
+                await WaitForVdfReleaseAsync(ct);
+                return;
             }
         }
 
-        // Fallback: pede fechamento gracioso da janela principal de cada processo Steam,
-        // evitando Kill (que eleva heuristica de antivirrus e pode corromper arquivos VDF).
-        foreach (var proc in System.Diagnostics.Process
-            .GetProcesses()
-            .Where(p => p.ProcessName.StartsWith("steam", StringComparison.OrdinalIgnoreCase)))
+        if (method == SteamCloseMethod.Graceful)
         {
-            try { proc.CloseMainWindow(); } catch { }
-            proc.Dispose();
+            var gracefulProcesses = GetSteamProcesses();
+            foreach (var process in gracefulProcesses)
+            {
+                try
+                {
+                    if (!process.HasExited && process.MainWindowHandle != IntPtr.Zero)
+                        process.CloseMainWindow();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogDebug(ex, "Falha ao fechar janela Steam. Pid={Pid}", SafeProcessId(process));
+                }
+            }
+            DisposeProcesses(gracefulProcesses);
+
+            if (await WaitForSteamExitAsync(TimeSpan.FromSeconds(2), ct))
+            {
+                await WaitForVdfReleaseAsync(ct);
+                return;
+            }
         }
 
-        // Da tempo pro Steam processar o WM_CLOSE.
-        await Task.Delay(1500, ct);
-
-        // Se ainda houver Steam rodando, encerra forcando - ultima recurso.
-        foreach (var proc in System.Diagnostics.Process
-            .GetProcessesByName("steam"))
+        var remaining = GetSteamProcesses();
+        logger.LogWarning(
+            "Steam não encerrou no prazo; aplicando fallback forçado. Processes={ProcessCount}",
+            remaining.Count);
+        foreach (var process in remaining)
         {
-            try { if (!proc.HasExited) proc.Close(); } catch { }
-            proc.Dispose();
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill(entireProcessTree: true);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Não foi possível encerrar processo Steam. Pid={Pid}", SafeProcessId(process));
+            }
+        }
+        DisposeProcesses(remaining);
+
+        if (!await WaitForSteamExitAsync(TimeSpan.FromSeconds(5), ct))
+            throw new InvalidOperationException(
+                "A Steam não pôde ser encerrada. Feche-a manualmente e tente novamente.");
+
+        await WaitForVdfReleaseAsync(ct);
+    }
+
+    private static List<Process> GetSteamProcesses()
+    {
+        var result = new List<Process>();
+        foreach (var processName in SteamProcessNames)
+            result.AddRange(Process.GetProcessesByName(processName));
+        return result;
+    }
+
+    private static void DisposeProcesses(IEnumerable<Process> processes)
+    {
+        foreach (var process in processes)
+            process.Dispose();
+    }
+
+    private static int SafeProcessId(Process process)
+    {
+        try { return process.Id; }
+        catch { return -1; }
+    }
+
+    private static async Task<bool> WaitForSteamExitAsync(
+        TimeSpan timeout,
+        CancellationToken ct)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            ct.ThrowIfCancellationRequested();
+            var processes = GetSteamProcesses();
+            var hasProcesses = processes.Count > 0;
+            DisposeProcesses(processes);
+            if (!hasProcesses) return true;
+            await Task.Delay(200, ct);
         }
 
-    done:
-        // Aguarda OS liberar handles dos arquivos.
-        await Task.Delay(800, ct);
+        var remaining = GetSteamProcesses();
+        var exited = remaining.Count == 0;
+        DisposeProcesses(remaining);
+        return exited;
+    }
 
-        // Dispose do snapshot original.
-        foreach (var p in processes) p.Dispose();
+    private async Task WaitForVdfReleaseAsync(CancellationToken ct)
+    {
+        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        Exception? lastError = null;
+
+        while (DateTime.UtcNow < deadline)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                using var stream = new FileStream(
+                    vdfPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                return;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                lastError = ex;
+                await Task.Delay(200, ct);
+            }
+        }
+
+        throw new IOException(
+            "A Steam foi encerrada, mas o loginusers.vdf continua em uso.",
+            lastError);
     }
 
     private async Task UpdateLoginUsersVdfAsync(
