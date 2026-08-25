@@ -115,17 +115,43 @@ public class SteamAccountService(
         await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
         LogSwitchPhase("steam-closed", operation, account.SteamId64);
 
-        // 2. Edita loginusers.vdf
-        await UpdateLoginUsersVdfAsync(account, targetState, ct);
-        LogSwitchPhase("vdf-updated", operation, account.SteamId64);
+        SteamSwitchBackup? backup = null;
+        try
+        {
+            // 2. Edita loginusers.vdf
+            backup = await UpdateLoginUsersVdfAsync(account, targetState, ct);
+            LogSwitchPhase("vdf-updated", operation, account.SteamId64);
 
-        // 3. Atualiza registro
-        UpdateRegistry(account);
-        LogSwitchPhase("registry-updated", operation, account.SteamId64);
+            // 3. Atualiza registro
+            UpdateRegistry(account);
+            LogSwitchPhase("registry-updated", operation, account.SteamId64);
 
-        // 4. Abre Steam
-        await StartSteamAsync(settings, targetState, ct);
-        LogSwitchPhase("steam-started", operation, account.SteamId64);
+            // 4. Abre Steam
+            await StartSteamAsync(settings, targetState, ct);
+            LogSwitchPhase("steam-started", operation, account.SteamId64);
+        }
+        catch
+        {
+            if (backup is not null)
+            {
+                try
+                {
+                    await RestoreSwitchBackupAsync(backup);
+                    logger.LogWarning(
+                        "Troca Steam revertida após falha. Target={Target}",
+                        MaskSteamId(account.SteamId64));
+                }
+                catch (Exception rollbackError)
+                {
+                    logger.LogError(
+                        rollbackError,
+                        "Falha ao restaurar estado anterior da Steam. Target={Target}",
+                        MaskSteamId(account.SteamId64));
+                }
+            }
+
+            throw;
+        }
 
         logger.LogInformation(
             "Troca Steam concluída. Target={Target}, ElapsedMs={ElapsedMs}",
@@ -613,27 +639,98 @@ public class SteamAccountService(
             lastError);
     }
 
-    private async Task UpdateLoginUsersVdfAsync(
+    private async Task<SteamSwitchBackup> UpdateLoginUsersVdfAsync(
         SteamAccount target,
         LoginState? state,
         CancellationToken ct)
     {
-        await Task.Run(() =>
+        return await Task.Run(() =>
         {
             var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
-            File.Copy(vdfPath, vdfPath + "_last", overwrite: true);
+            var originalVdf = File.ReadAllBytes(vdfPath);
+            var previousAutoLoginUser = Registry.GetValue(
+                @"HKEY_CURRENT_USER\Software\Valve\Steam",
+                "AutoLoginUser",
+                null);
+            var previousRememberPassword = Registry.GetValue(
+                @"HKEY_CURRENT_USER\Software\Valve\Steam",
+                "RememberPassword",
+                null);
 
-            using var input = File.OpenRead(vdfPath);
+            using var input = new MemoryStream(originalVdf, writable: false);
             using var output = new MemoryStream();
             SteamLoginUsersEditor.Rewrite(
                 input,
                 output,
                 target.SteamId64,
                 state ?? LoginState.Online);
-            File.WriteAllBytes(vdfPath, output.ToArray());
+
+            WriteVdfAtomically(vdfPath, output.ToArray(), createBackup: true);
             InvalidateSnapshot();
+            return new SteamSwitchBackup(
+                vdfPath,
+                originalVdf,
+                previousAutoLoginUser,
+                previousRememberPassword);
         }, ct);
     }
+
+    private static void WriteVdfAtomically(
+        string vdfPath,
+        byte[] contents,
+        bool createBackup)
+    {
+        var tempPath = vdfPath + ".tmp";
+        var backupPath = createBackup ? vdfPath + "_last" : null;
+
+        try
+        {
+            using (var stream = new FileStream(
+                tempPath,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 16 * 1024,
+                FileOptions.WriteThrough))
+            {
+                stream.Write(contents);
+                stream.Flush(flushToDisk: true);
+            }
+
+            File.Replace(tempPath, vdfPath, backupPath, ignoreMetadataErrors: true);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
+    }
+
+    private async Task RestoreSwitchBackupAsync(SteamSwitchBackup backup)
+    {
+        await Task.Run(() =>
+        {
+            WriteVdfAtomically(backup.VdfPath, backup.OriginalVdf, createBackup: false);
+            RestoreRegistryValue("AutoLoginUser", backup.AutoLoginUser);
+            RestoreRegistryValue("RememberPassword", backup.RememberPassword);
+            InvalidateSnapshot();
+        });
+    }
+
+    private static void RestoreRegistryValue(string name, object? value)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(@"Software\Valve\Steam", writable: true);
+        if (value is null)
+            key.DeleteValue(name, throwOnMissingValue: false);
+        else
+            key.SetValue(name, value);
+    }
+
+    private sealed record SteamSwitchBackup(
+        string VdfPath,
+        byte[] OriginalVdf,
+        object? AutoLoginUser,
+        object? RememberPassword);
 
     private void InvalidateSnapshot()
     {
