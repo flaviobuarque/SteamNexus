@@ -232,8 +232,11 @@ public class SteamAccountService(
             throw new InvalidOperationException("A conta selecionada não possui um nome de login válido.");
 
         if (!persisted.RememberPassword)
-            throw new InvalidOperationException(
-                "A Steam não possui uma sessão lembrada para esta conta. Entre nela novamente e marque a opção para lembrar a conta.");
+        {
+            logger.LogWarning(
+                "A conta de destino não está marcada como lembrada; a Steam poderá solicitar autenticação. Target={Target}",
+                MaskSteamId(target.SteamId64));
+        }
 
         return string.Equals(
             snapshot.ActiveAccount?.SteamId64,
@@ -898,11 +901,19 @@ public class SteamAccountService(
                 throw new InvalidOperationException(
                     "A Steam foi iniciada, mas encerrou antes de concluir a troca.");
         }
-        catch (InvalidOperationException) when (Process.GetProcessesByName("steam").Length > 0)
+        catch (InvalidOperationException) when (IsSteamMainProcessRunning())
         {
             // UseShellExecute pode entregar um processo intermediário enquanto a
             // instância real da Steam já está em execução.
         }
+    }
+
+    private static bool IsSteamMainProcessRunning()
+    {
+        var processes = Process.GetProcessesByName("steam");
+        var running = processes.Length > 0;
+        DisposeProcesses(processes);
+        return running;
     }
 
     public async Task AddAccountAsync(CancellationToken ct = default)
