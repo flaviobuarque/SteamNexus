@@ -218,6 +218,8 @@ public partial class SettingsViewModel(
     {
         try
         {
+            if (accountService.IsOperationInProgress)
+                throw new InvalidOperationException("Aguarde a operação atual da Steam terminar.");
             await installationService.SelectAsync(installation.Id);
             RefreshSteamInstallations();
             WeakReferenceMessenger.Default.Send(new SteamInstallationChanged());

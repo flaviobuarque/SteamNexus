@@ -12,9 +12,13 @@ public class SteamAccountService(
     IAppSettingsService settingsService,
     ILogger<SteamAccountService> logger) : ISteamAccountService
 {
-    private string SteamPath => installationService.SelectedInstallation?.RootPath ?? string.Empty;
+    public bool IsOperationInProgress => _steamMutationGate.CurrentCount == 0;
+    private string SteamPath => _operationContext.Value?.RootPath
+        ?? installationService.SelectedInstallation?.RootPath
+        ?? string.Empty;
     private readonly SemaphoreSlim _snapshotGate = new(1, 1);
     private readonly SemaphoreSlim _steamMutationGate = new(1, 1);
+    private readonly AsyncLocal<SteamOperationContext?> _operationContext = new();
     private SteamAccountsSnapshot? _cachedSnapshot;
     private string? _cachedInstallationId;
     private long _cachedVdfLength = -1;
@@ -621,12 +625,37 @@ public class SteamAccountService(
         await WaitForVdfReleaseAsync(ct);
     }
 
-    private static List<Process> GetSteamProcesses()
+    private List<Process> GetSteamProcesses()
     {
         var result = new List<Process>();
         foreach (var processName in SteamProcessNames)
-            result.AddRange(Process.GetProcessesByName(processName));
+        {
+            foreach (var process in Process.GetProcessesByName(processName))
+            {
+                if (ProcessBelongsToSelectedInstallation(process))
+                    result.Add(process);
+                else
+                    process.Dispose();
+            }
+        }
         return result;
+    }
+
+    private bool ProcessBelongsToSelectedInstallation(Process process)
+    {
+        try
+        {
+            var executablePath = process.MainModule?.FileName;
+            if (string.IsNullOrWhiteSpace(executablePath)) return false;
+            var root = Path.GetFullPath(SteamPath)
+                .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            return Path.GetFullPath(executablePath)
+                .StartsWith(root, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static void DisposeProcesses(IEnumerable<Process> processes)
@@ -641,7 +670,7 @@ public class SteamAccountService(
         catch { return -1; }
     }
 
-    private static async Task<bool> WaitForSteamExitAsync(
+    private async Task<bool> WaitForSteamExitAsync(
         TimeSpan timeout,
         CancellationToken ct)
     {
@@ -917,10 +946,12 @@ public class SteamAccountService(
         }
     }
 
-    private static bool IsSteamMainProcessRunning()
+    private bool IsSteamMainProcessRunning()
     {
-        var processes = Process.GetProcessesByName("steam");
-        var running = processes.Length > 0;
+        var processes = GetSteamProcesses()
+            .Where(process => process.ProcessName.Equals("steam", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var running = processes.Count > 0;
         DisposeProcesses(processes);
         return running;
     }
@@ -968,10 +999,12 @@ public class SteamAccountService(
 
         try
         {
+            _operationContext.Value = installationService.CaptureContext();
             await operation();
         }
         finally
         {
+            _operationContext.Value = null;
             _steamMutationGate.Release();
         }
     }
@@ -986,10 +1019,12 @@ public class SteamAccountService(
 
         try
         {
+            _operationContext.Value = installationService.CaptureContext();
             return await operation();
         }
         finally
         {
+            _operationContext.Value = null;
             _steamMutationGate.Release();
         }
     }
