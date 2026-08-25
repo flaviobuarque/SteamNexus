@@ -8,6 +8,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddSteamSwitcherCore(this IServiceCollection services)
     {
         // Infraestrutura
+        services.AddSingleton<ISteamInstallationService, SteamInstallationService>();
         services.AddSingleton<ISteamLocatorService, SteamLocatorService>();
         services.AddSingleton<IAppSettingsService, AppSettingsService>();
         services.AddSingleton<IImageCacheService, ImageCacheService>();
