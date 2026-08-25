@@ -374,7 +374,7 @@ public partial class GamesViewModel(
                 _gameSearchDebounceCts?.Cancel();
                 _accountSearchDebounceCts?.Cancel();
                 _initialized = false;
-                await Application.Current.Dispatcher
+                await System.Windows.Application.Current.Dispatcher
                     .InvokeAsync(() => InitializeAsync())
                     .Task
                     .Unwrap();
