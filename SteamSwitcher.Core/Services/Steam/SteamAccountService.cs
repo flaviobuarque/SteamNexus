@@ -3,7 +3,6 @@ using Microsoft.Win32;
 using SteamSwitcher.Core.Models;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using ValveKeyValue;
 
 namespace SteamSwitcher.Core.Services;
 
@@ -17,21 +16,6 @@ public class SteamAccountService(
     private SteamAccountsSnapshot? _cachedSnapshot;
     private long _cachedVdfLength = -1;
     private long _cachedVdfWriteTicks = -1;
-
-    // Regex pre-compiladas (热心 usado em cada linha do VDF) — evita compilar a
-    // cada iteracao de SwitchAccountAsync (potencialmente centenas de linhas).
-    private static readonly Regex SteamIdLineRegex =
-        new(@"""7656\d{13}""", RegexOptions.Compiled);
-    private static readonly Regex MostRecentRegex =
-        new(@"""MostRecent""\s+""[^""]*""", RegexOptions.Compiled);
-    private static readonly Regex AutoLoginRegex =
-        new(@"""AutoLogin""\s+""[^""]*""", RegexOptions.Compiled);
-    private static readonly Regex RememberPasswordRegex =
-        new(@"""RememberPassword""\s+""[^""]*""", RegexOptions.Compiled);
-    private static readonly Regex WantsOfflineModeRegex =
-        new(@"""WantsOfflineMode""\s+""[^""]*""", RegexOptions.Compiled);
-    private static readonly Regex SkipOfflineModeWarningRegex =
-        new(@"""SkipOfflineModeWarning""\s+""[^""]*""", RegexOptions.Compiled);
 
     public async Task<SteamAccountsSnapshot> GetSnapshotAsync(CancellationToken ct = default)
     {
@@ -630,76 +614,23 @@ public class SteamAccountService(
     }
 
     private async Task UpdateLoginUsersVdfAsync(
-    SteamAccount target,
-    LoginState? state,
-    CancellationToken ct)
+        SteamAccount target,
+        LoginState? state,
+        CancellationToken ct)
     {
         await Task.Run(() =>
         {
             var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
             File.Copy(vdfPath, vdfPath + "_last", overwrite: true);
 
-            var lines = File.ReadAllLines(vdfPath).ToList();
-            string? currentSteamId = null;
-
-            // Interpreta null como Online: garante reset determinístico do modo offline
-            // em todo o loginusers.vdf, evitando resíduos de sessões anteriores offline.
-            var effectiveState = state ?? LoginState.Online;
-            var wantsOffline = effectiveState == LoginState.Offline;
-
-            for (int i = 0; i < lines.Count; i++)
-            {
-                var trimmed = lines[i].Trim().Trim('"');
-
-                if (trimmed == "}" && currentSteamId is not null)
-                {
-                    currentSteamId = null;
-                    continue;
-                }
-
-                // Detecta linha de SteamID (linha com só número de 17 dígitos entre aspas)
-                if (SteamIdLineRegex.IsMatch(lines[i].Trim()))
-                {
-                    currentSteamId = trimmed;
-                    continue;
-                }
-
-                if (currentSteamId is null) continue;
-
-                var isTarget = currentSteamId == target.SteamId64;
-
-                // MostRecent
-                if (lines[i].Contains("\"MostRecent\""))
-                {
-                    lines[i] = MostRecentRegex.Replace(
-                        lines[i], $"\"MostRecent\"\t\t\"{(isTarget ? "1" : "0")}\"");
-                }
-
-                // RememberPassword — garante 1 no target
-                if (isTarget && lines[i].Contains("\"RememberPassword\""))
-                {
-                    lines[i] = RememberPasswordRegex.Replace(
-                        lines[i], "\"RememberPassword\"\t\t\"1\"");
-                }
-
-                // WantsOfflineMode — escreve em TODOS os usuários quando Online,
-                // e apenas no target quando Offline.
-                if (lines[i].Contains("\"WantsOfflineMode\""))
-                {
-                    var newValue = (isTarget && wantsOffline) ? "1" : "0";
-                    lines[i] = WantsOfflineModeRegex.Replace(
-                        lines[i], $"\"WantsOfflineMode\"\t\t\"{newValue}\"");
-                }
-
-                if (lines[i].Contains("\"SkipOfflineModeWarning\""))
-                {
-                    var newValue = (isTarget && wantsOffline) ? "1" : "0";
-                    lines[i] = SkipOfflineModeWarningRegex.Replace(
-                        lines[i], $"\"SkipOfflineModeWarning\"\t\t\"{newValue}\"");
-                }
-            }
-
-            File.WriteAllLines(vdfPath, lines);
+            using var input = File.OpenRead(vdfPath);
+            using var output = new MemoryStream();
+            SteamLoginUsersEditor.Rewrite(
+                input,
+                output,
+                target.SteamId64,
+                state ?? LoginState.Online);
+            File.WriteAllBytes(vdfPath, output.ToArray());
             InvalidateSnapshot();
         }, ct);
     }
