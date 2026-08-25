@@ -65,6 +65,9 @@ public partial class App : Application
         var settingsService = _host.Services.GetRequiredService<IAppSettingsService>();
         await settingsService.LoadAsync();
 
+        var installationService = _host.Services.GetRequiredService<ISteamInstallationService>();
+        await installationService.DiscoverAsync();
+
         // Aplica tema salvo
         ApplyTheme(settingsService.Current.Theme);
 
