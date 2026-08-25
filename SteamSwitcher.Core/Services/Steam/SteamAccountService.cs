@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SteamSwitcher.Core.Models;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using ValveKeyValue;
 
@@ -104,26 +105,119 @@ public class SteamAccountService(
         LoginState? stateOverride = null,
         CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(account);
+
+        var operation = Stopwatch.StartNew();
         var settings = settingsService.Current;
         LoginState? targetState = stateOverride
             ?? account.LoginStateOverride
             ?? settings.DefaultLoginStateOverride;
 
         logger.LogInformation(
-            "Trocando para {Account} com estado {State}",
-            account.AccountName, targetState);
+            "Troca Steam iniciada. Target={Target}, State={State}",
+            MaskSteamId(account.SteamId64), targetState ?? LoginState.Online);
+
+        if (await PreflightSwitchAsync(account, ct))
+        {
+            logger.LogInformation(
+                "Troca Steam ignorada: a conta solicitada já está ativa. Target={Target}, ElapsedMs={ElapsedMs}",
+                MaskSteamId(account.SteamId64), operation.ElapsedMilliseconds);
+            return;
+        }
+
+        LogSwitchPhase("preflight", operation, account.SteamId64);
 
         // 1. Fecha Steam
         await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
+        LogSwitchPhase("steam-closed", operation, account.SteamId64);
 
         // 2. Edita loginusers.vdf
         await UpdateLoginUsersVdfAsync(account, targetState, ct);
+        LogSwitchPhase("vdf-updated", operation, account.SteamId64);
 
         // 3. Atualiza registro
         UpdateRegistry(account);
+        LogSwitchPhase("registry-updated", operation, account.SteamId64);
 
         // 4. Abre Steam
         await StartSteamAsync(settings, targetState, ct);
+        LogSwitchPhase("steam-started", operation, account.SteamId64);
+
+        logger.LogInformation(
+            "Troca Steam concluída. Target={Target}, ElapsedMs={ElapsedMs}",
+            MaskSteamId(account.SteamId64), operation.ElapsedMilliseconds);
+    }
+
+    private async Task<bool> PreflightSwitchAsync(
+        SteamAccount target,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        if (string.IsNullOrWhiteSpace(_steamPath) || !Directory.Exists(_steamPath))
+            throw new InvalidOperationException("A instalação da Steam não foi encontrada.");
+
+        var steamExe = locator.GetSteamExePath(_steamPath);
+        if (!File.Exists(steamExe))
+            throw new FileNotFoundException("O executável da Steam não foi encontrado.", steamExe);
+
+        var vdfPath = locator.GetLoginUsersVdfPath(_steamPath);
+        if (!File.Exists(vdfPath))
+            throw new FileNotFoundException("O arquivo loginusers.vdf não foi encontrado.", vdfPath);
+
+        if ((File.GetAttributes(vdfPath) & FileAttributes.ReadOnly) != 0)
+            throw new IOException("O arquivo loginusers.vdf está marcado como somente leitura.");
+
+        if (string.IsNullOrWhiteSpace(target.SteamId64))
+            throw new InvalidOperationException("A conta selecionada não possui um SteamID válido.");
+
+        SteamAccountsSnapshot snapshot;
+        try
+        {
+            await using var stream = new FileStream(
+                vdfPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete,
+                bufferSize: 4096,
+                useAsync: true);
+            snapshot = SteamAccountSnapshotParser.Parse(stream);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new IOException("Não foi possível ler o loginusers.vdf antes da troca.", ex);
+        }
+
+        var persisted = snapshot.Accounts.FirstOrDefault(a =>
+            string.Equals(a.SteamId64, target.SteamId64, StringComparison.Ordinal));
+
+        if (persisted is null)
+            throw new InvalidOperationException("A conta selecionada não existe mais no loginusers.vdf.");
+
+        if (string.IsNullOrWhiteSpace(persisted.AccountName))
+            throw new InvalidOperationException("A conta selecionada não possui um nome de login válido.");
+
+        if (!persisted.RememberPassword)
+            throw new InvalidOperationException(
+                "A Steam não possui uma sessão lembrada para esta conta. Entre nela novamente e marque a opção para lembrar a conta.");
+
+        return string.Equals(
+            snapshot.ActiveAccount?.SteamId64,
+            target.SteamId64,
+            StringComparison.Ordinal);
+    }
+
+    private void LogSwitchPhase(string phase, Stopwatch operation, string steamId64) =>
+        logger.LogInformation(
+            "Troca Steam: {Phase}. Target={Target}, ElapsedMs={ElapsedMs}",
+            phase,
+            MaskSteamId(steamId64),
+            operation.ElapsedMilliseconds);
+
+    private static string MaskSteamId(string steamId64)
+    {
+        var value = steamId64?.Trim() ?? string.Empty;
+        return value.Length <= 4 ? "****" : $"***{value[^4..]}";
     }
 
     public async Task<SteamAccount?> GetActiveAccountAsync(CancellationToken ct = default)
