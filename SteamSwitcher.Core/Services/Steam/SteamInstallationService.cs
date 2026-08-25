@@ -7,6 +7,7 @@ using System.Text;
 namespace SteamSwitcher.Core.Services;
 
 public sealed class SteamInstallationService(
+    IAppSettingsService settingsService,
     ILogger<SteamInstallationService> logger) : ISteamInstallationService
 {
     private readonly List<SteamInstallation> _installations = [];
@@ -21,13 +22,14 @@ public sealed class SteamInstallationService(
         await _discoveryGate.WaitAsync(ct);
         try
         {
-            var candidates = DiscoverCandidatePaths();
+            var candidates = DiscoverCandidatePaths(settingsService.Current);
             var discovered = new List<SteamInstallation>();
 
             foreach (var candidate in candidates)
             {
                 ct.ThrowIfCancellationRequested();
-                var installation = await BuildInstallationAsync(candidate.Path, candidate.Registry, ct);
+                var installation = await BuildInstallationAsync(
+                    candidate.Path, candidate.Registry, candidate.Custom, ct);
                 if (installation is not null)
                     discovered.Add(installation);
             }
@@ -35,8 +37,11 @@ public sealed class SteamInstallationService(
             _installations.Clear();
             _installations.AddRange(discovered);
 
+            var configuredPath = settingsService.Current.SteamInstallPath;
             var previousId = SelectedInstallation?.Id;
-            SelectedInstallation = _installations.FirstOrDefault(i => i.Id == previousId)
+            SelectedInstallation = _installations.FirstOrDefault(i =>
+                    PathsEqual(i.RootPath, configuredPath))
+                ?? _installations.FirstOrDefault(i => i.Id == previousId)
                 ?? _installations.FirstOrDefault(i => i.IsValid)
                 ?? _installations.FirstOrDefault();
 
@@ -49,6 +54,57 @@ public sealed class SteamInstallationService(
         {
             _discoveryGate.Release();
         }
+    }
+
+    public async Task SelectAsync(string installationId, CancellationToken ct = default)
+    {
+        var selected = _installations.FirstOrDefault(i => i.Id == installationId)
+            ?? throw new InvalidOperationException("A instalação selecionada não foi encontrada.");
+        if (!selected.IsValid)
+            throw new InvalidOperationException("A instalação selecionada não está disponível.");
+
+        if (SelectedInstallation?.Id == selected.Id) return;
+
+        SelectedInstallation = selected;
+        var settings = settingsService.Current;
+        settings.SteamInstallPath = selected.RootPath;
+        AddKnownPath(settings, selected.RootPath);
+        await settingsService.SaveAsync(settings);
+        SelectedInstallationChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public async Task AddCustomPathAsync(string path, CancellationToken ct = default)
+    {
+        var normalized = NormalizeSteamRoot(path);
+        var settings = settingsService.Current;
+        AddKnownPath(settings, normalized);
+        settings.SteamInstallPath = normalized;
+        await settingsService.SaveAsync(settings);
+        await DiscoverAsync(ct);
+
+        var selected = _installations.FirstOrDefault(i => PathsEqual(i.RootPath, normalized));
+        if (selected is null || !selected.IsValid)
+            throw new InvalidOperationException(
+                "O caminho não contém Steam.exe e config\\loginusers.vdf válidos.");
+
+        SelectedInstallation = selected;
+        SelectedInstallationChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public async Task RemoveCustomPathAsync(string installationId, CancellationToken ct = default)
+    {
+        var installation = _installations.FirstOrDefault(i => i.Id == installationId)
+            ?? throw new InvalidOperationException("A instalação não foi encontrada.");
+        if (!installation.IsCustom)
+            throw new InvalidOperationException("Uma instalação detectada pelo sistema não pode ser removida.");
+
+        var settings = settingsService.Current;
+        settings.KnownSteamInstallPaths.RemoveAll(path => PathsEqual(path, installation.RootPath));
+        if (PathsEqual(settings.SteamInstallPath, installation.RootPath))
+            settings.SteamInstallPath = null;
+        await settingsService.SaveAsync(settings);
+        await DiscoverAsync(ct);
+        SelectedInstallationChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public SteamOperationContext CaptureContext()
@@ -66,9 +122,15 @@ public sealed class SteamInstallationService(
             Path.Combine(installation.RootPath, "steamapps", "libraryfolders.vdf"));
     }
 
-    private static IEnumerable<(string Path, bool Registry)> DiscoverCandidatePaths()
+    private static IEnumerable<(string Path, bool Registry, bool Custom)> DiscoverCandidatePaths(
+        AppSettings settings)
     {
-        var candidates = new List<(string, bool)>();
+        var candidates = new List<(string, bool, bool)>();
+
+        if (!string.IsNullOrWhiteSpace(settings.SteamInstallPath))
+            candidates.Add((settings.SteamInstallPath, false, true));
+        foreach (var path in settings.KnownSteamInstallPaths)
+            candidates.Add((path, false, true));
 
         AddRegistryValue(candidates, Registry.CurrentUser,
             @"Software\Valve\Steam", "SteamPath");
@@ -79,17 +141,17 @@ public sealed class SteamInstallationService(
         AddRegistryValue(candidates, Registry.LocalMachine,
             @"SOFTWARE\Valve\Steam", "InstallPath");
 
-        candidates.Add((@"C:\Program Files (x86)\Steam", false));
-        candidates.Add((@"C:\Program Files\Steam", false));
+        candidates.Add((@"C:\Program Files (x86)\Steam", false, false));
+        candidates.Add((@"C:\Program Files\Steam", false, false));
 
         return candidates
             .Where(item => !string.IsNullOrWhiteSpace(item.Item1))
-            .Select(item => (NormalizePath(item.Item1), item.Item2))
+            .Select(item => (NormalizePath(item.Item1), item.Item2, item.Item3))
             .DistinctBy(item => item.Item1, StringComparer.OrdinalIgnoreCase);
     }
 
     private static void AddRegistryValue(
-        ICollection<(string, bool)> candidates,
+        ICollection<(string, bool, bool)> candidates,
         RegistryKey hive,
         string subKey,
         string valueName,
@@ -100,7 +162,7 @@ public sealed class SteamInstallationService(
             using var key = hive.OpenSubKey(subKey);
             var value = key?.GetValue(valueName)?.ToString();
             if (string.IsNullOrWhiteSpace(value)) return;
-            candidates.Add((isExecutable ? Path.GetDirectoryName(value) ?? value : value, true));
+            candidates.Add((isExecutable ? Path.GetDirectoryName(value) ?? value : value, true, false));
         }
         catch
         {
@@ -111,6 +173,7 @@ public sealed class SteamInstallationService(
     private static async Task<SteamInstallation?> BuildInstallationAsync(
         string rootPath,
         bool registryDefault,
+        bool custom,
         CancellationToken ct)
     {
         var steamExe = Path.Combine(rootPath, "Steam.exe");
@@ -142,9 +205,29 @@ public sealed class SteamInstallationService(
             DisplayName = registryDefault ? "Steam principal" : $"Steam — {Path.GetFileName(rootPath)}",
             AccountCount = accountCount,
             IsRegistryDefault = registryDefault,
+            IsCustom = custom,
             IsValid = File.Exists(steamExe) && File.Exists(loginUsers),
         };
     }
+
+    private static string NormalizeSteamRoot(string path)
+    {
+        var normalized = NormalizePath(path);
+        return string.Equals(Path.GetFileName(normalized), "steam.exe", StringComparison.OrdinalIgnoreCase)
+            ? Path.GetDirectoryName(normalized)!
+            : normalized;
+    }
+
+    private static void AddKnownPath(AppSettings settings, string path)
+    {
+        if (!settings.KnownSteamInstallPaths.Any(existing => PathsEqual(existing, path)))
+            settings.KnownSteamInstallPaths.Add(path);
+    }
+
+    private static bool PathsEqual(string? left, string? right) =>
+        !string.IsNullOrWhiteSpace(left)
+        && !string.IsNullOrWhiteSpace(right)
+        && string.Equals(NormalizePath(left), NormalizePath(right), StringComparison.OrdinalIgnoreCase);
 
     private static string NormalizePath(string path) =>
         Path.GetFullPath(path.Trim().Trim('"')).TrimEnd(Path.DirectorySeparatorChar);

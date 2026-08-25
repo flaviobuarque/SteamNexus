@@ -25,6 +25,7 @@ public class AppSettings
     public bool StartAsAdmin { get; set; } = false;
     public string? SteamApiKey { get; set; }
     public string? SteamInstallPath { get; set; }
+    public List<string> KnownSteamInstallPaths { get; set; } = [];
 
     // Cache
     public int AvatarCacheExpiryDays { get; set; } = 7;

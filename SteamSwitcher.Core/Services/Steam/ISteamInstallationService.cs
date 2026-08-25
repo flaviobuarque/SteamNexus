@@ -9,5 +9,8 @@ public interface ISteamInstallationService
     event EventHandler? SelectedInstallationChanged;
 
     Task DiscoverAsync(CancellationToken ct = default);
+    Task SelectAsync(string installationId, CancellationToken ct = default);
+    Task AddCustomPathAsync(string path, CancellationToken ct = default);
+    Task RemoveCustomPathAsync(string installationId, CancellationToken ct = default);
     SteamOperationContext CaptureContext();
 }
