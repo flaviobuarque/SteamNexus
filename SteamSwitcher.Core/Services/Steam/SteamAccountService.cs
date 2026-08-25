@@ -13,6 +13,7 @@ public class SteamAccountService(
 {
     private readonly string _steamPath = locator.FindSteamInstallPath() ?? string.Empty;
     private readonly SemaphoreSlim _snapshotGate = new(1, 1);
+    private readonly SemaphoreSlim _steamMutationGate = new(1, 1);
     private SteamAccountsSnapshot? _cachedSnapshot;
     private long _cachedVdfLength = -1;
     private long _cachedVdfWriteTicks = -1;
@@ -88,6 +89,14 @@ public class SteamAccountService(
         SteamAccount account,
         LoginState? stateOverride = null,
         CancellationToken ct = default)
+        => await RunSteamMutationAsync(
+            () => SwitchAccountCoreAsync(account, stateOverride, ct),
+            ct);
+
+    private async Task SwitchAccountCoreAsync(
+        SteamAccount account,
+        LoginState? stateOverride,
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(account);
 
@@ -261,6 +270,13 @@ public class SteamAccountService(
     public async Task ForgetAccountAsync(
         SteamAccount account,
         CancellationToken ct = default)
+        => await RunSteamMutationAsync(
+            () => ForgetAccountCoreAsync(account, ct),
+            ct);
+
+    private async Task ForgetAccountCoreAsync(
+        SteamAccount account,
+        CancellationToken ct)
     {
         if (string.IsNullOrEmpty(_steamPath))
             throw new InvalidOperationException("Steam não encontrada.");
@@ -351,6 +367,13 @@ public class SteamAccountService(
     public async Task<IReadOnlyList<string>> ForgetAccountsAsync(
         IReadOnlyCollection<string> steamIds64,
         CancellationToken ct = default)
+        => await RunSteamMutationAsync(
+            () => ForgetAccountsCoreAsync(steamIds64, ct),
+            ct);
+
+    private async Task<IReadOnlyList<string>> ForgetAccountsCoreAsync(
+        IReadOnlyCollection<string> steamIds64,
+        CancellationToken ct)
     {
         if (steamIds64.Count == 0) return [];
         if (string.IsNullOrEmpty(_steamPath))
@@ -883,6 +906,11 @@ public class SteamAccountService(
     }
 
     public async Task AddAccountAsync(CancellationToken ct = default)
+        => await RunSteamMutationAsync(
+            () => AddAccountCoreAsync(ct),
+            ct);
+
+    private async Task AddAccountCoreAsync(CancellationToken ct)
     {
         // 1. Fecha Steam
         await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
@@ -908,5 +936,41 @@ public class SteamAccountService(
             FileName = steamExe,
             UseShellExecute = true
         });
+    }
+
+    private async Task RunSteamMutationAsync(
+        Func<Task> operation,
+        CancellationToken ct)
+    {
+        if (!await _steamMutationGate.WaitAsync(0, ct))
+            throw new InvalidOperationException(
+                "Outra operação da Steam já está em andamento. Aguarde a conclusão e tente novamente.");
+
+        try
+        {
+            await operation();
+        }
+        finally
+        {
+            _steamMutationGate.Release();
+        }
+    }
+
+    private async Task<T> RunSteamMutationAsync<T>(
+        Func<Task<T>> operation,
+        CancellationToken ct)
+    {
+        if (!await _steamMutationGate.WaitAsync(0, ct))
+            throw new InvalidOperationException(
+                "Outra operação da Steam já está em andamento. Aguarde a conclusão e tente novamente.");
+
+        try
+        {
+            return await operation();
+        }
+        finally
+        {
+            _steamMutationGate.Release();
+        }
     }
 }
