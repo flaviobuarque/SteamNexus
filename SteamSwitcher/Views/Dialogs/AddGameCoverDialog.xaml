@@ -21,10 +21,10 @@
             ShadowDepth="0" />
     </Window.Effect>
 
-    <Border Background="#66000000">
+    <Border Background="{DynamicResource AppDialogBackdropBrush}">
         <Border
-            Background="#0D2135"
-            BorderBrush="#1F456A"
+            Background="{DynamicResource AppChromeBrush}"
+            BorderBrush="{DynamicResource AppBorderBrush}"
             BorderThickness="1"
             CornerRadius="14"
             Padding="24"
@@ -45,35 +45,35 @@
                     <ic:SymbolIcon
                         Symbol="Image"
                         FontSize="18"
-                        Foreground="#38D6C6"
+                        Foreground="{DynamicResource AppAccentAltBrush}"
                         Margin="0,0,10,0"
                         VerticalAlignment="Center" />
                     <TextBlock
                         Text="Adicionar capa"
                         FontSize="16"
                         FontWeight="SemiBold"
-                        Foreground="#EAF7FF"
+                        Foreground="{DynamicResource AppTextPrimaryBrush}"
                         VerticalAlignment="Center" />
                 </StackPanel>
 
                 <TextBlock
                     FontSize="13"
-                    Foreground="#A9C8DE"
+                    Foreground="{DynamicResource AppTextSecondaryBrush}"
                     TextWrapping="Wrap"
                     Margin="0,0,0,16">
                     <Run Text="Capa para" />
                     <Run Text="{Binding GameName, Mode=OneWay}"
                         FontWeight="SemiBold"
-                        Foreground="#EAF7FF" />
+                        Foreground="{DynamicResource AppTextPrimaryBrush}" />
                 </TextBlock>
 
                 <!-- Preview -->
                 <Border
                     Width="160" Height="240"
                     CornerRadius="10"
-                    BorderBrush="#1F456A"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
                     BorderThickness="1"
-                    Background="#102B45"
+                    Background="{DynamicResource AppSurfaceAltBrush}"
                     HorizontalAlignment="Center"
                     Margin="0,0,0,16">
                     <Grid>
@@ -83,7 +83,7 @@
                         <ic:SymbolIcon
                             Symbol="Image"
                             FontSize="40"
-                            Foreground="#1F456A"
+                            Foreground="{DynamicResource AppTextMutedBrush}"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Visibility="{Binding PreviewImage,
@@ -95,20 +95,20 @@
                 <TextBlock
                     Text="ℹ A imagem deve ter proporção 2:3 (ex.: 600×900 ou 342×482)."
                     FontSize="11"
-                    Foreground="#6593B0"
+                    Foreground="{DynamicResource AppTextMutedBrush}"
                     TextWrapping="Wrap"
                     Margin="0,0,0,8" />
 
                 <!-- Dimensões + proporção + status -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                    <TextBlock Text="Dimensões: " FontSize="11" Foreground="#6593B0" />
-                    <TextBlock Text="{Binding DimensionsText}" FontSize="11" Foreground="#A9C8DE" />
+                    <TextBlock Text="Dimensões: " FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}" />
+                    <TextBlock Text="{Binding DimensionsText}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                    <TextBlock Text="Proporção: " FontSize="11" Foreground="#6593B0" />
-                    <TextBlock Text="{Binding RatioText}" FontSize="11" Foreground="#A9C8DE" />
+                    <TextBlock Text="Proporção: " FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}" />
+                    <TextBlock Text="{Binding RatioText}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" />
                 </StackPanel>
-                <TextBlock Text="{Binding ValidationText}" FontSize="11" Foreground="#A9C8DE" Margin="0,2,0,12" />
+                <TextBlock Text="{Binding ValidationText}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,2,0,12" />
 
                 <!-- Botoes -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
@@ -124,7 +124,7 @@
                         Command="{Binding RemoveCoverCommand}" />
                 </StackPanel>
 
-                <Border Height="1" Background="#1F456A" Margin="0,16,0,16" />
+                <Border Height="1" Background="{DynamicResource AppBorderBrush}" Margin="0,16,0,16" />
 
                 <!-- Footer -->
                 <Grid>

@@ -20,10 +20,10 @@
             ShadowDepth="0" />
 	</Window.Effect>
 
-	<Border Background="#66000000">
+	<Border Background="{DynamicResource AppDialogBackdropBrush}">
 		<Border
-            Background="#0D2135"
-            BorderBrush="#1F456A"
+            Background="{DynamicResource AppChromeBrush}"
+            BorderBrush="{DynamicResource AppBorderBrush}"
             BorderThickness="1"
             CornerRadius="14"
             Padding="24"
@@ -44,33 +44,33 @@
 				<StackPanel Orientation="Horizontal" Margin="0,0,0,6">
 					<ui:SymbolIcon
                         Symbol="PersonQuestionMark24"
-                        Foreground="#38D6C6"
+                        Foreground="{DynamicResource AppAccentAltBrush}"
                         Margin="0,0,10,0"
                         VerticalAlignment="Center" />
 					<TextBlock
                         Text="Associar conta"
                         FontSize="16"
                         FontWeight="SemiBold"
-                        Foreground="#EAF7FF"
+                        Foreground="{DynamicResource AppTextPrimaryBrush}"
                         VerticalAlignment="Center" />
 				</StackPanel>
 
 				<TextBlock
                     FontSize="13"
-                    Foreground="#A9C8DE"
+                    Foreground="{DynamicResource AppTextSecondaryBrush}"
                     TextWrapping="Wrap"
                     Margin="0,0,0,4">
 					<Run Text="Qual conta deve jogar" />
 					<Run Text="{Binding GameName, Mode=OneWay}"
                         FontWeight="SemiBold"
-                        Foreground="#EAF7FF" />
+                        Foreground="{DynamicResource AppTextPrimaryBrush}" />
 					<Run Text="?" />
 				</TextBlock>
 
 				<TextBlock
                     Text="Este jogo não possui conta associada no appmanifest."
                     FontSize="11"
-                    Foreground="#6593B0"
+                    Foreground="{DynamicResource AppTextMutedBrush}"
                     Margin="0,2,0,16"
                     TextWrapping="Wrap" />
 
@@ -100,12 +100,12 @@
                                     Cursor="Hand">
                                     <Border.Style>
                                         <Style TargetType="Border">
-                                            <Setter Property="Background" Value="#102B45" />
-                                            <Setter Property="BorderBrush" Value="#1F456A" />
+                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="#38D6C6" />
-                                                    <Setter Property="Background" Value="#143A5C" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
+                                                    <Setter Property="Background" Value="{DynamicResource AppAccentSurfaceBrush}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -119,7 +119,7 @@
                                     </Border.InputBindings>
                                     <StackPanel Orientation="Horizontal">
                                         <Grid Width="38" Height="38" Margin="0,0,12,0">
-                                            <Ellipse Fill="#143A5C" />
+                                            <Ellipse Fill="{DynamicResource AppSurfaceAltBrush}" />
                                             <Image Source="{Binding Card.AvatarImage}" Stretch="UniformToFill">
                                                 <Image.Clip>
                                                     <EllipseGeometry Center="19,19" RadiusX="19" RadiusY="19" />
@@ -127,7 +127,7 @@
                                             </Image>
                                             <ui:SymbolIcon
                                                 Symbol="Person24"
-                                                Foreground="#A9C8DE"
+                                                Foreground="{DynamicResource AppTextSecondaryBrush}"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
                                                 Visibility="{Binding Card.HasAvatar, Converter={StaticResource InverseBoolToVisibility}}" />
@@ -137,11 +137,11 @@
                                                 Text="{Binding DisplayName}"
                                                 FontWeight="SemiBold"
                                                 FontSize="13"
-                                                Foreground="#EAF7FF" />
+                                                Foreground="{DynamicResource AppTextPrimaryBrush}" />
                                             <TextBlock
                                                 Text="{Binding AccountName, StringFormat=@{0}}"
                                                 FontSize="11"
-                                                Foreground="#6593B0"
+                                                Foreground="{DynamicResource AppTextMutedBrush}"
                                                 Margin="0,2,0,0" />
                                         </StackPanel>
                                     </StackPanel>
@@ -158,7 +158,7 @@
                     Text="STATUS AO ENTRAR (por jogo, opcional)"
                     FontSize="10"
                     FontWeight="Bold"
-                    Foreground="#6593B0"
+                    Foreground="{DynamicResource AppTextMutedBrush}"
                     Margin="0,4,0,8" />
 
 				<ComboBox
@@ -178,7 +178,7 @@
                                 <TextBlock
                                     Text="{Binding Label}"
                                     VerticalAlignment="Center"
-                                    Foreground="#EAF7FF" />
+                                    Foreground="{DynamicResource AppTextPrimaryBrush}" />
                             </StackPanel>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
