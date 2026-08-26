@@ -37,7 +37,8 @@ public partial class DiagnosticsViewModel(
                     report,
                     expandedIds.Count > 0
                         ? expandedIds.Contains(report.InstallationId)
-                        : report.IsSelected || report.IsRunning || index == 0)));
+                        : report.IsSelected || report.IsRunning || index == 0,
+                    $"Verificado às {_report.CheckedAt:HH:mm:ss}")));
             LastCheckText = $"Verificado às {_report.CheckedAt:HH:mm:ss}";
             mainViewModel.UpdateStatusBar(
                 _report.HasBlockingIssues ? "Diagnóstico encontrou problemas" : "Diagnóstico concluído",
@@ -86,6 +87,30 @@ public partial class DiagnosticsViewModel(
     }
 
     [RelayCommand]
+    private void CopyReport()
+    {
+        if (_report is null) return;
+        var text = new StringBuilder()
+            .AppendLine("SteamNexus — Diagnóstico da Steam")
+            .AppendLine($"Data: {_report.CheckedAt:yyyy-MM-dd HH:mm:ss}");
+        foreach (var installation in _report.Installations)
+        {
+            text.AppendLine()
+                .AppendLine($"## {installation.InstallationName}")
+                .AppendLine($"Diretório: {installation.InstallationPath}")
+                .AppendLine($"Selecionada: {installation.IsSelected}")
+                .AppendLine($"Em execução: {installation.RunningSteamPath}")
+                .AppendLine($"Conta ativa: {installation.ActiveAccountName}");
+            foreach (var diagnostic in installation.Items)
+                text.AppendLine($"[{diagnostic.Severity}] {diagnostic.Title}: {diagnostic.Detail}");
+        }
+
+        Clipboard.SetText(text.ToString());
+        snackbarService.Show("Diagnósticos copiados", "O relatório de todas as instalações foi copiado.",
+            ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
+    }
+
+    [RelayCommand]
     private void CopyInstallationReport(DiagnosticInstallationItem item)
     {
         var installation = item.Report;
@@ -108,8 +133,10 @@ public partial class DiagnosticsViewModel(
 
 public partial class DiagnosticInstallationItem(
     SteamInstallationDiagnosticReport report,
-    bool isExpanded) : ObservableObject
+    bool isExpanded,
+    string checkedAtText) : ObservableObject
 {
     public SteamInstallationDiagnosticReport Report { get; } = report;
+    public string CheckedAtText { get; } = checkedAtText;
     [ObservableProperty] private bool _isExpanded = isExpanded;
 }
