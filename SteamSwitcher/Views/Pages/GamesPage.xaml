@@ -631,7 +631,11 @@
                                         <Grid>
                                             <Image
                                                 Source="{Binding CoverImage}"
-                                                Stretch="UniformToFill" />
+                                                Stretch="UniformToFill">
+                                                <Image.Clip>
+                                                    <RectangleGeometry Rect="0,0,160,240" RadiusX="14" RadiusY="14" />
+                                                </Image.Clip>
+                                            </Image>
                                             <Border
                                                 Background="{DynamicResource AppBackgroundBrush}"
                                                 CornerRadius="14,14,0,0"
