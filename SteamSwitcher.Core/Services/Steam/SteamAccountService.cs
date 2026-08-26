@@ -720,8 +720,12 @@ public class SteamAccountService(
             !ProcessBelongsToSelectedInstallation(process));
 
         logger.LogInformation(
-            "Encerrando Steam. Method={Method}, Processes={ProcessCount}, ConflictingInstallations={ConflictingCount}",
-            method, initialProcesses.Count, conflictingCount);
+            "Encerrando Steam. Method={Method}, Processes={ProcessCount}, ConflictingInstallations={ConflictingCount}, Details={ProcessDetails}, ClientServiceRunning={ClientServiceRunning}",
+            method,
+            initialProcesses.Count,
+            conflictingCount,
+            DescribeProcesses(initialProcesses),
+            IsSteamClientServiceRunning());
         DisposeProcesses(initialProcesses);
 
         var steamExe = locator.GetSteamExePath(SteamPath);
@@ -793,8 +797,14 @@ public class SteamAccountService(
         DisposeProcesses(remaining);
 
         if (!await WaitForSteamExitAsync(TimeSpan.FromSeconds(5), ct))
+        {
+            var blockedProcesses = GetAllSteamProcesses();
+            var details = DescribeProcesses(blockedProcesses);
+            DisposeProcesses(blockedProcesses);
             throw new InvalidOperationException(
-                "A Steam não pôde ser encerrada. Feche-a manualmente e tente novamente.");
+                $"A Steam não pôde ser encerrada. Processos restantes: {details}. " +
+                "Feche-os manualmente e tente novamente.");
+        }
 
         await WaitForVdfReleaseAsync(ct);
     }
@@ -844,6 +854,40 @@ public class SteamAccountService(
     {
         foreach (var process in processes)
             process.Dispose();
+    }
+
+    private static string DescribeProcesses(IEnumerable<Process> processes)
+    {
+        var descriptions = new List<string>();
+        foreach (var process in processes)
+        {
+            try
+            {
+                var path = process.MainModule?.FileName ?? "caminho indisponível";
+                descriptions.Add($"{process.ProcessName} (PID {process.Id}, {path})");
+            }
+            catch
+            {
+                descriptions.Add($"{process.ProcessName} (PID {SafeProcessId(process)})");
+            }
+        }
+
+        return descriptions.Count == 0
+            ? "nenhum"
+            : string.Join("; ", descriptions);
+    }
+
+    private static bool IsSteamClientServiceRunning()
+    {
+        var processes = Process.GetProcessesByName("SteamService");
+        try
+        {
+            return processes.Any(process => !process.HasExited);
+        }
+        finally
+        {
+            DisposeProcesses(processes);
+        }
     }
 
     private static int SafeProcessId(Process process)
@@ -896,7 +940,8 @@ public class SteamAccountService(
         }
 
         throw new IOException(
-            "A Steam foi encerrada, mas o loginusers.vdf continua em uso.",
+            $"A Steam foi encerrada, mas o arquivo '{vdfPath}' continua em uso. " +
+            $"Steam Client Service ativo: {IsSteamClientServiceRunning()}.",
             lastError);
     }
 
