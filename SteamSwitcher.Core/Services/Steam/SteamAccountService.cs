@@ -123,7 +123,10 @@ public class SteamAccountService(
             "Troca Steam iniciada. Target={Target}, State={State}",
             MaskSteamId(account.SteamId64), targetState ?? LoginState.Online);
 
-        if (await PreflightSwitchAsync(account, ct))
+        if (await PreflightSwitchAsync(
+                account,
+                targetState ?? LoginState.Online,
+                ct))
         {
             logger.LogInformation(
                 "Troca Steam ignorada: a conta solicitada já está ativa. Target={Target}, ElapsedMs={ElapsedMs}",
@@ -197,6 +200,7 @@ public class SteamAccountService(
 
     private async Task<bool> PreflightSwitchAsync(
         SteamAccount target,
+        LoginState targetState,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
@@ -259,7 +263,12 @@ public class SteamAccountService(
         // O VDF sozinho não basta: a conta pode estar marcada como ativa na
         // instalação selecionada enquanto outra cópia da Steam está executando.
         // Só ignoramos a troca quando a instância correta já é a única aberta.
-        return targetIsAlreadyActive && IsOnlySelectedSteamMainProcessRunning();
+        var persistedStateMatches = persisted.WantsOfflineMode
+            == (targetState == LoginState.Offline);
+
+        return targetIsAlreadyActive
+            && persistedStateMatches
+            && IsOnlySelectedSteamMainProcessRunning();
     }
 
     private void LogSwitchPhase(string phase, Stopwatch operation, string steamId64) =>
