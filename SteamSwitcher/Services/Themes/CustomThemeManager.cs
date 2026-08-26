@@ -171,8 +171,27 @@ public static class CustomThemeManager
         AddBrush(resources, "ControlFillColorTertiaryBrush", theme.SurfaceHover);
         AddBrush(resources, "ControlStrokeColorDefaultBrush", theme.Border, theme.BorderOpacity);
         AddBrush(resources, "ControlStrokeColorSecondaryBrush", theme.Border, theme.BorderOpacity * 0.75);
-        AddBrush(resources, "SystemAccentColorPrimaryBrush", theme.Accent);
-        resources["SystemAccentColor"] = ParseColor(theme.Accent);
+        var accent = ParseColor(theme.Accent);
+        var accentAlt = ParseColor(theme.AccentAlt);
+        var accentSurface = ParseColor(theme.AccentSurface);
+        var onAccent = ContrastRatio("#FFFFFF", theme.Accent) >= ContrastRatio("#0B1220", theme.Accent)
+            ? Colors.White
+            : ParseColor("#0B1220");
+
+        resources["SystemAccentColor"] = accent;
+        resources["SystemAccentColorPrimary"] = accent;
+        resources["SystemAccentColorSecondary"] = accentAlt;
+        resources["SystemAccentColorTertiary"] = accentSurface;
+        resources["SystemAccentColorPrimaryBrush"] = FrozenBrush(accent);
+        resources["SystemAccentColorSecondaryBrush"] = FrozenBrush(accentAlt);
+        resources["SystemAccentColorTertiaryBrush"] = FrozenBrush(accentSurface);
+        resources["AccentFillColorDefaultBrush"] = FrozenBrush(accent);
+        resources["AccentFillColorSecondaryBrush"] = FrozenBrush(accentAlt);
+        resources["AccentFillColorTertiaryBrush"] = FrozenBrush(accentSurface);
+        resources["AccentFillColorDisabledBrush"] = FrozenBrush(accentSurface, 0.65);
+        resources["TextOnAccentFillColorPrimaryBrush"] = FrozenBrush(onAccent);
+        resources["TextOnAccentFillColorSecondaryBrush"] = FrozenBrush(onAccent, 0.88);
+        resources["TextOnAccentFillColorDisabledBrush"] = FrozenBrush(onAccent, 0.55);
         AddBrush(resources, "TextFillColorPrimaryBrush", theme.TextPrimary);
         AddBrush(resources, "TextFillColorSecondaryBrush", theme.TextSecondary);
         AddBrush(resources, "TextFillColorTertiaryBrush", theme.TextMuted);
@@ -252,6 +271,13 @@ public static class CustomThemeManager
 
     private static void AddBrush(ResourceDictionary resources, string key, string value, double opacity = 1)
         => resources[key] = new SolidColorBrush(ParseColor(value)) { Opacity = Clamp(opacity, 0, 1) };
+
+    private static SolidColorBrush FrozenBrush(Color color, double opacity = 1)
+    {
+        var brush = new SolidColorBrush(color) { Opacity = Clamp(opacity, 0, 1) };
+        brush.Freeze();
+        return brush;
+    }
 
     private static Color ParseColor(string value)
     {
