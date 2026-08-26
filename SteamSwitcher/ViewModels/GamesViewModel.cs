@@ -84,11 +84,16 @@ public partial class GamesViewModel(
     public Size GameGridItemSize => new(
         Math.Ceiling(172 * GameCardScale),
         Math.Ceiling(320 * GameCardScale));
+    public WpfToolkit.Controls.SpacingMode GameGridSpacingMode =>
+        NormalizeGridDensity(settingsService.Current.GameGridDensityPercent) == 100
+            ? WpfToolkit.Controls.SpacingMode.None
+            : WpfToolkit.Controls.SpacingMode.Uniform;
 
     public void RefreshGameGridDensity()
     {
         OnPropertyChanged(nameof(GameCardScale));
         OnPropertyChanged(nameof(GameGridItemSize));
+        OnPropertyChanged(nameof(GameGridSpacingMode));
     }
 
     private static int NormalizeGridDensity(int percent) => percent switch

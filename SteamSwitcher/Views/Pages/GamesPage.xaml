@@ -507,6 +507,7 @@
                     <ItemsPanelTemplate>
                         <vwp:VirtualizingWrapPanel
                             ItemSize="{Binding GameGridItemSize}"
+                            SpacingMode="{Binding GameGridSpacingMode}"
                             Orientation="Horizontal" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>

@@ -60,9 +60,7 @@ public partial class AccountsViewModel(
         Math.Ceiling(188 * AccountCardScale),
         Math.Ceiling(220 * AccountCardScale));
     public WpfToolkit.Controls.SpacingMode AccountGridSpacingMode =>
-        NormalizeGridDensity(settingsService.Current.AccountGridDensityPercent) == 100
-            ? WpfToolkit.Controls.SpacingMode.None
-            : WpfToolkit.Controls.SpacingMode.Uniform;
+        WpfToolkit.Controls.SpacingMode.None;
 
     public void RefreshAccountGridDensity()
     {
