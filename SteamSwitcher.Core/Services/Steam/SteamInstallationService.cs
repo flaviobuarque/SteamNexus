@@ -34,6 +34,8 @@ public sealed class SteamInstallationService(
                     discovered.Add(installation);
             }
 
+            ApplyDisplayNames(discovered, settingsService.Current);
+
             _installations.Clear();
             _installations.AddRange(discovered);
 
@@ -102,6 +104,28 @@ public sealed class SteamInstallationService(
         settings.KnownSteamInstallPaths.RemoveAll(path => PathsEqual(path, installation.RootPath));
         if (PathsEqual(settings.SteamInstallPath, installation.RootPath))
             settings.SteamInstallPath = null;
+        await settingsService.SaveAsync(settings);
+        await DiscoverAsync(ct);
+        SelectedInstallationChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public async Task RenameAsync(
+        string installationId,
+        string? displayName,
+        CancellationToken ct = default)
+    {
+        var installation = _installations.FirstOrDefault(i => i.Id == installationId)
+            ?? throw new InvalidOperationException("A instalação não foi encontrada.");
+        var settings = settingsService.Current;
+        var existingKey = settings.SteamInstallationNames.Keys.FirstOrDefault(path =>
+            PathsEqual(path, installation.RootPath));
+        if (existingKey is not null)
+            settings.SteamInstallationNames.Remove(existingKey);
+
+        var normalizedName = displayName?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedName))
+            settings.SteamInstallationNames[installation.RootPath] = normalizedName;
+
         await settingsService.SaveAsync(settings);
         await DiscoverAsync(ct);
         SelectedInstallationChanged?.Invoke(this, EventArgs.Empty);
@@ -215,6 +239,52 @@ public sealed class SteamInstallationService(
             IsCustom = custom,
             IsValid = File.Exists(steamExe) && File.Exists(loginUsers),
         };
+    }
+
+    private static void ApplyDisplayNames(
+        IList<SteamInstallation> installations,
+        AppSettings settings)
+    {
+        var duplicateFolderNames = installations
+            .GroupBy(i => Path.GetFileName(i.RootPath), StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        for (var index = 0; index < installations.Count; index++)
+        {
+            var installation = installations[index];
+            var customName = settings.SteamInstallationNames
+                .FirstOrDefault(item => PathsEqual(item.Key, installation.RootPath))
+                .Value?.Trim();
+            installations[index] = installation with
+            {
+                DisplayName = !string.IsNullOrWhiteSpace(customName)
+                    ? customName
+                    : CreateAutomaticDisplayName(installation.RootPath, duplicateFolderNames),
+                HasCustomDisplayName = !string.IsNullOrWhiteSpace(customName),
+            };
+        }
+    }
+
+    private static string CreateAutomaticDisplayName(
+        string rootPath,
+        IReadOnlySet<string> duplicateFolderNames)
+    {
+        var folderName = Path.GetFileName(rootPath);
+        var drive = Path.GetPathRoot(rootPath)?.TrimEnd(Path.DirectorySeparatorChar);
+        var location = folderName;
+
+        if (duplicateFolderNames.Contains(folderName))
+        {
+            var parentName = Path.GetFileName(Path.GetDirectoryName(rootPath));
+            if (!string.IsNullOrWhiteSpace(parentName))
+                location = Path.Combine(parentName, folderName);
+        }
+
+        return string.IsNullOrWhiteSpace(drive)
+            ? location
+            : $"{drive} · {location}";
     }
 
     private static string NormalizeSteamRoot(string path)

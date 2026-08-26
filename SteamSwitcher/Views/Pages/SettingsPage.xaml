@@ -177,6 +177,33 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="300" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
+                                <TextBlock Text="Nome da instalação" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                <TextBlock Text="Use um nome curto para identificar instalações em discos ou pastas diferentes."
+                                           FontSize="12" Margin="0,3,0,0"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                            </StackPanel>
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding SteamInstallationDisplayName, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="{Binding SelectedSteamInstallation.RootPath}"
+                                     MinHeight="38" Padding="10,7" />
+                            <ui:Button Grid.Column="2"
+                                       Command="{Binding RenameSteamInstallationCommand}"
+                                       ToolTip="Salvar nome da instalação"
+                                       Padding="12,8" Margin="8,0,0,0">
+                                <ic:SymbolIcon Symbol="Save" FontSize="15" />
+                            </ui:Button>
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource TileMiddleStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Center">

@@ -7,6 +7,7 @@ public sealed record SteamInstallation
     public required string SteamExePath { get; init; }
     public required string LoginUsersPath { get; init; }
     public string DisplayName { get; init; } = "Steam";
+    public bool HasCustomDisplayName { get; init; }
     public int AccountCount { get; init; }
     public bool IsRegistryDefault { get; init; }
     public bool IsCustom { get; init; }

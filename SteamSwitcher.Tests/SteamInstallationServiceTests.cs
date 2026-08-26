@@ -83,6 +83,26 @@ public sealed class SteamInstallationServiceTests : IDisposable
         action.Should().Throw<InvalidOperationException>();
     }
 
+    [Fact]
+    public async Task Discover_DifferentiatesSameFolderNameAndPersistsCustomName()
+    {
+        var first = CreateSteam(Path.Combine("Primary", "Steam"), "76561198000000005");
+        var second = CreateSteam(Path.Combine("Secondary", "Steam"), "76561198000000006");
+        var settings = new AppSettings { KnownSteamInstallPaths = [first, second] };
+        var (service, _, settingsService) = CreateService(settings);
+
+        await service.DiscoverAsync();
+
+        service.Installations.Select(i => i.DisplayName).Should().OnlyHaveUniqueItems();
+        var secondInstallation = service.Installations.Single(i => i.RootPath == second);
+        await service.RenameAsync(secondInstallation.Id, "Steam secundária");
+
+        service.Installations.Single(i => i.RootPath == second).DisplayName
+            .Should().Be("Steam secundária");
+        settings.SteamInstallationNames[second].Should().Be("Steam secundária");
+        await settingsService.Received().SaveAsync(settings);
+    }
+
     private (SteamInstallationService Service, AppSettings Settings, IAppSettingsService SettingsService)
         CreateService(AppSettings? settings = null)
     {

@@ -27,6 +27,8 @@ public class AppSettings
     public string? SteamApiKey { get; set; }
     public string? SteamInstallPath { get; set; }
     public List<string> KnownSteamInstallPaths { get; set; } = [];
+    public Dictionary<string, string> SteamInstallationNames { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
 
     // Cache
     public int AvatarCacheExpiryDays { get; set; } = 7;

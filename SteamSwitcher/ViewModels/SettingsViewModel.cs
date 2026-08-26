@@ -48,6 +48,7 @@ public partial class SettingsViewModel(
     [ObservableProperty] private bool _isCleaningOldAccounts;
     [ObservableProperty] private ObservableCollection<SteamInstallation> _steamInstallations = [];
     [ObservableProperty] private SteamInstallation? _selectedSteamInstallation;
+    [ObservableProperty] private string _steamInstallationDisplayName = string.Empty;
 
     private readonly HashSet<Key> _pressedHotkeyKeys = [];
     private Key _capturedMainKey = Key.None;
@@ -67,6 +68,7 @@ public partial class SettingsViewModel(
     partial void OnSteamGridDbApiKeyChanged(string value) => CheckDirty();
     partial void OnSelectedSteamInstallationChanged(SteamInstallation? value)
     {
+        SteamInstallationDisplayName = value?.DisplayName ?? string.Empty;
         if (_initializing || value is null || value.Id == installationService.SelectedInstallation?.Id)
             return;
         _ = SelectSteamInstallationAsync(value);
@@ -286,6 +288,35 @@ public partial class SettingsViewModel(
     }
 
     [RelayCommand]
+    private async Task RenameSteamInstallationAsync()
+    {
+        if (SelectedSteamInstallation is not { } installation) return;
+
+        try
+        {
+            await installationService.RenameAsync(
+                installation.Id,
+                SteamInstallationDisplayName);
+            RefreshSteamInstallations();
+            snackbarService.Show(
+                "Nome da instalação salvo",
+                SelectedSteamInstallation?.DisplayName ?? installation.RootPath,
+                ControlAppearance.Success,
+                null,
+                TimeSpan.FromSeconds(3));
+        }
+        catch (Exception ex)
+        {
+            snackbarService.Show(
+                "Não foi possível renomear a instalação",
+                ex.Message,
+                ControlAppearance.Danger,
+                null,
+                TimeSpan.FromSeconds(5));
+        }
+    }
+
+    [RelayCommand]
     private async Task CheckForUpdatesAsync()
     {
         await UpdateService.CheckForUpdatesAsync();
@@ -437,6 +468,9 @@ public partial class SettingsViewModel(
                 : null,
             SteamInstallPath = current.SteamInstallPath,
             KnownSteamInstallPaths = [.. current.KnownSteamInstallPaths],
+            SteamInstallationNames = new Dictionary<string, string>(
+                current.SteamInstallationNames,
+                StringComparer.OrdinalIgnoreCase),
             AvatarCacheExpiryDays = current.AvatarCacheExpiryDays,
             CoverCacheExpiryDays = current.CoverCacheExpiryDays,
             SteamGridDbApiKey = string.IsNullOrWhiteSpace(SteamGridDbApiKey) ? null : SteamGridDbApiKey,
