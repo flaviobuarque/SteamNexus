@@ -27,12 +27,8 @@ public partial class GameCardViewModel : ObservableObject
     public bool HasOwner => Game.OwnerAccount is not null;
 
     public string SizeAndDrive => Game.SizeAndDrive;
-    public string InstallLocationAndSize =>
-        string.IsNullOrWhiteSpace(Game.DriveLetter)
-            ? Game.SizeFormatted
-            : string.IsNullOrWhiteSpace(Game.SizeFormatted)
-                ? Game.DriveLetter
-                : $"{Game.DriveLetter} • {Game.SizeFormatted}";
+    public string InstallDrive => Game.DriveLetter.ToUpperInvariant();
+    public string InstallSize => Game.SizeFormatted;
     public string InstallFullPath => Game.InstallFullPath;
     public string InstallationName => Game.InstallationName;
     public string InstallationRootPath => Game.InstallationRootPath;
@@ -44,7 +40,8 @@ public partial class GameCardViewModel : ObservableObject
         OnPropertyChanged(nameof(OwnerAccountName));
         OnPropertyChanged(nameof(HasOwner));
         OnPropertyChanged(nameof(SizeAndDrive));
-        OnPropertyChanged(nameof(InstallLocationAndSize));
+        OnPropertyChanged(nameof(InstallDrive));
+        OnPropertyChanged(nameof(InstallSize));
         OnPropertyChanged(nameof(InstallFullPath));
         OnPropertyChanged(nameof(InstallationName));
         OnPropertyChanged(nameof(InstallationRootPath));

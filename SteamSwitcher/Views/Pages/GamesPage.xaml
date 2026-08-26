@@ -521,7 +521,7 @@
                             <Border
                                 x:Name="CardRoot"
                                 Width="160"
-                                Height="322"
+                                Height="302"
                                 Margin="0,0,10,10"
                                 CornerRadius="14"
                                 BorderThickness="1"
@@ -771,12 +771,36 @@
                                             VerticalAlignment="Center" HorizontalAlignment="Center" />
                                     </Border>
 
+                                    <!-- Tempo de jogo sobre a capa -->
+                                    <Border
+                                        Margin="0,0,0,8"
+                                        Padding="7,3"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Top"
+                                        CornerRadius="8"
+                                        Background="{DynamicResource AppChromeBrush}"
+                                        BorderBrush="{DynamicResource AppBorderBrush}"
+                                        BorderThickness="1"
+                                        Panel.ZIndex="21"
+                                        RenderTransformOrigin="0.5,0.5">
+                                        <Border.RenderTransform>
+                                            <TranslateTransform Y="210" />
+                                        </Border.RenderTransform>
+                                        <StackPanel Orientation="Horizontal">
+                                            <ic:SymbolIcon Symbol="Clock" FontSize="10"
+                                                Foreground="{DynamicResource AppAccentBrush}"
+                                                Margin="0,0,4,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Game.PlaytimeFormatted}" FontSize="10"
+                                                Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                                VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+
                                     <!-- 5. Área de texto -->
                                     <Border Margin="0,240,0,0" Padding="9,7,9,7">
                                         <Grid>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="32" />
-                                                <RowDefinition Height="20" />
                                                 <RowDefinition Height="*" />
                                             </Grid.RowDefinitions>
                                             <TextBlock
@@ -785,23 +809,21 @@
                                                 Foreground="{DynamicResource AppTextPrimaryBrush}"
                                                 TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
                                                 ToolTip="{Binding Game.Name}" />
-                                            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center"
+                                            <StackPanel Grid.Row="1" Orientation="Horizontal"
+                                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                                         ToolTip="{Binding InstallFullPath}">
-                                                <ic:SymbolIcon Symbol="Folder" FontSize="10"
+                                                <ic:SymbolIcon Symbol="HardDrive" FontSize="10"
                                                     Foreground="{DynamicResource AppTextMutedBrush}"
                                                     Margin="0,0,4,0" VerticalAlignment="Center" />
-                                                <TextBlock Text="{Binding InstallLocationAndSize}" FontSize="10"
+                                                <TextBlock Text="{Binding InstallDrive}" FontSize="10"
                                                     Foreground="{DynamicResource AppTextSecondaryBrush}"
                                                     TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                            </StackPanel>
-                                            <StackPanel Grid.Row="2" Orientation="Horizontal"
-                                                        HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <ic:SymbolIcon Symbol="Clock" FontSize="10"
-                                                        Foreground="{DynamicResource AppTextMutedBrush}"
-                                                        Margin="0,0,4,0" VerticalAlignment="Center" />
-                                                    <TextBlock Text="{Binding Game.PlaytimeFormatted}" FontSize="10"
-                                                        Foreground="{DynamicResource AppTextSecondaryBrush}"
-                                                        VerticalAlignment="Center" />
+                                                <ic:SymbolIcon Symbol="Database" FontSize="10"
+                                                    Foreground="{DynamicResource AppTextMutedBrush}"
+                                                    Margin="10,0,4,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding InstallSize}" FontSize="10"
+                                                    Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                                    VerticalAlignment="Center" />
                                             </StackPanel>
                                         </Grid>
                                     </Border>
