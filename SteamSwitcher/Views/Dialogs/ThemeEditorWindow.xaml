@@ -223,43 +223,19 @@
                                        HorizontalAlignment="Right" Foreground="{DynamicResource AppTextSecondaryBrush}" />
                         </Grid>
 
-                        <TextBlock Text="Camada de contraste" FontWeight="SemiBold"
+                        <TextBlock Text="Filtro para legibilidade" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        <TextBlock Text="Aplica uma cor transparente sobre a imagem para facilitar a leitura dos textos."
+                                   Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource AppTextMutedBrush}" />
                         <TextBox Text="{Binding BackgroundOverlay, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="0,7,0,18" TextChanged="EditorValue_Changed" />
 
                         <TextBlock Text="Ajuste da imagem" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                        <ComboBox ItemsSource="{Binding StretchOptions}" SelectedItem="{Binding BackgroundStretch}"
+                        <ComboBox ItemsSource="{Binding StretchOptions}" DisplayMemberPath="Label"
+                                  SelectedValuePath="Value" SelectedValue="{Binding BackgroundStretch}"
                                   Margin="0,7,0,0" SelectionChanged="EditorValue_Changed" />
-                    </StackPanel>
-                </TabItem>
-
-                <TabItem Header="Componentes" IsEnabled="{Binding IsCustomTheme}">
-                    <StackPanel Margin="18">
-                        <TextBlock Text="Arredondamento dos cartões" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                        <Slider Minimum="0" Maximum="28" Value="{Binding CardCornerRadius}"
-                                Margin="0,8,0,4" ValueChanged="EditorValue_Changed" />
-                        <TextBlock Text="{Binding CardCornerRadius, StringFormat={}{0:F0} px}"
-                                   Foreground="{DynamicResource AppTextMutedBrush}" />
-
-                        <TextBlock Text="Arredondamento dos botões" FontWeight="SemiBold" Margin="0,22,0,0"
-                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                        <Slider Minimum="0" Maximum="20" Value="{Binding ButtonCornerRadius}"
-                                Margin="0,8,0,4" ValueChanged="EditorValue_Changed" />
-                        <TextBlock Text="{Binding ButtonCornerRadius, StringFormat={}{0:F0} px}"
-                                   Foreground="{DynamicResource AppTextMutedBrush}" />
-
-                        <TextBlock Text="Intensidade das bordas" FontWeight="SemiBold" Margin="0,22,0,0"
-                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                        <Slider Minimum="0.2" Maximum="1" Value="{Binding BorderOpacity}"
-                                Margin="0,8,0,4" ValueChanged="EditorValue_Changed" />
-                        <TextBlock Text="{Binding BorderOpacity, StringFormat={}{0:P0}}"
-                                   Foreground="{DynamicResource AppTextMutedBrush}" />
-
-                        <CheckBox Content="Ativar sombras" IsChecked="{Binding ShadowsEnabled}"
-                                  Margin="0,22,0,0" Click="EditorValue_Changed" />
                     </StackPanel>
                 </TabItem>
 

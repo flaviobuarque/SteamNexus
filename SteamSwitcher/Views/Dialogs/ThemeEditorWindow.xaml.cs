@@ -219,7 +219,13 @@ public partial class ThemeEditorWindow : Window
 public partial class ThemeEditorViewModel : ObservableObject
 {
     public ObservableCollection<ThemeColorEntry> Colors { get; } = [];
-    public IReadOnlyList<string> StretchOptions { get; } = ["UniformToFill", "Uniform", "Fill", "None"];
+    public IReadOnlyList<ThemeStretchOption> StretchOptions { get; } =
+    [
+        new("Preencher sem distorcer", "UniformToFill"),
+        new("Exibir imagem inteira", "Uniform"),
+        new("Esticar para preencher", "Fill"),
+        new("Usar tamanho original", "None"),
+    ];
     public IReadOnlyList<string> Presets { get; } = ["SteamNexus Dark", "SteamNexus Light", "AMOLED", "Roxo neon"];
 
     public static bool IsBuiltInPreset(string? name) => name is
@@ -407,3 +413,5 @@ public partial class ThemeColorEntry(string label, string key, string value) : O
     }
     partial void OnValueChanged(string value) => OnPropertyChanged(nameof(PreviewBrush));
 }
+
+public sealed record ThemeStretchOption(string Label, string Value);
