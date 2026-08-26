@@ -268,13 +268,21 @@
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <vwp:VirtualizingWrapPanel
-                            ItemSize="196,272"
+                            ItemSize="{Binding DataContext.AccountGridItemSize,
+                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             Orientation="Horizontal" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:AccountCardViewModel}">
                         <Grid Margin="0,0,16,12">
+                            <Grid.LayoutTransform>
+                                <ScaleTransform
+                                    ScaleX="{Binding DataContext.AccountCardScale,
+                                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    ScaleY="{Binding DataContext.AccountCardScale,
+                                        RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                            </Grid.LayoutTransform>
                             <local:AccountGridCard
                                 DataContext="{Binding}"
                                 SwitchCommand="{Binding DataContext.SwitchAccountCommand,

@@ -44,6 +44,46 @@ public partial class MainViewModel(
         settingsService.Current.Theme == AppTheme.System;
 
     public string TrayAccountStatusText => IsSwitchingAccount ? "Trocando conta..." : "Conta ativa";
+    public int AccountGridDensityPercent => NormalizeAccountGridDensity(
+        settingsService.Current.AccountGridDensityPercent);
+    public string AccountGridDensityText => $"{AccountGridDensityPercent}%";
+    public bool CanDecreaseAccountGridDensity => AccountGridDensityPercent > 50;
+    public bool CanIncreaseAccountGridDensity => AccountGridDensityPercent < 100;
+    public bool ShowAccountGridDensityControls => ActivePage == "Accounts";
+
+    partial void OnActivePageChanged(string value)
+        => OnPropertyChanged(nameof(ShowAccountGridDensityControls));
+
+    [RelayCommand]
+    private async Task DecreaseAccountGridDensityAsync()
+        => await SetAccountGridDensityAsync(AccountGridDensityPercent == 100 ? 75 : 50);
+
+    [RelayCommand]
+    private async Task IncreaseAccountGridDensityAsync()
+        => await SetAccountGridDensityAsync(AccountGridDensityPercent == 50 ? 75 : 100);
+
+    private async Task SetAccountGridDensityAsync(int percent)
+    {
+        percent = NormalizeAccountGridDensity(percent);
+        if (AccountGridDensityPercent == percent)
+            return;
+
+        settingsService.Current.AccountGridDensityPercent = percent;
+        await settingsService.SaveAsync(settingsService.Current);
+
+        OnPropertyChanged(nameof(AccountGridDensityPercent));
+        OnPropertyChanged(nameof(AccountGridDensityText));
+        OnPropertyChanged(nameof(CanDecreaseAccountGridDensity));
+        OnPropertyChanged(nameof(CanIncreaseAccountGridDensity));
+        WeakReferenceMessenger.Default.Send(new AccountGridDensityChanged());
+    }
+
+    private static int NormalizeAccountGridDensity(int percent) => percent switch
+    {
+        <= 50 => 50,
+        <= 75 => 75,
+        _ => 100,
+    };
 
     partial void OnIsSwitchingAccountChanged(bool value)
         => OnPropertyChanged(nameof(TrayAccountStatusText));

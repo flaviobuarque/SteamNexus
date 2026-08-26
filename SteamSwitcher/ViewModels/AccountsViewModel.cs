@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Net.Http;
+using System.Windows;
 using System.Windows.Data;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
@@ -45,6 +46,22 @@ public partial class AccountsViewModel(
     public bool IsCompactView => AccountViewMode == AccountViewMode.Compact;
     public bool IsGridContentVisible => !IsLoading && IsGridView;
     public bool IsCompactContentVisible => !IsLoading && IsCompactView;
+    public double AccountCardScale => NormalizeGridDensity(
+        settingsService.Current.AccountGridDensityPercent) / 100d;
+    public Size AccountGridItemSize => new(196 * AccountCardScale, 272 * AccountCardScale);
+
+    public void RefreshAccountGridDensity()
+    {
+        OnPropertyChanged(nameof(AccountCardScale));
+        OnPropertyChanged(nameof(AccountGridItemSize));
+    }
+
+    private static int NormalizeGridDensity(int percent) => percent switch
+    {
+        <= 50 => 50,
+        <= 75 => 75,
+        _ => 100,
+    };
 
     public ICollectionView AccountsView
     {

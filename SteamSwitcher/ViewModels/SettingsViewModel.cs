@@ -424,6 +424,7 @@ public partial class SettingsViewModel(
             Theme = Theme,
             AccountSortMode = current.AccountSortMode,
             AccountViewMode = current.AccountViewMode,
+            AccountGridDensityPercent = current.AccountGridDensityPercent,
             GameSortMode = current.GameSortMode,
             GameViewMode = current.GameViewMode,
             AfterAccountSwitch = AfterAccountSwitch,

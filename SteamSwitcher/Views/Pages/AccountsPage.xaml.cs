@@ -48,6 +48,10 @@ public partial class AccountsPage : Page,
                         .Unwrap();
                 });
 
+            WeakReferenceMessenger.Default.Register<AccountGridDensityChanged>(
+                this,
+                (_, _) => ViewModel.RefreshAccountGridDensity());
+
             _messengerRegistered = true;
         }
 
@@ -64,6 +68,7 @@ public partial class AccountsPage : Page,
     {
         WeakReferenceMessenger.Default.Unregister<CacheCleared>(this);
         WeakReferenceMessenger.Default.Unregister<SteamInstallationChanged>(this);
+        WeakReferenceMessenger.Default.Unregister<AccountGridDensityChanged>(this);
         _messengerRegistered = false;
     }
 

@@ -544,6 +544,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <TextBlock
@@ -553,7 +554,41 @@
                     VerticalAlignment="Center"
                     Foreground="{DynamicResource AppTextMutedBrush}" />
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center"
+                    Visibility="{Binding ShowAccountGridDensityControls, Converter={StaticResource BoolToVisibility}}">
+                    <Button
+                        Width="26"
+                        Height="24"
+                        Padding="0"
+                        Cursor="Hand"
+                        ToolTip="Reduzir cartões"
+                        IsEnabled="{Binding CanDecreaseAccountGridDensity}"
+                        Command="{Binding DecreaseAccountGridDensityCommand}">
+                        <ic:SymbolIcon Symbol="Subtract" FontSize="13" />
+                    </Button>
+                    <TextBlock
+                        Width="42"
+                        Text="{Binding AccountGridDensityText}"
+                        TextAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="{DynamicResource AppTextMutedBrush}" />
+                    <Button
+                        Width="26"
+                        Height="24"
+                        Padding="0"
+                        Cursor="Hand"
+                        ToolTip="Aumentar cartões"
+                        IsEnabled="{Binding CanIncreaseAccountGridDensity}"
+                        Command="{Binding IncreaseAccountGridDensityCommand}">
+                        <ic:SymbolIcon Symbol="Add" FontSize="13" />
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                     <TextBlock
                         Text="{Binding StatusBarRight}"
                         FontSize="12"

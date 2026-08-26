@@ -6,6 +6,7 @@ public class AppSettings
     public AppTheme Theme { get; set; } = AppTheme.System;
     public AccountSortMode AccountSortMode { get; set; } = AccountSortMode.RecentUsage;
     public AccountViewMode AccountViewMode { get; set; } = AccountViewMode.Grid;
+    public int AccountGridDensityPercent { get; set; } = 100;
     public GameSortMode GameSortMode { get; set; } = GameSortMode.Alphabetical;
     public GameViewMode GameViewMode { get; set; } = GameViewMode.Grid;
 
