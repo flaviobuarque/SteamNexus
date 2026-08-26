@@ -79,7 +79,7 @@ public sealed class SteamInstallationServiceTests : IDisposable
 
         service.Installations.Should().Contain(i =>
             i.RootPath == disconnected && !i.IsValid && i.IsCustom);
-        var action = service.CaptureContext;
+        var action = () => service.CaptureContext();
         action.Should().Throw<InvalidOperationException>();
     }
 
@@ -101,6 +101,26 @@ public sealed class SteamInstallationServiceTests : IDisposable
             .Should().Be("Steam secundária");
         settings.SteamInstallationNames[second].Should().Be("Steam secundária");
         await settingsService.Received().SaveAsync(settings);
+    }
+
+    [Fact]
+    public async Task CaptureContext_ByInstallationId_DoesNotDependOnCurrentSelection()
+    {
+        var first = CreateSteam("ContextFirst", "76561198000000007");
+        var second = CreateSteam("ContextSecond", "76561198000000008");
+        var settings = new AppSettings
+        {
+            SteamInstallPath = first,
+            KnownSteamInstallPaths = [first, second],
+        };
+        var (service, _, _) = CreateService(settings);
+        await service.DiscoverAsync();
+        var secondInstallation = service.Installations.Single(i => i.RootPath == second);
+
+        var context = service.CaptureContext(secondInstallation.Id);
+
+        context.RootPath.Should().Be(second);
+        service.SelectedInstallation!.RootPath.Should().Be(first);
     }
 
     private (SteamInstallationService Service, AppSettings Settings, IAppSettingsService SettingsService)

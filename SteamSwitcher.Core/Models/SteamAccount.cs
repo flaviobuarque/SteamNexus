@@ -2,6 +2,11 @@
 
 public class SteamAccount
 {
+    // Instalação de origem. SteamId64 pode existir em mais de uma instalação.
+    public string InstallationId { get; set; } = string.Empty;
+    public string InstallationName { get; set; } = string.Empty;
+    public string InstallationRootPath { get; set; } = string.Empty;
+
     // Dados do loginusers.vdf
     public required string SteamId64 { get; init; }
     public required string AccountName { get; set; }
@@ -29,6 +34,9 @@ public class SteamAccount
     public string DisplayName => CustomDisplayName ?? PersonaName;
     public string AvatarSource => CustomAvatarPath ?? AvatarUrl ?? string.Empty;
     public bool IsActive { get; set; }
+    public string UniqueKey => string.IsNullOrWhiteSpace(InstallationId)
+        ? SteamId64
+        : $"{InstallationId}:{SteamId64}";
 
     // SteamID32 para paths de userdata
     public string SteamId32

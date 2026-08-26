@@ -104,7 +104,8 @@ public class SteamAccountService(
         CancellationToken ct = default)
         => await RunSteamMutationAsync(
             () => SwitchAccountCoreAsync(account, stateOverride, ct),
-            ct);
+            ct,
+            account.InstallationId);
 
     private async Task SwitchAccountCoreAsync(
         SteamAccount account,
@@ -305,7 +306,8 @@ public class SteamAccountService(
         CancellationToken ct = default)
         => await RunSteamMutationAsync(
             () => ForgetAccountCoreAsync(account, ct),
-            ct);
+            ct,
+            account.InstallationId);
 
     private async Task ForgetAccountCoreAsync(
         SteamAccount account,
@@ -1040,7 +1042,8 @@ public class SteamAccountService(
 
     private async Task RunSteamMutationAsync(
         Func<Task> operation,
-        CancellationToken ct)
+        CancellationToken ct,
+        string? installationId = null)
     {
         if (!await _steamMutationGate.WaitAsync(0, ct))
             throw new InvalidOperationException(
@@ -1048,7 +1051,9 @@ public class SteamAccountService(
 
         try
         {
-            _operationContext.Value = installationService.CaptureContext();
+            _operationContext.Value = string.IsNullOrWhiteSpace(installationId)
+                ? installationService.CaptureContext()
+                : installationService.CaptureContext(installationId);
             await operation();
         }
         finally

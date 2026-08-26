@@ -22,6 +22,10 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     public string DisplayName => Account.DisplayName;
     public string AccountName => Account.AccountName;
     public string SteamId64 => Account.SteamId64;
+    public string UniqueKey => Account.UniqueKey;
+    public string InstallationId => Account.InstallationId;
+    public string InstallationName => Account.InstallationName;
+    public string InstallationRootPath => Account.InstallationRootPath;
     public long Timestamp => Account.Timestamp;
     public string LastLoginFormatted => FormatLastLogin(Account.Timestamp);
     public bool HasAvatar => AvatarImage is not null || !string.IsNullOrEmpty(AvatarPath);
@@ -43,6 +47,9 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
             StringComparison.OrdinalIgnoreCase);
 
         Account.AccountName = updated.AccountName;
+        Account.InstallationId = updated.InstallationId;
+        Account.InstallationName = updated.InstallationName;
+        Account.InstallationRootPath = updated.InstallationRootPath;
         Account.PersonaName = updated.PersonaName;
         Account.RememberPassword = updated.RememberPassword;
         Account.MostRecent = updated.MostRecent;
@@ -67,6 +74,10 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
 
         OnPropertyChanged(nameof(DisplayName));
         OnPropertyChanged(nameof(AccountName));
+        OnPropertyChanged(nameof(UniqueKey));
+        OnPropertyChanged(nameof(InstallationId));
+        OnPropertyChanged(nameof(InstallationName));
+        OnPropertyChanged(nameof(InstallationRootPath));
         OnPropertyChanged(nameof(Timestamp));
         OnPropertyChanged(nameof(LastLoginFormatted));
     }

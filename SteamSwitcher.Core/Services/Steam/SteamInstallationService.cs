@@ -137,6 +137,22 @@ public sealed class SteamInstallationService(
             ? SelectedInstallation
             : throw new InvalidOperationException("Nenhuma instalação válida da Steam está selecionada.");
 
+        return CreateOperationContext(installation);
+    }
+
+    public SteamOperationContext CaptureContext(string installationId)
+    {
+        var installation = _installations.FirstOrDefault(i =>
+                i.Id == installationId && i.IsValid)
+            ?? throw new InvalidOperationException(
+                "A instalação vinculada à conta não está disponível.");
+
+        return CreateOperationContext(installation);
+    }
+
+    private static SteamOperationContext CreateOperationContext(SteamInstallation installation)
+    {
+
         if (!File.Exists(installation.SteamExePath)
             || !File.Exists(installation.LoginUsersPath))
         {
