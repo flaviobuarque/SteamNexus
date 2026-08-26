@@ -42,6 +42,19 @@ public static class SteamKnownAccountStore
                 }
             },
             ct);
+
+    public static Task RemoveAsync(
+        IEnumerable<string> uniqueKeys,
+        CancellationToken ct = default) =>
+        AtomicJsonFile.UpdateAsync(
+            StorePath,
+            static () => new Dictionary<string, KnownSteamAccount>(StringComparer.Ordinal),
+            stored =>
+            {
+                foreach (var key in uniqueKeys)
+                    stored.Remove(key);
+            },
+            ct);
 }
 
 public sealed class KnownSteamAccount

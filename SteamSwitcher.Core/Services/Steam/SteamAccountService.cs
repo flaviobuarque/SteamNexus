@@ -145,6 +145,31 @@ public class SteamAccountService(
 
         var accountGroups = await Task.WhenAll(tasks);
         var accounts = accountGroups.SelectMany(group => group).ToList();
+        var stored = await SteamKnownAccountStore.LoadAsync(ct);
+        var installationsById = installations.ToDictionary(i => i.Id, StringComparer.Ordinal);
+        var presentKeys = accounts.Select(a => a.UniqueKey).ToHashSet(StringComparer.Ordinal);
+
+        foreach (var record in stored.Values)
+        {
+            var uniqueKey = $"{record.InstallationId}:{record.SteamId64}";
+            if (presentKeys.Contains(uniqueKey)
+                || !installationsById.TryGetValue(record.InstallationId, out var installation)
+                || string.IsNullOrWhiteSpace(record.AccountName))
+                continue;
+
+            accounts.Add(new SteamAccount
+            {
+                InstallationId = installation.Id,
+                InstallationName = installation.DisplayName,
+                InstallationRootPath = installation.RootPath,
+                SteamId64 = record.SteamId64,
+                AccountName = record.AccountName,
+                PersonaName = record.PersonaName,
+                Timestamp = record.Timestamp,
+            });
+            presentKeys.Add(uniqueKey);
+        }
+
         await SteamKnownAccountStore.RememberAsync(accounts, ct);
         return accounts;
     }
@@ -303,7 +328,16 @@ public class SteamAccountService(
             string.Equals(a.SteamId64, target.SteamId64, StringComparison.Ordinal));
 
         if (persisted is null)
-            throw new InvalidOperationException("A conta selecionada não existe mais no loginusers.vdf.");
+        {
+            if (string.IsNullOrWhiteSpace(target.AccountName))
+                throw new InvalidOperationException(
+                    "A conta selecionada não existe mais no loginusers.vdf e não possui nome de login para recuperação.");
+
+            persisted = target;
+            logger.LogInformation(
+                "Conta será restaurada no loginusers.vdf antes da troca. Target={Target}",
+                MaskSteamId(target.SteamId64));
+        }
 
         if (string.IsNullOrWhiteSpace(persisted.AccountName))
             throw new InvalidOperationException("A conta selecionada não possui um nome de login válido.");
@@ -487,6 +521,7 @@ public class SteamAccountService(
 
         logger.LogInformation("Conta {Account} esquecida, backup em {Backup}",
             account.AccountName, backupPath);
+        await SteamKnownAccountStore.RemoveAsync([account.UniqueKey], ct);
     }
 
     public async Task<IReadOnlyList<string>> ForgetAccountsAsync(
@@ -517,6 +552,7 @@ public class SteamAccountService(
                 .Select(account => account.UniqueKey));
         }
 
+        await SteamKnownAccountStore.RemoveAsync(removedKeys, ct);
         return removedKeys;
     }
 
@@ -886,7 +922,8 @@ public class SteamAccountService(
                 input,
                 output,
                 target.SteamId64,
-                state ?? LoginState.Online);
+                state ?? LoginState.Online,
+                target);
 
             WriteVdfAtomically(vdfPath, output.ToArray(), createBackup: true);
             InvalidateSnapshot();

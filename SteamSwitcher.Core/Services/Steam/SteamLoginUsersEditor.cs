@@ -9,7 +9,8 @@ public static class SteamLoginUsersEditor
         Stream input,
         Stream output,
         string targetSteamId64,
-        LoginState state)
+        LoginState state,
+        SteamAccount? missingTarget = null)
     {
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(output);
@@ -19,6 +20,24 @@ public static class SteamLoginUsersEditor
         var document = serializer.Deserialize(input);
         var foundTarget = false;
         var wantsOffline = state == LoginState.Offline;
+
+        if (!document.Children.Any(user => string.Equals(
+                user.Name, targetSteamId64, StringComparison.Ordinal))
+            && missingTarget is not null
+            && string.Equals(missingTarget.SteamId64, targetSteamId64, StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(missingTarget.AccountName))
+        {
+            var restored = new KVObject(targetSteamId64,
+            [
+                new KVObject("AccountName", missingTarget.AccountName),
+                new KVObject("PersonaName", missingTarget.PersonaName),
+                new KVObject(
+                    "Timestamp",
+                    missingTarget.Timestamp.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture)),
+            ]);
+            document.Add(restored);
+        }
 
         foreach (var user in document.Children)
         {

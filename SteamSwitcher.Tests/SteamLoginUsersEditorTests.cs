@@ -124,6 +124,32 @@ public sealed class SteamLoginUsersEditorTests
     }
 
     [Fact]
+    public void Rewrite_RestoresKnownTargetWhenMissingFromVdf()
+    {
+        const string restoredId = "76561198999999999";
+        using var input = StreamOf(CreateVdf());
+        using var output = new MemoryStream();
+        var known = new SteamAccount
+        {
+            SteamId64 = restoredId,
+            AccountName = "restored_login",
+            PersonaName = "Restored",
+            Timestamp = 1234,
+        };
+
+        SteamLoginUsersEditor.Rewrite(
+            input, output, restoredId, LoginState.Online, known);
+        output.Position = 0;
+
+        var snapshot = SteamAccountSnapshotParser.Parse(output);
+        var restored = snapshot.Accounts.Single(a => a.SteamId64 == restoredId);
+        restored.AccountName.Should().Be("restored_login");
+        restored.AutoLogin.Should().BeTrue();
+        restored.MostRecent.Should().BeTrue();
+        restored.RememberPassword.Should().BeTrue();
+    }
+
+    [Fact]
     public void Rewrite_RejectsInvalidVdf()
     {
         using var input = StreamOf("not a valid { vdf");
