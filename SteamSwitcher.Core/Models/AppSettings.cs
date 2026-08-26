@@ -13,6 +13,7 @@ public class AppSettings
 
     // Atualizações
     public bool CheckForUpdatesAutomatically { get; set; } = true;
+    public CustomThemeSettings? CustomTheme { get; set; }
 
     // Comportamento após troca de conta
     public PostSwitchBehavior AfterAccountSwitch { get; set; } = PostSwitchBehavior.KeepOpen;

@@ -6,6 +6,7 @@ using SteamSwitcher.Core.Extensions;
 using SteamSwitcher.Core.Services;
 using SteamSwitcher.Services.Updates;
 using SteamSwitcher.Services.Notifications;
+using SteamSwitcher.Services.Themes;
 using SteamSwitcher.ViewModels;
 using SteamSwitcher.Views;
 using SteamSwitcher.Views.Onboarding;
@@ -69,7 +70,7 @@ public partial class App : Application
         await installationService.DiscoverAsync();
 
         // Aplica tema salvo
-        ApplyTheme(settingsService.Current.Theme);
+        ApplyTheme(settingsService.Current.Theme, settingsService.Current.CustomTheme);
 
         // Watchdog — verifica se houve crash durante troca
         var watchdog = _host.Services.GetRequiredService<IWatchdogService>();
@@ -237,7 +238,9 @@ public partial class App : Application
         if (FeatureFlags.Mods) services.AddSingleton<ModsPage>();
     }
 
-    public static void ApplyTheme(SteamSwitcher.Core.Models.AppTheme theme)
+    public static void ApplyTheme(
+        SteamSwitcher.Core.Models.AppTheme theme,
+        SteamSwitcher.Core.Models.CustomThemeSettings? customTheme = null)
     {
         var wpfUiTheme = theme switch
         {
@@ -263,6 +266,7 @@ public partial class App : Application
             Current.Resources.MergedDictionaries.Remove(existing);
 
         Current.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = uri });
+        CustomThemeManager.Apply(customTheme);
     }
 
     private static string? GetArgValue(string[] args, string key)
