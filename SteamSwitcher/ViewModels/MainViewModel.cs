@@ -360,6 +360,7 @@ public partial class MainViewModel(
 
         var current = settingsService.Current;
         current.Theme = theme;
+        if (current.CustomTheme is not null) current.CustomTheme.IsEnabled = false;
         await settingsService.SaveAsync(current);
         App.ApplyTheme(theme);
         RefreshThemeSelection();

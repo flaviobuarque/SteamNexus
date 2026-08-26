@@ -133,6 +133,7 @@ public partial class SettingsPage : System.Windows.Controls.Page,
 
         var target = button.Tag?.ToString() switch
         {
+            "Appearance" => AppearanceSection,
             "Installations" => InstallationsSection,
             "Steam" => SteamSection,
             "Integrations" => IntegrationsSection,
@@ -196,6 +197,7 @@ public partial class SettingsPage : System.Windows.Controls.Page,
     private (Wpf.Ui.Controls.Button Button, FrameworkElement Element)[]
         GetSettingsSections() =>
         [
+            (AppearanceNavButton, AppearanceSection),
             (AccountNavButton, AccountSection),
             (InstallationsNavButton, InstallationsSection),
             (SteamNavButton, SteamSection),
@@ -204,6 +206,17 @@ public partial class SettingsPage : System.Windows.Controls.Page,
             (UpdatesNavButton, UpdatesSection),
             (DangerNavButton, DangerSection)
         ];
+
+    private async void OpenThemeEditor_Click(object sender, RoutedEventArgs e)
+    {
+        var settings = ViewModel.SettingsSnapshot;
+        var dialog = new ThemeEditorWindow(settings.Theme, settings.CustomTheme)
+        {
+            Owner = Window.GetWindow(this),
+        };
+        if (dialog.ShowDialog() == true && dialog.ResultTheme is not null)
+            await ViewModel.ApplyCustomThemeAsync(dialog.ResultTheme);
+    }
 
     private void UpdateActiveSettingsSection(Wpf.Ui.Controls.Button activeButton)
     {

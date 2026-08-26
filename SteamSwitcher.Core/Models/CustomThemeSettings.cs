@@ -29,13 +29,14 @@ public sealed class CustomThemeSettings
 
     public string? BackgroundImagePath { get; set; }
     public double BackgroundImageOpacity { get; set; } = 0.25;
+    public double BackgroundBlurRadius { get; set; }
     public string BackgroundOverlay { get; set; } = "#6607111F";
     public string BackgroundStretch { get; set; } = "UniformToFill";
 
     public double CardCornerRadius { get; set; } = 14;
     public double ButtonCornerRadius { get; set; } = 8;
     public double BorderOpacity { get; set; } = 1;
-    public bool ShadowsEnabled { get; set; } = true;
+    public bool ShadowsEnabled { get; set; }
 
     public CustomThemeSettings Clone() => (CustomThemeSettings)MemberwiseClone();
 

@@ -2,6 +2,10 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <CornerRadius x:Key="AppCardCornerRadius">14</CornerRadius>
+    <CornerRadius x:Key="AppButtonCornerRadius">8</CornerRadius>
+    <BlurEffect x:Key="AppCardEffect" Radius="0" />
+
     <!-- ========================= -->
     <!-- BACKGROUNDS -->
     <!-- ========================= -->

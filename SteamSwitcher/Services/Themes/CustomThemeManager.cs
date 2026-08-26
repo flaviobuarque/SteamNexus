@@ -1,10 +1,12 @@
 using SteamSwitcher.Core.Models;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Effects;
 
 namespace SteamSwitcher.Services.Themes;
 
@@ -48,6 +50,9 @@ public static class CustomThemeManager
         resources["AppCardCornerRadius"] = new CornerRadius(Clamp(theme.CardCornerRadius, 0, 28));
         resources["AppButtonCornerRadius"] = new CornerRadius(Clamp(theme.ButtonCornerRadius, 0, 20));
         resources["AppThemeShadowsEnabled"] = theme.ShadowsEnabled;
+        resources["AppCardEffect"] = theme.ShadowsEnabled
+            ? new DropShadowEffect { BlurRadius = 18, ShadowDepth = 4, Opacity = 0.22, Color = Colors.Black }
+            : new BlurEffect { Radius = 0 };
 
         if (!string.IsNullOrWhiteSpace(theme.BackgroundImagePath)
             && File.Exists(theme.BackgroundImagePath))
@@ -59,15 +64,61 @@ public static class CustomThemeManager
 
     public static async Task ExportAsync(CustomThemeSettings theme, string path, CancellationToken ct = default)
     {
-        var json = JsonSerializer.Serialize(theme, JsonOptions);
-        await File.WriteAllTextAsync(path, json, ct);
+        Validate(theme);
+        await using var file = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true);
+        using var archive = new ZipArchive(file, ZipArchiveMode.Create, leaveOpen: true);
+        var portable = theme.Clone();
+        if (!string.IsNullOrWhiteSpace(theme.BackgroundImagePath) && File.Exists(theme.BackgroundImagePath))
+        {
+            var extension = Path.GetExtension(theme.BackgroundImagePath).ToLowerInvariant();
+            var assetName = "assets/background" + extension;
+            portable.BackgroundImagePath = assetName;
+            var asset = archive.CreateEntry(assetName, CompressionLevel.Optimal);
+            await using var source = new FileStream(theme.BackgroundImagePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, true);
+            await using var destination = asset.Open();
+            await source.CopyToAsync(destination, ct);
+        }
+        var manifest = archive.CreateEntry("theme.json", CompressionLevel.Optimal);
+        await using var writer = new StreamWriter(manifest.Open());
+        await writer.WriteAsync(JsonSerializer.Serialize(portable, JsonOptions).AsMemory(), ct);
     }
 
     public static async Task<CustomThemeSettings> ImportAsync(string path, CancellationToken ct = default)
     {
-        var json = await File.ReadAllTextAsync(path, ct);
+        if (Path.GetExtension(path).Equals(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            var legacyJson = await File.ReadAllTextAsync(path, ct);
+            var legacyTheme = JsonSerializer.Deserialize<CustomThemeSettings>(legacyJson, JsonOptions)
+                ?? throw new InvalidDataException("O arquivo de tema está vazio ou inválido.");
+            Validate(legacyTheme);
+            return legacyTheme;
+        }
+
+        using var archive = ZipFile.OpenRead(path);
+        var manifest = archive.GetEntry("theme.json")
+            ?? throw new InvalidDataException("O pacote não contém theme.json.");
+        string json;
+        await using (var stream = manifest.Open())
+        using (var reader = new StreamReader(stream))
+            json = await reader.ReadToEndAsync(ct);
         var theme = JsonSerializer.Deserialize<CustomThemeSettings>(json, JsonOptions)
             ?? throw new InvalidDataException("O arquivo de tema está vazio ou inválido.");
+        if (!string.IsNullOrWhiteSpace(theme.BackgroundImagePath))
+        {
+            var asset = archive.GetEntry(theme.BackgroundImagePath.Replace('\\', '/'));
+            if (asset is not null)
+            {
+                var extension = Path.GetExtension(asset.Name).ToLowerInvariant();
+                var directory = ThemeAssetsDirectory();
+                Directory.CreateDirectory(directory);
+                var destination = Path.Combine(directory, $"background-{Guid.NewGuid():N}{extension}");
+                await using var source = asset.Open();
+                await using var target = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true);
+                await source.CopyToAsync(target, ct);
+                theme.BackgroundImagePath = destination;
+            }
+            else theme.BackgroundImagePath = null;
+        }
         Validate(theme);
         return theme;
     }
@@ -78,14 +129,16 @@ public static class CustomThemeManager
         if (extension is not (".png" or ".jpg" or ".jpeg" or ".webp" or ".bmp"))
             throw new InvalidDataException("Use uma imagem PNG, JPG, WEBP ou BMP.");
 
-        var directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SteamSwitcher", "Themes", "Assets");
+        var directory = ThemeAssetsDirectory();
         Directory.CreateDirectory(directory);
         var destination = Path.Combine(directory, $"background-{Guid.NewGuid():N}{extension}");
         File.Copy(sourcePath, destination, false);
         return destination;
     }
+
+    private static string ThemeAssetsDirectory() => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "SteamSwitcher", "Themes", "Assets");
 
     public static double ContrastRatio(string foreground, string background)
     {
@@ -103,6 +156,7 @@ public static class CustomThemeManager
 
         foreach (var value in ColorValues(theme)) ParseColor(value);
         theme.BackgroundImageOpacity = Clamp(theme.BackgroundImageOpacity, 0, 1);
+        theme.BackgroundBlurRadius = Clamp(theme.BackgroundBlurRadius, 0, 24);
         theme.BorderOpacity = Clamp(theme.BorderOpacity, 0.2, 1);
         theme.CardCornerRadius = Clamp(theme.CardCornerRadius, 0, 28);
         theme.ButtonCornerRadius = Clamp(theme.ButtonCornerRadius, 0, 20);
@@ -147,7 +201,11 @@ public static class CustomThemeManager
         bitmap.EndInit();
         bitmap.Freeze();
 
-        var image = new ImageDrawing(bitmap, new Rect(0, 0, 1, 1));
+        ImageSource backgroundSource = bitmap;
+        if (theme.BackgroundBlurRadius > 0.1)
+            backgroundSource = CreateBlurredBitmap(bitmap, theme.BackgroundBlurRadius);
+
+        var image = new ImageDrawing(backgroundSource, new Rect(0, 0, 1, 1));
         var imageLayer = new DrawingGroup { Opacity = theme.BackgroundImageOpacity };
         imageLayer.Children.Add(image);
         var drawings = new DrawingGroup();
@@ -164,6 +222,32 @@ public static class CustomThemeManager
             Stretch = Enum.TryParse<Stretch>(theme.BackgroundStretch, out var stretch)
                 ? stretch : Stretch.UniformToFill,
         };
+    }
+
+    private static BitmapSource CreateBlurredBitmap(BitmapSource source, double radius)
+    {
+        const double maxDimension = 1920;
+        var scale = Math.Min(1, maxDimension / Math.Max(source.PixelWidth, source.PixelHeight));
+        var width = Math.Max(1, (int)Math.Round(source.PixelWidth * scale));
+        var height = Math.Max(1, (int)Math.Round(source.PixelHeight * scale));
+        var image = new System.Windows.Controls.Image
+        {
+            Source = source,
+            Width = width,
+            Height = height,
+            Stretch = Stretch.UniformToFill,
+            Effect = new BlurEffect
+            {
+                Radius = Clamp(radius, 0, 24),
+                KernelType = KernelType.Gaussian,
+            },
+        };
+        image.Measure(new Size(width, height));
+        image.Arrange(new Rect(0, 0, width, height));
+        var rendered = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        rendered.Render(image);
+        rendered.Freeze();
+        return rendered;
     }
 
     private static void AddBrush(ResourceDictionary resources, string key, string value, double opacity = 1)

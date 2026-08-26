@@ -182,6 +182,10 @@
                 <Setter Property="NavigationUIVisibility" Value="Hidden" />
             </Style>
 
+            <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                <Setter Property="CornerRadius" Value="{DynamicResource AppButtonCornerRadius}" />
+            </Style>
+
             <!-- Converters -->
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
             <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />

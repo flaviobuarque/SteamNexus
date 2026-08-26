@@ -28,6 +28,7 @@ public partial class SettingsViewModel(
 {
     private readonly MainViewModel _mainViewModel = mainViewModel;
     public IUpdateService UpdateService { get; } = updateService;
+    public AppSettings SettingsSnapshot => settingsService.Current;
 
     [ObservableProperty] private AppTheme _theme;
     [ObservableProperty] private PostSwitchBehavior _afterAccountSwitch;
@@ -167,6 +168,7 @@ public partial class SettingsViewModel(
     {
         Theme = theme;
         var settings = BuildSettingsFromCurrent();
+        if (settings.CustomTheme is not null) settings.CustomTheme.IsEnabled = false;
         await settingsService.SaveAsync(settings);
         App.ApplyTheme(theme);
         _original = settings;
@@ -212,6 +214,21 @@ public partial class SettingsViewModel(
             ControlAppearance.Success,
             null,
             TimeSpan.FromSeconds(3));
+    }
+
+    public async Task ApplyCustomThemeAsync(CustomThemeSettings theme)
+    {
+        theme.IsEnabled = true;
+        Theme = theme.BaseTheme;
+        var settings = BuildSettingsFromCurrent();
+        settings.Theme = theme.BaseTheme;
+        settings.CustomTheme = theme.Clone();
+        await settingsService.SaveAsync(settings);
+        App.ApplyTheme(theme.BaseTheme, theme);
+        _original = settings;
+        HasUnsavedChanges = false;
+        RefreshStatusBar();
+        snackbarService.Show("Tema aplicado", theme.Name, ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
     }
 
     private void RefreshSteamInstallations()
@@ -521,6 +538,7 @@ public partial class SettingsViewModel(
             StartSilent = StartSilent,
             StartAsAdmin = StartAsAdmin,
             CheckForUpdatesAutomatically = CheckForUpdatesAutomatically,
+            CustomTheme = current.CustomTheme?.Clone(),
             SteamApiKey = FeatureFlags.SteamWebApiKey
                 ? (string.IsNullOrWhiteSpace(SteamApiKey) ? null : SteamApiKey)
                 : null,

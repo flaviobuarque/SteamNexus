@@ -12,6 +12,7 @@ using SteamSwitcher.Views;
 using SteamSwitcher.Views.Onboarding;
 using SteamSwitcher.Views.Pages;
 using System.Windows;
+using System.Windows.Input;
 using Velopack;
 using Wpf.Ui;
 using Wpf.Ui.DependencyInjection;
@@ -70,7 +71,20 @@ public partial class App : Application
         await installationService.DiscoverAsync();
 
         // Aplica tema salvo
-        ApplyTheme(settingsService.Current.Theme, settingsService.Current.CustomTheme);
+        var customTheme = (Keyboard.Modifiers & ModifierKeys.Shift) != 0
+            ? null
+            : settingsService.Current.CustomTheme;
+        try
+        {
+            ApplyTheme(settingsService.Current.Theme, customTheme);
+        }
+        catch
+        {
+            if (settingsService.Current.CustomTheme is not null)
+                settingsService.Current.CustomTheme.IsEnabled = false;
+            await settingsService.SaveAsync(settingsService.Current);
+            ApplyTheme(settingsService.Current.Theme);
+        }
 
         // Watchdog — verifica se houve crash durante troca
         var watchdog = _host.Services.GetRequiredService<IWatchdogService>();
