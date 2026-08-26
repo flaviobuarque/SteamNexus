@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Net.Http;
+using System.Windows;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 
@@ -74,6 +75,29 @@ public partial class GamesViewModel(
     public bool IsGameCompactView => GameViewMode == GameViewMode.Compact;
     public bool IsGameGridContentVisible => HasFilteredGames && IsGameGridView;
     public bool IsGameCompactContentVisible => HasFilteredGames && IsGameCompactView;
+    public double GameCardScale => NormalizeGridDensity(
+        settingsService.Current.GameGridDensityPercent) switch
+    {
+        70 => 0.80,
+        85 => 0.90,
+        _ => 1d,
+    };
+    public Size GameGridItemSize => new(
+        Math.Ceiling(172 * GameCardScale),
+        Math.Ceiling(334 * GameCardScale));
+
+    public void RefreshGameGridDensity()
+    {
+        OnPropertyChanged(nameof(GameCardScale));
+        OnPropertyChanged(nameof(GameGridItemSize));
+    }
+
+    private static int NormalizeGridDensity(int percent) => percent switch
+    {
+        <= 70 => 70,
+        <= 85 => 85,
+        _ => 100,
+    };
 
     [ObservableProperty] private int _currentPage = 1;
 
@@ -956,6 +980,7 @@ public partial class GamesViewModel(
         OnPropertyChanged(nameof(IsGameCompactView));
         OnPropertyChanged(nameof(IsGameGridContentVisible));
         OnPropertyChanged(nameof(IsGameCompactContentVisible));
+        mainViewModel.RefreshGameGridDensityVisibility();
         await settingsService.SaveAsync(settingsService.Current);
     }
 

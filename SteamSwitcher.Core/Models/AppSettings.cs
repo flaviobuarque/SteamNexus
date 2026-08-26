@@ -9,6 +9,7 @@ public class AppSettings
     public int AccountGridDensityPercent { get; set; } = 100;
     public GameSortMode GameSortMode { get; set; } = GameSortMode.Alphabetical;
     public GameViewMode GameViewMode { get; set; } = GameViewMode.Grid;
+    public int GameGridDensityPercent { get; set; } = 85;
 
     // Comportamento após troca de conta
     public PostSwitchBehavior AfterAccountSwitch { get; set; } = PostSwitchBehavior.KeepOpen;

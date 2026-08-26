@@ -506,6 +506,7 @@ public partial class SettingsViewModel(
             AccountGridDensityPercent = current.AccountGridDensityPercent,
             GameSortMode = current.GameSortMode,
             GameViewMode = current.GameViewMode,
+            GameGridDensityPercent = current.GameGridDensityPercent,
             AfterAccountSwitch = AfterAccountSwitch,
             AfterGameLaunch = AfterGameLaunch,
             DefaultLoginStateOverride = DefaultLoginStateOverride,

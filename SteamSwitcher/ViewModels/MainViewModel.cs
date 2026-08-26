@@ -50,9 +50,22 @@ public partial class MainViewModel(
     public bool CanDecreaseAccountGridDensity => AccountGridDensityPercent > 50;
     public bool CanIncreaseAccountGridDensity => AccountGridDensityPercent < 100;
     public bool ShowAccountGridDensityControls => ActivePage == "Accounts";
+    public int GameGridDensityPercent => NormalizeGameGridDensity(
+        settingsService.Current.GameGridDensityPercent);
+    public string GameGridDensityText => $"{GameGridDensityPercent}%";
+    public bool CanDecreaseGameGridDensity => GameGridDensityPercent > 70;
+    public bool CanIncreaseGameGridDensity => GameGridDensityPercent < 100;
+    public bool ShowGameGridDensityControls => ActivePage == "Games"
+        && settingsService.Current.GameViewMode == GameViewMode.Grid;
 
     partial void OnActivePageChanged(string value)
-        => OnPropertyChanged(nameof(ShowAccountGridDensityControls));
+    {
+        OnPropertyChanged(nameof(ShowAccountGridDensityControls));
+        OnPropertyChanged(nameof(ShowGameGridDensityControls));
+    }
+
+    public void RefreshGameGridDensityVisibility()
+        => OnPropertyChanged(nameof(ShowGameGridDensityControls));
 
     [RelayCommand]
     private async Task DecreaseAccountGridDensityAsync()
@@ -82,6 +95,37 @@ public partial class MainViewModel(
     {
         <= 50 => 50,
         <= 75 => 75,
+        _ => 100,
+    };
+
+    [RelayCommand]
+    private async Task DecreaseGameGridDensityAsync()
+        => await SetGameGridDensityAsync(GameGridDensityPercent == 100 ? 85 : 70);
+
+    [RelayCommand]
+    private async Task IncreaseGameGridDensityAsync()
+        => await SetGameGridDensityAsync(GameGridDensityPercent == 70 ? 85 : 100);
+
+    private async Task SetGameGridDensityAsync(int percent)
+    {
+        percent = NormalizeGameGridDensity(percent);
+        if (GameGridDensityPercent == percent)
+            return;
+
+        settingsService.Current.GameGridDensityPercent = percent;
+        await settingsService.SaveAsync(settingsService.Current);
+
+        OnPropertyChanged(nameof(GameGridDensityPercent));
+        OnPropertyChanged(nameof(GameGridDensityText));
+        OnPropertyChanged(nameof(CanDecreaseGameGridDensity));
+        OnPropertyChanged(nameof(CanIncreaseGameGridDensity));
+        WeakReferenceMessenger.Default.Send(new GameGridDensityChanged());
+    }
+
+    private static int NormalizeGameGridDensity(int percent) => percent switch
+    {
+        <= 70 => 70,
+        <= 85 => 85,
         _ => 100,
     };
 

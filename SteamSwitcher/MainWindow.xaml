@@ -588,6 +588,28 @@
                     </Button>
                 </StackPanel>
 
+                <StackPanel
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center"
+                    Visibility="{Binding ShowGameGridDensityControls, Converter={StaticResource BoolToVisibility}}">
+                    <Button Width="26" Height="24" Padding="0" Cursor="Hand"
+                            ToolTip="Reduzir pôsteres"
+                            IsEnabled="{Binding CanDecreaseGameGridDensity}"
+                            Command="{Binding DecreaseGameGridDensityCommand}">
+                        <ic:SymbolIcon Symbol="Subtract" FontSize="13" />
+                    </Button>
+                    <TextBlock Width="42" Text="{Binding GameGridDensityText}"
+                               TextAlignment="Center" VerticalAlignment="Center"
+                               FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}" />
+                    <Button Width="26" Height="24" Padding="0" Cursor="Hand"
+                            ToolTip="Aumentar pôsteres"
+                            IsEnabled="{Binding CanIncreaseGameGridDensity}"
+                            Command="{Binding IncreaseGameGridDensityCommand}">
+                        <ic:SymbolIcon Symbol="Add" FontSize="13" />
+                    </Button>
+                </StackPanel>
+
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                     <TextBlock
                         Text="{Binding StatusBarRight}"

@@ -481,7 +481,7 @@
         <Grid Grid.Row="1">
             <ItemsControl
                 x:Name="GamesItemsControl"
-                Padding="16"
+                Padding="12"
                 ItemsSource="{Binding Games}"
                 ClipToBounds="True"
                 VirtualizingPanel.IsVirtualizing="True"
@@ -506,16 +506,23 @@
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <vwp:VirtualizingWrapPanel
-                            ItemSize="172,364"
+                            ItemSize="{Binding GameGridItemSize}"
                             Orientation="Horizontal" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:GameCardViewModel}">
+                            <Grid>
+                                <Grid.LayoutTransform>
+                                    <ScaleTransform
+                                        ScaleX="{Binding DataContext.GameCardScale, Source={x:Reference GamesItemsControl}}"
+                                        ScaleY="{Binding DataContext.GameCardScale, Source={x:Reference GamesItemsControl}}" />
+                                </Grid.LayoutTransform>
                             <Border
                                 x:Name="CardRoot"
                                 Width="160"
-                                Margin="0,0,12,12"
+                                Height="322"
+                                Margin="0,0,10,10"
                                 CornerRadius="14"
                                 BorderThickness="1"
                                 Background="{DynamicResource AppSurfaceBrush}"
@@ -592,6 +599,21 @@
                                             </ic:SymbolIcon.Style>
                                         </ic:SymbolIcon>
                                     </Button>
+                                    <Border
+                                        Margin="8,8,0,0" Padding="6,2"
+                                        HorizontalAlignment="Left" VerticalAlignment="Top"
+                                        CornerRadius="6" Panel.ZIndex="20"
+                                        Background="{DynamicResource AppChromeBrush}"
+                                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                                        ToolTip="{Binding InstallationRootPath}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ic:SymbolIcon Symbol="HardDrive" FontSize="10" Margin="0,0,4,0"
+                                                           Foreground="{DynamicResource AppAccentBrush}" />
+                                            <TextBlock Text="{Binding InstallationName}" FontSize="9" MaxWidth="88"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                        </StackPanel>
+                                    </Border>
                                     <!-- 2. Capa do jogo -->
                                     <Border
                                         CornerRadius="14,14,0,0"
@@ -742,15 +764,20 @@
                                     </Border>
 
                                     <!-- 5. Área de texto -->
-                                    <Border Margin="0,240,0,0" Padding="10,8,10,10">
-                                        <StackPanel>
+                                    <Border Margin="0,240,0,0" Padding="9,7,9,7">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="32" />
+                                                <RowDefinition Height="20" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
                                             <TextBlock
                                                 Text="{Binding Game.Name}"
                                                 FontSize="12" FontWeight="SemiBold"
                                                 Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                                TextTrimming="CharacterEllipsis"
+                                                TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
                                                 ToolTip="{Binding Game.Name}" />
-                                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
                                                 <ic:SymbolIcon
                                                     Symbol="Person" FontSize="10"
                                                     Foreground="{DynamicResource AppTextSecondaryBrush}"
@@ -772,13 +799,12 @@
                                                     FontStyle="Italic"
                                                     Visibility="{Binding HasOwner, Converter={StaticResource InverseBoolToVisibility}}" />
                                             </StackPanel>
-                                            <Border Height="1" Background="{DynamicResource AppBorderBrush}" Margin="0,8,0,8" />
-                                            <Grid>
+                                            <Grid Grid.Row="2" VerticalAlignment="Center">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                                                     <ic:SymbolIcon Symbol="Clock" FontSize="10"
                                                         Foreground="{DynamicResource AppTextMutedBrush}"
                                                         Margin="0,0,4,0" VerticalAlignment="Center" />
@@ -786,23 +812,20 @@
                                                         Foreground="{DynamicResource AppTextSecondaryBrush}"
                                                         VerticalAlignment="Center" />
                                                 </StackPanel>
-                                            </Grid>
-                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                <ic:SymbolIcon Symbol="HardDrive" FontSize="10"
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ic:SymbolIcon Symbol="HardDrive" FontSize="10"
                                                         Foreground="{DynamicResource AppTextMutedBrush}"
                                                         Margin="0,0,4,0" VerticalAlignment="Center" />
-                                                <TextBlock Text="{Binding SizeAndDrive}" FontSize="10"
+                                                    <TextBlock Text="{Binding SizeAndDrive}" FontSize="10"
                                                         Foreground="{DynamicResource AppTextMutedBrush}"
                                                         VerticalAlignment="Center" />
-                                            </StackPanel>
-                                            <TextBlock Text="{Binding InstallationName}" FontSize="9" Margin="0,3,0,0"
-                                                       ToolTip="{Binding InstallationRootPath}"
-                                                       Foreground="{DynamicResource AppAccentBrush}"
-                                                       TextTrimming="CharacterEllipsis" />
-                                        </StackPanel>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Grid>
                                     </Border>
                                 </Grid>
                             </Border>
+                            </Grid>
 
                             <DataTemplate.Triggers>
                                 <Trigger SourceName="CardRoot" Property="IsMouseOver" Value="True">

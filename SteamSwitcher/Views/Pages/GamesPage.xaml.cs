@@ -1,4 +1,5 @@
 ﻿using SteamSwitcher.ViewModels;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -16,14 +17,23 @@ public partial class GamesPage : Page,
         InitializeComponent();
         DataContext = ViewModel;
         Loaded += Page_Loaded;
+        Unloaded += Page_Unloaded;
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
+        WeakReferenceMessenger.Default.Unregister<GameGridDensityChanged>(this);
+        WeakReferenceMessenger.Default.Register<GameGridDensityChanged>(
+            this,
+            (_, _) => ViewModel.RefreshGameGridDensity());
+
         await ViewModel.InitializeAsync();
 
         ViewModel.RefreshStatusBar();
     }
+
+    private void Page_Unloaded(object sender, RoutedEventArgs e)
+        => WeakReferenceMessenger.Default.Unregister<GameGridDensityChanged>(this);
 
     private void GameSortButton_Click(object sender, RoutedEventArgs e)
     {
