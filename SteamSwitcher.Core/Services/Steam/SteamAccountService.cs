@@ -251,10 +251,15 @@ public class SteamAccountService(
                 MaskSteamId(target.SteamId64));
         }
 
-        return string.Equals(
+        var targetIsAlreadyActive = string.Equals(
             snapshot.ActiveAccount?.SteamId64,
             target.SteamId64,
             StringComparison.Ordinal);
+
+        // O VDF sozinho não basta: a conta pode estar marcada como ativa na
+        // instalação selecionada enquanto outra cópia da Steam está executando.
+        // Só ignoramos a troca quando a instância correta já é a única aberta.
+        return targetIsAlreadyActive && IsOnlySelectedSteamMainProcessRunning();
     }
 
     private void LogSwitchPhase(string phase, Stopwatch operation, string steamId64) =>
@@ -538,16 +543,19 @@ public class SteamAccountService(
 
     private async Task CloseSteamAsync(SteamCloseMethod method, CancellationToken ct)
     {
-        var initialProcesses = GetSteamProcesses();
+        var initialProcesses = GetAllSteamProcesses();
         if (initialProcesses.Count == 0)
         {
             await WaitForVdfReleaseAsync(ct);
             return;
         }
 
+        var conflictingCount = initialProcesses.Count(process =>
+            !ProcessBelongsToSelectedInstallation(process));
+
         logger.LogInformation(
-            "Encerrando Steam. Method={Method}, Processes={ProcessCount}",
-            method, initialProcesses.Count);
+            "Encerrando Steam. Method={Method}, Processes={ProcessCount}, ConflictingInstallations={ConflictingCount}",
+            method, initialProcesses.Count, conflictingCount);
         DisposeProcesses(initialProcesses);
 
         var steamExe = locator.GetSteamExePath(SteamPath);
@@ -578,7 +586,7 @@ public class SteamAccountService(
 
         if (method == SteamCloseMethod.Graceful)
         {
-            var gracefulProcesses = GetSteamProcesses();
+            var gracefulProcesses = GetAllSteamProcesses();
             foreach (var process in gracefulProcesses)
             {
                 try
@@ -600,7 +608,7 @@ public class SteamAccountService(
             }
         }
 
-        var remaining = GetSteamProcesses();
+        var remaining = GetAllSteamProcesses();
         logger.LogWarning(
             "Steam não encerrou no prazo; aplicando fallback forçado. Processes={ProcessCount}",
             remaining.Count);
@@ -625,7 +633,15 @@ public class SteamAccountService(
         await WaitForVdfReleaseAsync(ct);
     }
 
-    private List<Process> GetSteamProcesses()
+    private static List<Process> GetAllSteamProcesses()
+    {
+        var result = new List<Process>();
+        foreach (var processName in SteamProcessNames)
+            result.AddRange(Process.GetProcessesByName(processName));
+        return result;
+    }
+
+    private List<Process> GetSelectedSteamProcesses()
     {
         var result = new List<Process>();
         foreach (var processName in SteamProcessNames)
@@ -678,14 +694,14 @@ public class SteamAccountService(
         while (DateTime.UtcNow < deadline)
         {
             ct.ThrowIfCancellationRequested();
-            var processes = GetSteamProcesses();
+            var processes = GetAllSteamProcesses();
             var hasProcesses = processes.Count > 0;
             DisposeProcesses(processes);
             if (!hasProcesses) return true;
             await Task.Delay(200, ct);
         }
 
-        var remaining = GetSteamProcesses();
+        var remaining = GetAllSteamProcesses();
         var exited = remaining.Count == 0;
         DisposeProcesses(remaining);
         return exited;
@@ -948,12 +964,34 @@ public class SteamAccountService(
 
     private bool IsSteamMainProcessRunning()
     {
-        var processes = GetSteamProcesses()
+        var processes = GetSelectedSteamProcesses()
             .Where(process => process.ProcessName.Equals("steam", StringComparison.OrdinalIgnoreCase))
             .ToList();
         var running = processes.Count > 0;
         DisposeProcesses(processes);
         return running;
+    }
+
+    private bool IsOnlySelectedSteamMainProcessRunning()
+    {
+        var processes = Process.GetProcessesByName("steam");
+        try
+        {
+            var selectedIsRunning = false;
+            foreach (var process in processes)
+            {
+                if (ProcessBelongsToSelectedInstallation(process))
+                    selectedIsRunning = true;
+                else
+                    return false;
+            }
+
+            return selectedIsRunning;
+        }
+        finally
+        {
+            DisposeProcesses(processes);
+        }
     }
 
     public async Task AddAccountAsync(CancellationToken ct = default)
