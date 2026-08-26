@@ -604,6 +604,16 @@ public partial class GamesViewModel(
         var installationAccounts = _allAccounts
             .Where(account => account.InstallationId == cardVm.Game.InstallationId)
             .ToList();
+        if (installationAccounts.Count == 0)
+        {
+            snackbarService.Show(
+                "Nenhuma conta nesta instalação",
+                $"Adicione uma conta à instalação {cardVm.Game.InstallationName}.",
+                ControlAppearance.Caution,
+                null,
+                TimeSpan.FromSeconds(4));
+            return;
+        }
         var dialog = new SteamSwitcher.Views.Dialogs.PickAccountDialog(
             cardVm.Game.Name,
             installationAccounts,
@@ -1062,6 +1072,16 @@ public partial class GamesViewModel(
             var installationAccounts = _allAccounts
                 .Where(candidate => candidate.InstallationId == cardVm.Game.InstallationId)
                 .ToList();
+            if (installationAccounts.Count == 0)
+            {
+                snackbarService.Show(
+                    "Nenhuma conta nesta instalação",
+                    $"Adicione uma conta à instalação {cardVm.Game.InstallationName}.",
+                    ControlAppearance.Caution,
+                    null,
+                    TimeSpan.FromSeconds(4));
+                return;
+            }
             var dialog = new SteamSwitcher.Views.Dialogs.PickAccountDialog(
                 cardVm.Game.Name, installationAccounts, cardVm.Game.LoginStateOverride)
             {

@@ -106,8 +106,7 @@ public class SteamAccountService(
             .ToList();
         if (installations.Count == 0) return [];
 
-        var activeInstallationId = FindRunningInstallationId(installations)
-            ?? installationService.SelectedInstallation?.Id;
+        var activeInstallationId = FindRunningInstallationId(installations);
         var tasks = installations.Select(async installation =>
         {
             try

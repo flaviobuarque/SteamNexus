@@ -166,6 +166,8 @@
                                             <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
                                             <TextBlock Text="{Binding RootPath}" FontSize="11" Opacity="0.7"
                                                        TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding StatusText}" FontSize="10"
+                                                       Foreground="{DynamicResource AppTextMutedBrush}" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>

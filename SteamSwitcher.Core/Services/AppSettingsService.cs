@@ -30,6 +30,8 @@ public class AppSettingsService(ILogger<AppSettingsService> logger) : IAppSettin
         {
             var json = await File.ReadAllTextAsync(_settingsPath);
             Current = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions) ?? new();
+            Current.KnownSteamInstallPaths ??= [];
+            Current.SteamInstallationNames ??= new(StringComparer.OrdinalIgnoreCase);
         }
         catch (Exception ex)
         {

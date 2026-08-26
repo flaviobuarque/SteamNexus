@@ -391,6 +391,8 @@ public partial class AccountsViewModel(
                 EnableRaisingEvents = true,
             };
             watcher.Changed += (_, _) => QueueLoginUsersRefresh();
+            watcher.Created += (_, _) => QueueLoginUsersRefresh();
+            watcher.Renamed += (_, _) => QueueLoginUsersRefresh();
             _vdfWatchers.Add(watcher);
         }
     }
