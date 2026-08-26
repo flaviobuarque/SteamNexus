@@ -144,7 +144,9 @@ public class SteamAccountService(
         });
 
         var accountGroups = await Task.WhenAll(tasks);
-        return accountGroups.SelectMany(accounts => accounts).ToList();
+        var accounts = accountGroups.SelectMany(group => group).ToList();
+        await SteamKnownAccountStore.RememberAsync(accounts, ct);
+        return accounts;
     }
 
     public async Task SwitchAccountAsync(
