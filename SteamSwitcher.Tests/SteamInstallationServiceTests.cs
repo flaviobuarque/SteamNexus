@@ -144,6 +144,8 @@ public sealed class SteamInstallationServiceTests : IDisposable
             locator,
             installationService,
             settingsService,
+            new SteamKnownAccountStore(Path.Combine(
+                Path.GetTempPath(), $"steam-known-{Guid.NewGuid():N}.json")),
             NullLogger<SteamAccountService>.Instance);
 
         var accounts = await accountService.GetAllAccountsAsync();
@@ -152,6 +154,59 @@ public sealed class SteamInstallationServiceTests : IDisposable
         accounts.Select(account => account.UniqueKey).Should().OnlyHaveUniqueItems();
         accounts.Select(account => account.InstallationId)
             .Should().BeEquivalentTo("first", "second");
+    }
+
+    [Fact]
+    public async Task GetAllAccounts_RestoresStoredAccountOnlyToItsInstallation()
+    {
+        var first = CreateSteam("StoredFirst", "76561198000000012");
+        var second = CreateSteam("StoredSecond", "76561198000000013");
+        var installations = new[]
+        {
+            CreateInstallation("first", first),
+            CreateInstallation("second", second),
+        };
+        var installationService = Substitute.For<ISteamInstallationService>();
+        installationService.Installations.Returns(installations);
+        installationService.SelectedInstallation.Returns(installations[0]);
+        var locator = Substitute.For<ISteamLocatorService>();
+        var settingsService = Substitute.For<IAppSettingsService>();
+        settingsService.Current.Returns(new AppSettings());
+        var storePath = Path.Combine(
+            Path.GetTempPath(), $"steam-known-{Guid.NewGuid():N}.json");
+
+        try
+        {
+            var store = new SteamKnownAccountStore(storePath);
+            await store.RememberAsync(
+            [
+                new SteamAccount
+                {
+                    InstallationId = "second",
+                    SteamId64 = "76561198000000014",
+                    AccountName = "recovered_login",
+                    PersonaName = "Recovered",
+                },
+            ]);
+            var accountService = new SteamAccountService(
+                locator,
+                installationService,
+                settingsService,
+                store,
+                NullLogger<SteamAccountService>.Instance);
+
+            var accounts = await accountService.GetAllAccountsAsync();
+
+            var recovered = accounts.Single(a => a.SteamId64 == "76561198000000014");
+            recovered.InstallationId.Should().Be("second");
+            recovered.InstallationRootPath.Should().Be(second);
+            recovered.RememberPassword.Should().BeFalse();
+            recovered.IsActive.Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(storePath);
+        }
     }
 
     [Fact]

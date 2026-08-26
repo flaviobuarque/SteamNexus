@@ -3,25 +3,39 @@ using SteamSwitcher.Core.Models;
 
 namespace SteamSwitcher.Core.Services;
 
-public static class SteamKnownAccountStore
+public interface ISteamKnownAccountStore
 {
-    private static readonly string StorePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "SteamSwitcher",
-        "known_steam_accounts.json");
+    Task<Dictionary<string, KnownSteamAccount>> LoadAsync(CancellationToken ct = default);
+    Task RememberAsync(IEnumerable<SteamAccount> accounts, CancellationToken ct = default);
+    Task RemoveAsync(IEnumerable<string> uniqueKeys, CancellationToken ct = default);
+}
 
-    public static Task<Dictionary<string, KnownSteamAccount>> LoadAsync(
+public sealed class SteamKnownAccountStore : ISteamKnownAccountStore
+{
+    private readonly string _storePath;
+
+    public SteamKnownAccountStore()
+        : this(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "SteamSwitcher",
+            "known_steam_accounts.json"))
+    {
+    }
+
+    public SteamKnownAccountStore(string storePath) => _storePath = storePath;
+
+    public Task<Dictionary<string, KnownSteamAccount>> LoadAsync(
         CancellationToken ct = default) =>
         AtomicJsonFile.ReadAsync(
-            StorePath,
+            _storePath,
             static () => new Dictionary<string, KnownSteamAccount>(StringComparer.Ordinal),
             ct);
 
-    public static Task RememberAsync(
+    public Task RememberAsync(
         IEnumerable<SteamAccount> accounts,
         CancellationToken ct = default) =>
         AtomicJsonFile.UpdateAsync(
-            StorePath,
+            _storePath,
             static () => new Dictionary<string, KnownSteamAccount>(StringComparer.Ordinal),
             stored =>
             {
@@ -43,11 +57,11 @@ public static class SteamKnownAccountStore
             },
             ct);
 
-    public static Task RemoveAsync(
+    public Task RemoveAsync(
         IEnumerable<string> uniqueKeys,
         CancellationToken ct = default) =>
         AtomicJsonFile.UpdateAsync(
-            StorePath,
+            _storePath,
             static () => new Dictionary<string, KnownSteamAccount>(StringComparer.Ordinal),
             stored =>
             {

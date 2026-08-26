@@ -12,6 +12,7 @@ public class SteamAccountService(
     ISteamLocatorService locator,
     ISteamInstallationService installationService,
     IAppSettingsService settingsService,
+    ISteamKnownAccountStore knownAccountStore,
     ILogger<SteamAccountService> logger) : ISteamAccountService
 {
     public bool IsOperationInProgress => _steamMutationGate.CurrentCount == 0;
@@ -147,7 +148,7 @@ public class SteamAccountService(
 
         var accountGroups = await Task.WhenAll(tasks);
         var accounts = accountGroups.SelectMany(group => group).ToList();
-        var stored = await SteamKnownAccountStore.LoadAsync(ct);
+        var stored = await knownAccountStore.LoadAsync(ct);
         var installationsById = installations.ToDictionary(i => i.Id, StringComparer.Ordinal);
         var presentKeys = accounts.Select(a => a.UniqueKey).ToHashSet(StringComparer.Ordinal);
 
@@ -172,7 +173,7 @@ public class SteamAccountService(
             presentKeys.Add(uniqueKey);
         }
 
-        await SteamKnownAccountStore.RememberAsync(accounts, ct);
+        await knownAccountStore.RememberAsync(accounts, ct);
         return accounts;
     }
 
@@ -523,7 +524,7 @@ public class SteamAccountService(
 
         logger.LogInformation("Conta {Account} esquecida, backup em {Backup}",
             account.AccountName, backupPath);
-        await SteamKnownAccountStore.RemoveAsync([account.UniqueKey], ct);
+        await knownAccountStore.RemoveAsync([account.UniqueKey], ct);
     }
 
     public async Task<IReadOnlyList<string>> ForgetAccountsAsync(
@@ -554,7 +555,7 @@ public class SteamAccountService(
                 .Select(account => account.UniqueKey));
         }
 
-        await SteamKnownAccountStore.RemoveAsync(removedKeys, ct);
+        await knownAccountStore.RemoveAsync(removedKeys, ct);
         return removedKeys;
     }
 
