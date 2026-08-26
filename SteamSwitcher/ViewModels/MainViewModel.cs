@@ -36,13 +36,6 @@ public partial class MainViewModel(
     [ObservableProperty] private string _activeAccountAvatarPath = string.Empty;
     [ObservableProperty] private bool _isSwitchingAccount;
 
-    public bool IsDarkThemeSelected =>
-        settingsService.Current.Theme == AppTheme.Dark;
-    public bool IsLightThemeSelected =>
-        settingsService.Current.Theme == AppTheme.Light;
-    public bool IsSystemThemeSelected =>
-        settingsService.Current.Theme == AppTheme.System;
-
     public string TrayAccountStatusText => IsSwitchingAccount ? "Trocando conta..." : "Conta ativa";
     public int AccountGridDensityPercent => NormalizeAccountGridDensity(
         settingsService.Current.AccountGridDensityPercent);
@@ -346,31 +339,6 @@ public partial class MainViewModel(
                 ControlAppearance.Success,
                 null,
                 TimeSpan.FromSeconds(3));
-    }
-
-    [RelayCommand]
-    private async Task ApplyThemeAsync(string themeStr)
-    {
-        var theme = themeStr switch
-        {
-            "Light" => Core.Models.AppTheme.Light,
-            "Dark" => Core.Models.AppTheme.Dark,
-            _ => Core.Models.AppTheme.System
-        };
-
-        var current = settingsService.Current;
-        current.Theme = theme;
-        if (current.CustomTheme is not null) current.CustomTheme.IsEnabled = false;
-        await settingsService.SaveAsync(current);
-        App.ApplyTheme(theme);
-        RefreshThemeSelection();
-    }
-
-    public void RefreshThemeSelection()
-    {
-        OnPropertyChanged(nameof(IsDarkThemeSelected));
-        OnPropertyChanged(nameof(IsLightThemeSelected));
-        OnPropertyChanged(nameof(IsSystemThemeSelected));
     }
 
     [RelayCommand]

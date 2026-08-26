@@ -89,11 +89,6 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
                 Dispatcher.Invoke(() => NavigateTo(typeof(SettingsPage), "Settings")));
         }
 
-        ThemeNavItem.AddHandler(
-            UIElement.MouseLeftButtonUpEvent,
-            new MouseButtonEventHandler(ThemeNavItem_Click),
-            handledEventsToo: true);
-
         if (TrayIcon.Menu is ContextMenu trayMenu)
             trayMenu.DataContext = _viewModel;
 
@@ -224,19 +219,6 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             Wpf.Ui.Controls.ControlAppearance.Success,
             null,
             TimeSpan.FromSeconds(6));
-    }
-
-    private void ThemeNavItem_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is Border border)
-        {
-            _viewModel.RefreshThemeSelection();
-            border.ContextMenu!.DataContext = _viewModel;
-            border.ContextMenu.PlacementTarget = border;
-            border.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Right;
-            border.ContextMenu.IsOpen = true;
-            e.Handled = true;
-        }
     }
 
     private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
