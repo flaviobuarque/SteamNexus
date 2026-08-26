@@ -1,0 +1,37 @@
+<Window
+    x:Class="SteamSwitcher.Views.Dialogs.RenameSteamInstallationDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+    WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+    ResizeMode="NoResize" Width="800" Height="600"
+    WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <Border Background="#AA000000">
+        <Border Width="430" Padding="26,24" CornerRadius="14"
+                VerticalAlignment="Center" HorizontalAlignment="Center"
+                Background="{DynamicResource AppChromeBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                    <ic:SymbolIcon Symbol="Edit" FontSize="21" Margin="0,0,10,0"
+                                   Foreground="{DynamicResource AppAccentBrush}" />
+                    <TextBlock Text="Renomear instalação" FontSize="17" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                </StackPanel>
+                <TextBlock Text="Nome exibido" FontSize="11" FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                <TextBox x:Name="NameBox" Margin="0,7,0,10" Padding="10,8"
+                         MaxLength="60" />
+                <TextBlock x:Name="PathText" FontSize="11" TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+                    <Button Content="Cancelar" Padding="18,8" Margin="0,0,8,0"
+                            Click="Cancel_Click" />
+                    <Button Content="Salvar" Padding="18,8" IsDefault="True"
+                            Background="{DynamicResource AppAccentBrush}" Foreground="White"
+                            Click="Save_Click" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Border>
+</Window>

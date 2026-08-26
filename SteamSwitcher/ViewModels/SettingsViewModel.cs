@@ -48,7 +48,6 @@ public partial class SettingsViewModel(
     [ObservableProperty] private bool _isCleaningOldAccounts;
     [ObservableProperty] private ObservableCollection<SteamInstallation> _steamInstallations = [];
     [ObservableProperty] private SteamInstallation? _selectedSteamInstallation;
-    [ObservableProperty] private string _steamInstallationDisplayName = string.Empty;
 
     private readonly HashSet<Key> _pressedHotkeyKeys = [];
     private Key _capturedMainKey = Key.None;
@@ -68,7 +67,6 @@ public partial class SettingsViewModel(
     partial void OnSteamGridDbApiKeyChanged(string value) => CheckDirty();
     partial void OnSelectedSteamInstallationChanged(SteamInstallation? value)
     {
-        SteamInstallationDisplayName = value?.DisplayName ?? string.Empty;
         if (_initializing || value is null || value.Id == installationService.SelectedInstallation?.Id)
             return;
         _ = SelectSteamInstallationAsync(value);
@@ -271,32 +269,43 @@ public partial class SettingsViewModel(
     }
 
     [RelayCommand]
-    private void OpenSteamInstallationFolder()
+    private void OpenSteamInstallationFolder(SteamInstallation? installation)
     {
-        var path = SelectedSteamInstallation?.RootPath;
+        var path = installation?.RootPath ?? SelectedSteamInstallation?.RootPath;
         if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) return;
         Process.Start(new ProcessStartInfo("explorer.exe", $"\"{path}\"") { UseShellExecute = true });
     }
 
     [RelayCommand]
-    private async Task RemoveSteamInstallationAsync()
+    private async Task RemoveSteamInstallationAsync(SteamInstallation? installation)
     {
-        if (SelectedSteamInstallation is not { IsCustom: true } installation) return;
+        installation ??= SelectedSteamInstallation;
+        if (installation is not { IsCustom: true }) return;
+        if (ConfirmFunc?.Invoke(
+                "Remover instalação",
+                $"Remover {installation.DisplayName} do SteamNexus? Nenhum arquivo da Steam será apagado.",
+                "Remover",
+                "Cancelar") == false)
+            return;
         await installationService.RemoveCustomPathAsync(installation.Id);
         RefreshSteamInstallations();
         WeakReferenceMessenger.Default.Send(new SteamInstallationChanged());
     }
 
     [RelayCommand]
-    private async Task RenameSteamInstallationAsync()
+    private async Task RenameSteamInstallationAsync(SteamInstallation installation)
     {
-        if (SelectedSteamInstallation is not { } installation) return;
-
         try
         {
-            await installationService.RenameAsync(
-                installation.Id,
-                SteamInstallationDisplayName);
+            var dialog = new Views.Dialogs.RenameSteamInstallationDialog(
+                installation.DisplayName,
+                installation.RootPath)
+            {
+                Owner = Application.Current.MainWindow,
+            };
+            if (dialog.ShowDialog() != true) return;
+
+            await installationService.RenameAsync(installation.Id, dialog.InstallationName);
             RefreshSteamInstallations();
             snackbarService.Show(
                 "Nome da instalação salvo",
@@ -309,6 +318,45 @@ public partial class SettingsViewModel(
         {
             snackbarService.Show(
                 "Não foi possível renomear a instalação",
+                ex.Message,
+                ControlAppearance.Danger,
+                null,
+                TimeSpan.FromSeconds(5));
+        }
+    }
+
+    [RelayCommand]
+    private async Task SetDefaultSteamInstallationAsync(SteamInstallation installation)
+        => await SelectSteamInstallationAsync(installation);
+
+    [RelayCommand]
+    private async Task RelocateSteamInstallationAsync(SteamInstallation installation)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = $"Localizar {installation.DisplayName}",
+            Filter = "Steam (Steam.exe)|Steam.exe|Executáveis (*.exe)|*.exe",
+            CheckFileExists = true,
+            Multiselect = false,
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            await installationService.RelocateAsync(installation.Id, dialog.FileName);
+            RefreshSteamInstallations();
+            WeakReferenceMessenger.Default.Send(new SteamInstallationChanged());
+            snackbarService.Show(
+                "Instalação localizada",
+                dialog.FileName,
+                ControlAppearance.Success,
+                null,
+                TimeSpan.FromSeconds(3));
+        }
+        catch (Exception ex)
+        {
+            snackbarService.Show(
+                "Não foi possível localizar a instalação",
                 ex.Message,
                 ControlAppearance.Danger,
                 null,

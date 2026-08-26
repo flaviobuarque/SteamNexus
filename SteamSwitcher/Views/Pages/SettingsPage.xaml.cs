@@ -133,6 +133,7 @@ public partial class SettingsPage : System.Windows.Controls.Page,
 
         var target = button.Tag?.ToString() switch
         {
+            "Installations" => InstallationsSection,
             "Steam" => SteamSection,
             "Integrations" => IntegrationsSection,
             "Maintenance" => MaintenanceSection,
@@ -196,6 +197,7 @@ public partial class SettingsPage : System.Windows.Controls.Page,
         GetSettingsSections() =>
         [
             (AccountNavButton, AccountSection),
+            (InstallationsNavButton, InstallationsSection),
             (SteamNavButton, SteamSection),
             (IntegrationsNavButton, IntegrationsSection),
             (MaintenanceNavButton, MaintenanceSection),

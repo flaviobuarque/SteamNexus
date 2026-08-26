@@ -72,6 +72,14 @@
                             <TextBlock Text="Conta" VerticalAlignment="Center" />
                         </StackPanel>
                     </ui:Button>
+                    <ui:Button x:Name="InstallationsNavButton"
+                        Style="{StaticResource SettingsNavButtonStyle}"
+                        Tag="Installations" Click="SettingsNavButton_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <ic:SymbolIcon Symbol="HardDrive" FontSize="15" Margin="0,0,9,0" />
+                            <TextBlock Text="Instalações" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ui:Button>
                     <ui:Button x:Name="SteamNavButton"
                         Style="{StaticResource SettingsNavButtonStyle}"
                         Tag="Steam" Click="SettingsNavButton_Click">
@@ -144,96 +152,6 @@
                 <StackPanel Margin="0,8,0,24">
 
                     <Border Style="{StaticResource TileFirstStyle}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="300" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
-                                <TextBlock Text="Instalação controlada" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                <TextBlock Text="Contas, jogos e trocas usam somente esta instalação."
-                                           FontSize="12" Margin="0,3,0,0"
-                                           Foreground="{DynamicResource AppTextMutedBrush}" />
-                            </StackPanel>
-                            <ComboBox Grid.Column="1"
-                                      ItemsSource="{Binding SteamInstallations}"
-                                      SelectedItem="{Binding SelectedSteamInstallation, Mode=TwoWay}"
-                                      MinHeight="40" Padding="10,6">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding RootPath}" FontSize="11" Opacity="0.7"
-                                                       TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Text="{Binding StatusText}" FontSize="10"
-                                                       Foreground="{DynamicResource AppTextMutedBrush}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                        </Grid>
-                    </Border>
-
-                    <Border Style="{StaticResource TileMiddleStyle}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="300" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
-                                <TextBlock Text="Nome da instalação" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                <TextBlock Text="Use um nome curto para identificar instalações em discos ou pastas diferentes."
-                                           FontSize="12" Margin="0,3,0,0"
-                                           Foreground="{DynamicResource AppTextMutedBrush}" />
-                            </StackPanel>
-                            <TextBox Grid.Column="1"
-                                     Text="{Binding SteamInstallationDisplayName, UpdateSourceTrigger=PropertyChanged}"
-                                     ToolTip="{Binding SelectedSteamInstallation.RootPath}"
-                                     MinHeight="38" Padding="10,7" />
-                            <ui:Button Grid.Column="2"
-                                       Command="{Binding RenameSteamInstallationCommand}"
-                                       ToolTip="Salvar nome da instalação"
-                                       Padding="12,8" Margin="8,0,0,0">
-                                <ic:SymbolIcon Symbol="Save" FontSize="15" />
-                            </ui:Button>
-                        </Grid>
-                    </Border>
-
-                    <Border Style="{StaticResource TileMiddleStyle}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="{Binding SelectedSteamInstallation.StatusText, TargetNullValue=Nenhuma instalação encontrada}"
-                                           FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                <TextBlock Text="{Binding SelectedSteamInstallation.RootPath}"
-                                           FontSize="12" Margin="0,3,20,0" TextTrimming="CharacterEllipsis"
-                                           Foreground="{DynamicResource AppTextMutedBrush}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <ui:Button Command="{Binding BrowseSteamInstallationCommand}" Padding="12,8" Margin="0,0,8,0">
-                                    <ic:SymbolIcon Symbol="FolderAdd" FontSize="15" />
-                                </ui:Button>
-                                <ui:Button Command="{Binding OpenSteamInstallationFolderCommand}" Padding="12,8" Margin="0,0,8,0">
-                                    <ic:SymbolIcon Symbol="FolderOpen" FontSize="15" />
-                                </ui:Button>
-                                <ui:Button Command="{Binding DetectSteamInstallationsCommand}" Padding="12,8">
-                                    <ic:SymbolIcon Symbol="ArrowSync" FontSize="15" />
-                                </ui:Button>
-                                <ui:Button Command="{Binding RemoveSteamInstallationCommand}" Padding="12,8" Margin="8,0,0,0"
-                                           IsEnabled="{Binding SelectedSteamInstallation.IsCustom}">
-                                    <ic:SymbolIcon Symbol="Delete" FontSize="15" />
-                                </ui:Button>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <Border Style="{StaticResource TileMiddleStyle}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -400,6 +318,121 @@
                 </StackPanel>
 
                 <!-- STEAM -->
+                <!-- INSTALAÇÕES STEAM -->
+                <TextBlock x:Name="InstallationsSection" Text="INSTALAÇÕES STEAM"
+                           Style="{StaticResource SteamSwitcherSectionTitleStyle}" />
+                <StackPanel Margin="0,8,0,24">
+                    <Border Style="{StaticResource TileFirstStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,18,0">
+                                <TextBlock Text="Gerenciar instalações" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                <TextBlock Text="As contas e os jogos usam automaticamente a instalação à qual pertencem."
+                                           FontSize="12" Margin="0,3,0,0" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <ui:Button Command="{Binding BrowseSteamInstallationCommand}"
+                                           ToolTip="Adicionar instalação" Padding="12,8" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ic:SymbolIcon Symbol="FolderAdd" FontSize="15" Margin="0,0,6,0" />
+                                        <TextBlock Text="Adicionar" />
+                                    </StackPanel>
+                                </ui:Button>
+                                <ui:Button Command="{Binding DetectSteamInstallationsCommand}"
+                                           ToolTip="Detectar novamente" Padding="12,8">
+                                    <ic:SymbolIcon Symbol="ArrowSync" FontSize="15" />
+                                </ui:Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <ItemsControl ItemsSource="{Binding SteamInstallations}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource TileMiddleStyle}" Padding="16,15">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,16,0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding DisplayName}" FontSize="14" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                                <Border Margin="8,0,0,0" Padding="7,2" CornerRadius="6"
+                                                        Background="{DynamicResource AppAccentSurfaceBrush}"
+                                                        Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibility}}">
+                                                    <TextBlock Text="PADRÃO" FontSize="9" FontWeight="Bold"
+                                                               Foreground="{DynamicResource AppAccentBrush}" />
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding RootPath}" FontSize="11" Margin="0,4,0,0"
+                                                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding RootPath}" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                                <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse">
+                                                            <Setter Property="Fill" Value="{DynamicResource AppDangerBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsValid}" Value="True">
+                                                                    <Setter Property="Fill" Value="{DynamicResource AppSuccessBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                                <TextBlock Text="{Binding StatusText}" FontSize="11"
+                                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <ui:Button Command="{Binding DataContext.SetDefaultSteamInstallationCommand,
+                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                       CommandParameter="{Binding}" ToolTip="Definir como padrão"
+                                                       Padding="10,8" Margin="0,0,6,0"
+                                                       IsEnabled="{Binding IsValid}"
+                                                       Visibility="{Binding IsSelected, Converter={StaticResource InverseBoolToVisibility}}">
+                                                <ic:SymbolIcon Symbol="Pin" FontSize="15" />
+                                            </ui:Button>
+                                            <ui:Button Command="{Binding DataContext.RenameSteamInstallationCommand,
+                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                       CommandParameter="{Binding}" ToolTip="Renomear"
+                                                       Padding="10,8" Margin="0,0,6,0">
+                                                <ic:SymbolIcon Symbol="Edit" FontSize="15" />
+                                            </ui:Button>
+                                            <ui:Button Command="{Binding DataContext.OpenSteamInstallationFolderCommand,
+                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                       CommandParameter="{Binding}" ToolTip="Abrir pasta"
+                                                       Padding="10,8" Margin="0,0,6,0" IsEnabled="{Binding IsValid}">
+                                                <ic:SymbolIcon Symbol="FolderOpen" FontSize="15" />
+                                            </ui:Button>
+                                            <ui:Button Command="{Binding DataContext.RelocateSteamInstallationCommand,
+                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                       CommandParameter="{Binding}" ToolTip="Localizar novamente"
+                                                       Padding="10,8" Margin="0,0,6,0">
+                                                <ic:SymbolIcon Symbol="FolderSearch" FontSize="15" />
+                                            </ui:Button>
+                                            <ui:Button Command="{Binding DataContext.RemoveSteamInstallationCommand,
+                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                       CommandParameter="{Binding}" ToolTip="Remover"
+                                                       Padding="10,8" IsEnabled="{Binding IsCustom}">
+                                                <ic:SymbolIcon Symbol="Delete" FontSize="15"
+                                                               Foreground="{DynamicResource AppDangerBrush}" />
+                                            </ui:Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
                 <TextBlock x:Name="SteamSection" Text="STEAM" Style="{StaticResource SteamSwitcherSectionTitleStyle}" />
                 <StackPanel Margin="0,8,0,24">
 

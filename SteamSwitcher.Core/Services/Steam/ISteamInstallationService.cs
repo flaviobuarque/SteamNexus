@@ -12,6 +12,7 @@ public interface ISteamInstallationService
     Task SelectAsync(string installationId, CancellationToken ct = default);
     Task AddCustomPathAsync(string path, CancellationToken ct = default);
     Task RenameAsync(string installationId, string? displayName, CancellationToken ct = default);
+    Task RelocateAsync(string installationId, string path, CancellationToken ct = default);
     Task RemoveCustomPathAsync(string installationId, CancellationToken ct = default);
     SteamOperationContext CaptureContext();
     SteamOperationContext CaptureContext(string installationId);

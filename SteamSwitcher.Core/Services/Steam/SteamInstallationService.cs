@@ -47,6 +47,14 @@ public sealed class SteamInstallationService(
                 ?? _installations.FirstOrDefault(i => i.IsValid)
                 ?? _installations.FirstOrDefault();
 
+            var selectedId = SelectedInstallation?.Id;
+            for (var index = 0; index < _installations.Count; index++)
+                _installations[index] = _installations[index] with
+                {
+                    IsSelected = _installations[index].Id == selectedId,
+                };
+            SelectedInstallation = _installations.FirstOrDefault(i => i.Id == selectedId);
+
             logger.LogInformation(
                 "Instalações Steam detectadas: {Count}; selecionada={Selected}",
                 _installations.Count,
@@ -67,7 +75,12 @@ public sealed class SteamInstallationService(
 
         if (SelectedInstallation?.Id == selected.Id) return;
 
-        SelectedInstallation = selected;
+        for (var index = 0; index < _installations.Count; index++)
+            _installations[index] = _installations[index] with
+            {
+                IsSelected = _installations[index].Id == selected.Id,
+            };
+        SelectedInstallation = _installations.First(i => i.Id == selected.Id);
         var settings = settingsService.Current;
         settings.SteamInstallPath = selected.RootPath;
         AddKnownPath(settings, selected.RootPath);
@@ -102,6 +115,10 @@ public sealed class SteamInstallationService(
 
         var settings = settingsService.Current;
         settings.KnownSteamInstallPaths.RemoveAll(path => PathsEqual(path, installation.RootPath));
+        var customNameKey = settings.SteamInstallationNames.Keys.FirstOrDefault(path =>
+            PathsEqual(path, installation.RootPath));
+        if (customNameKey is not null)
+            settings.SteamInstallationNames.Remove(customNameKey);
         if (PathsEqual(settings.SteamInstallPath, installation.RootPath))
             settings.SteamInstallPath = null;
         await settingsService.SaveAsync(settings);
@@ -125,6 +142,41 @@ public sealed class SteamInstallationService(
         var normalizedName = displayName?.Trim();
         if (!string.IsNullOrWhiteSpace(normalizedName))
             settings.SteamInstallationNames[installation.RootPath] = normalizedName;
+
+        await settingsService.SaveAsync(settings);
+        await DiscoverAsync(ct);
+        SelectedInstallationChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public async Task RelocateAsync(
+        string installationId,
+        string path,
+        CancellationToken ct = default)
+    {
+        var installation = _installations.FirstOrDefault(i => i.Id == installationId)
+            ?? throw new InvalidOperationException("A instalação não foi encontrada.");
+        var normalized = NormalizeSteamRoot(path);
+        var steamExe = Path.Combine(normalized, "Steam.exe");
+        var loginUsers = Path.Combine(normalized, "config", "loginusers.vdf");
+        if (!File.Exists(steamExe) || !File.Exists(loginUsers))
+            throw new InvalidOperationException(
+                "O caminho não contém Steam.exe e config\\loginusers.vdf válidos.");
+
+        var settings = settingsService.Current;
+        settings.KnownSteamInstallPaths.RemoveAll(candidate =>
+            PathsEqual(candidate, installation.RootPath));
+        AddKnownPath(settings, normalized);
+
+        var customName = settings.SteamInstallationNames.FirstOrDefault(item =>
+            PathsEqual(item.Key, installation.RootPath));
+        if (!string.IsNullOrWhiteSpace(customName.Key))
+        {
+            settings.SteamInstallationNames.Remove(customName.Key);
+            settings.SteamInstallationNames[normalized] = customName.Value;
+        }
+
+        if (PathsEqual(settings.SteamInstallPath, installation.RootPath))
+            settings.SteamInstallPath = normalized;
 
         await settingsService.SaveAsync(settings);
         await DiscoverAsync(ct);

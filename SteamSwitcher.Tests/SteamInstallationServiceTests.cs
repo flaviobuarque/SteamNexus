@@ -154,6 +154,33 @@ public sealed class SteamInstallationServiceTests : IDisposable
             .Should().BeEquivalentTo("first", "second");
     }
 
+    [Fact]
+    public async Task Relocate_PreservesCustomNameAndDefaultSelection()
+    {
+        var original = CreateSteam("RelocateOld", "76561198000000010");
+        var replacement = CreateSteam("RelocateNew", "76561198000000011");
+        var settings = new AppSettings
+        {
+            SteamInstallPath = original,
+            KnownSteamInstallPaths = [original],
+            SteamInstallationNames = new(StringComparer.OrdinalIgnoreCase)
+            {
+                [original] = "Steam portátil",
+            },
+        };
+        var (service, _, _) = CreateService(settings);
+        await service.DiscoverAsync();
+
+        await service.RelocateAsync(
+            service.SelectedInstallation!.Id,
+            Path.Combine(replacement, "Steam.exe"));
+
+        service.SelectedInstallation!.RootPath.Should().Be(replacement);
+        service.SelectedInstallation.DisplayName.Should().Be("Steam portátil");
+        service.SelectedInstallation.IsSelected.Should().BeTrue();
+        settings.KnownSteamInstallPaths.Should().Contain(replacement).And.NotContain(original);
+    }
+
     private (SteamInstallationService Service, AppSettings Settings, IAppSettingsService SettingsService)
         CreateService(AppSettings? settings = null)
     {
