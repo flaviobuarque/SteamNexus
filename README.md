@@ -19,7 +19,8 @@
     <a href="#-capturas-de-tela">Capturas</a> •
     <a href="#-instalação">Instalação</a> •
     <a href="#-como-funciona">Como funciona</a> •
-    <a href="#-desenvolvimento">Desenvolvimento</a>
+    <a href="#-desenvolvimento">Desenvolvimento</a> •
+    <a href="#-inspiração-e-créditos">Créditos</a>
   </p>
 </div>
 
@@ -33,6 +34,18 @@ O aplicativo lê as contas reconhecidas pela instalação local da Steam e foi p
 
 > [!IMPORTANT]
 > O SteamNexus é um projeto independente e não possui vínculo, patrocínio ou aprovação da Valve Corporation. Steam e o logotipo Steam são marcas de seus respectivos proprietários.
+
+## 💡 Inspiração e créditos
+
+O SteamNexus teve como uma de suas principais referências o projeto open source
+[TcNo Account Switcher](https://github.com/TCNOco/TcNo-Acc-Switcher), criado por
+[TCNOco](https://github.com/TCNOco). Sua abordagem para troca de contas e
+automação de clientes ajudou a inspirar decisões e estudos realizados durante o
+desenvolvimento deste aplicativo.
+
+O SteamNexus é um projeto independente, com identidade, interface, arquitetura e
+objetivos próprios. Não é uma versão oficial, derivação endossada ou produto
+afiliado ao TcNo Account Switcher ou aos seus responsáveis.
 
 ## 🚀 Recursos
 
@@ -71,6 +84,7 @@ O aplicativo lê as contas reconhecidas pela instalação local da Steam e foi p
 ### 🔄 Atualizações
 
 - Verificação de novas versões dentro do aplicativo.
+- Opção para ativar ou desativar verificações automáticas.
 - Download em segundo plano com indicação de progresso.
 - Instalação e reinicialização assistidas pelo Velopack.
 - Pacotes diferenciais nas versões seguintes, reduzindo o tamanho das atualizações quando possível.
