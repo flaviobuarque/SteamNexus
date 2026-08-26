@@ -84,7 +84,7 @@ public partial class GamesViewModel(
     };
     public Size GameGridItemSize => new(
         Math.Ceiling(172 * GameCardScale),
-        Math.Ceiling(314 * GameCardScale));
+        Math.Ceiling(282 * GameCardScale));
 
     public void RefreshGameGridDensity()
     {
