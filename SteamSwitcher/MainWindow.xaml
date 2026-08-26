@@ -700,7 +700,7 @@
                         CornerRadius="6"
                         Padding="10,4"
                         Cursor="Hand"
-                        ToolTip="Alternar estado de login"
+                        ToolTip="Estado de login na próxima abertura da Steam. Clique para alternar."
                         ToolTipService.InitialShowDelay="300"
                         Visibility="{Binding ShowLoginToggle, Converter={StaticResource BoolToVisibility}}">
                         <Border.Style>
@@ -732,6 +732,12 @@
                                     </Style>
                                 </Ellipse.Style>
                             </Ellipse>
+                            <TextBlock
+                                Text="Login Steam:"
+                                FontSize="12"
+                                Margin="0,0,4,0"
+                                VerticalAlignment="Center"
+                                Foreground="{DynamicResource AppTextSecondaryBrush}" />
                             <TextBlock
                         Text="{Binding StatusLoginState}"
                         FontSize="12"
