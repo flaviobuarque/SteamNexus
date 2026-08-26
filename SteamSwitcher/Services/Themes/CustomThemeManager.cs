@@ -12,6 +12,9 @@ namespace SteamSwitcher.Services.Themes;
 
 public static class CustomThemeManager
 {
+    public static IReadOnlyList<string> BuiltInPresetNames { get; } =
+        ["SteamNexus Dark", "SteamNexus Light", "AMOLED", "Roxo neon"];
+
     private static ResourceDictionary? _customResources;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -66,6 +69,41 @@ public static class CustomThemeManager
 
         _customResources = resources;
         Application.Current.Resources.MergedDictionaries.Add(resources);
+    }
+
+    public static CustomThemeSettings CreateBuiltInPreset(string name)
+    {
+        var theme = name == "SteamNexus Light"
+            ? CustomThemeSettings.CreateLight()
+            : CustomThemeSettings.CreateDark();
+        theme.Name = name;
+
+        if (name == "AMOLED")
+        {
+            theme.Background = "#000000";
+            theme.Chrome = "#050505";
+            theme.Surface = "#0B0B0B";
+            theme.SurfaceAlt = "#121212";
+            theme.SurfaceHover = "#1C1C1C";
+            theme.Border = "#303030";
+        }
+        else if (name == "Roxo neon")
+        {
+            theme.Background = "#0E0718";
+            theme.Chrome = "#160B25";
+            theme.Surface = "#211035";
+            theme.SurfaceAlt = "#2B1642";
+            theme.SurfaceHover = "#3A1E59";
+            theme.Border = "#633C88";
+            theme.Focus = theme.Accent = "#A855F7";
+            theme.AccentAlt = "#D946EF";
+            theme.AccentSurface = "#3B1760";
+            theme.TextPrimary = "#F8F1FF";
+            theme.TextSecondary = "#D8C4EA";
+            theme.TextMuted = "#A98ABD";
+        }
+
+        return theme;
     }
 
     public static void ApplyBaseAccent(AppTheme baseTheme) => ApplyAccent(

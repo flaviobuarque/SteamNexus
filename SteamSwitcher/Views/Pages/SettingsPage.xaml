@@ -181,28 +181,36 @@
 
                 <!-- PERSONALIZAÇÃO -->
                 <TextBlock x:Name="AppearanceSection" Text="PERSONALIZAÇÃO" Style="{StaticResource SteamSwitcherSectionTitleStyle}" />
-                <Border Margin="0,8,0,24" Style="{StaticResource TileStyle}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Border Width="42" Height="42" CornerRadius="10" Margin="0,0,13,0"
-                                Background="{DynamicResource AppAccentSurfaceBrush}">
-                            <ic:SymbolIcon Symbol="Color" FontSize="20" Foreground="{DynamicResource AppAccentBrush}" />
-                        </Border>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="Editor de tema" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                            <TextBlock Text="Personalize cores, fundo, contraste e aparência dos componentes."
-                                       Margin="0,3,16,0" FontSize="12" TextWrapping="Wrap"
-                                       Foreground="{DynamicResource AppTextMutedBrush}" />
-                        </StackPanel>
-                        <ui:Button Grid.Column="2" Content="Abrir editor" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
-                                   Padding="14,8" Click="OpenThemeEditor_Click" />
-                    </Grid>
-                </Border>
+                <StackPanel Margin="0,8,0,24">
+                    <Border Style="{StaticResource TileFirstStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="260"/></Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Tema atual" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                                <TextBlock Text="Escolha rapidamente a aparência do aplicativo."
+                                           Margin="0,3,18,0" FontSize="12" Foreground="{DynamicResource AppTextMutedBrush}"/>
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding ThemeOptions}"
+                                      SelectedItem="{Binding SelectedThemeName}"
+                                      SelectionChanged="ThemeSelection_Changed"/>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource TileLastStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <Border Width="42" Height="42" CornerRadius="10" Margin="0,0,13,0" Background="{DynamicResource AppAccentSurfaceBrush}">
+                                <ic:SymbolIcon Symbol="Color" FontSize="20" Foreground="{DynamicResource AppAccentBrush}"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Tema personalizado" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                                <TextBlock Text="Crie uma aparência própria ou edite o tema personalizado salvo."
+                                           Margin="0,3,16,0" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource AppTextMutedBrush}"/>
+                            </StackPanel>
+                            <ui:Button Grid.Column="2" Content="Criar ou editar" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
+                                       Padding="14,8" Click="OpenThemeEditor_Click"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
 
                 <!-- TROCA DE CONTA -->
                 <TextBlock x:Name="AccountSection" Text="TROCA DE CONTA" Style="{StaticResource SteamSwitcherSectionTitleStyle}" />

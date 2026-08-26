@@ -71,9 +71,13 @@ public partial class App : Application
         await installationService.DiscoverAsync();
 
         // Aplica tema salvo
-        var customTheme = (Keyboard.Modifiers & ModifierKeys.Shift) != 0
+        var safeThemeStartup = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+        var customTheme = safeThemeStartup
             ? null
-            : settingsService.Current.CustomTheme;
+            : !string.IsNullOrWhiteSpace(settingsService.Current.ActiveThemePresetName)
+                ? CustomThemeManager.CreateBuiltInPreset(settingsService.Current.ActiveThemePresetName!)
+                : settingsService.Current.CustomTheme;
+        if (customTheme is not null) customTheme.IsEnabled = true;
         try
         {
             ApplyTheme(settingsService.Current.Theme, customTheme);
@@ -82,6 +86,7 @@ public partial class App : Application
         {
             if (settingsService.Current.CustomTheme is not null)
                 settingsService.Current.CustomTheme.IsEnabled = false;
+            settingsService.Current.ActiveThemePresetName = null;
             await settingsService.SaveAsync(settingsService.Current);
             ApplyTheme(settingsService.Current.Theme);
         }

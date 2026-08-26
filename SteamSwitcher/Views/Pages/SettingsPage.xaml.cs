@@ -3,6 +3,7 @@ using SteamSwitcher.ViewModels;
 using SteamSwitcher.Views.Dialogs;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using System.Windows.Threading;
@@ -210,12 +211,23 @@ public partial class SettingsPage : System.Windows.Controls.Page,
     private async void OpenThemeEditor_Click(object sender, RoutedEventArgs e)
     {
         var settings = ViewModel.SettingsSnapshot;
-        var dialog = new ThemeEditorWindow(settings.Theme, settings.CustomTheme)
+        var activeTheme = !string.IsNullOrWhiteSpace(settings.ActiveThemePresetName)
+            ? SteamSwitcher.Services.Themes.CustomThemeManager.CreateBuiltInPreset(settings.ActiveThemePresetName)
+            : settings.CustomTheme;
+        if (activeTheme is not null && !string.IsNullOrWhiteSpace(settings.ActiveThemePresetName))
+            activeTheme.IsEnabled = true;
+        var dialog = new ThemeEditorWindow(settings.Theme, activeTheme)
         {
             Owner = Window.GetWindow(this),
         };
         if (dialog.ShowDialog() == true && dialog.ResultTheme is not null)
             await ViewModel.ApplyCustomThemeAsync(dialog.ResultTheme);
+    }
+
+    private async void ThemeSelection_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded) return;
+        await ViewModel.ApplySelectedThemeAsync(ViewModel.SelectedThemeName);
     }
 
     private void UpdateActiveSettingsSection(Wpf.Ui.Controls.Button activeButton)

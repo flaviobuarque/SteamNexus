@@ -226,10 +226,10 @@ public partial class ThemeEditorViewModel : ObservableObject
         new("Esticar para preencher", "Fill"),
         new("Usar tamanho original", "None"),
     ];
-    public IReadOnlyList<string> Presets { get; } = ["SteamNexus Dark", "SteamNexus Light", "AMOLED", "Roxo neon"];
+    public IReadOnlyList<string> Presets { get; } = CustomThemeManager.BuiltInPresetNames;
 
-    public static bool IsBuiltInPreset(string? name) => name is
-        "SteamNexus Dark" or "SteamNexus Light" or "AMOLED" or "Roxo neon";
+    public static bool IsBuiltInPreset(string? name) =>
+        name is not null && CustomThemeManager.BuiltInPresetNames.Contains(name);
 
     [ObservableProperty] private string _themeName = "Meu tema";
     [ObservableProperty] private string _selectedPreset = "SteamNexus Dark";
@@ -342,34 +342,8 @@ public partial class ThemeEditorViewModel : ObservableObject
 
     public void LoadSelectedPreset(bool asCopy)
     {
-        var theme = SelectedPreset == "SteamNexus Light"
-            ? CustomThemeSettings.CreateLight()
-            : CustomThemeSettings.CreateDark();
+        var theme = CustomThemeManager.CreateBuiltInPreset(SelectedPreset);
         theme.Name = asCopy ? $"Cópia de {SelectedPreset}" : SelectedPreset;
-        if (SelectedPreset == "AMOLED")
-        {
-            theme.Background = "#000000";
-            theme.Chrome = "#050505";
-            theme.Surface = "#0B0B0B";
-            theme.SurfaceAlt = "#121212";
-            theme.SurfaceHover = "#1C1C1C";
-            theme.Border = "#303030";
-        }
-        else if (SelectedPreset == "Roxo neon")
-        {
-            theme.Background = "#0E0718";
-            theme.Chrome = "#160B25";
-            theme.Surface = "#211035";
-            theme.SurfaceAlt = "#2B1642";
-            theme.SurfaceHover = "#3A1E59";
-            theme.Border = "#633C88";
-            theme.Focus = theme.Accent = "#A855F7";
-            theme.AccentAlt = "#D946EF";
-            theme.AccentSurface = "#3B1760";
-            theme.TextPrimary = "#F8F1FF";
-            theme.TextSecondary = "#D8C4EA";
-            theme.TextMuted = "#A98ABD";
-        }
         Load(theme);
         IsPresetReadOnly = !asCopy;
     }

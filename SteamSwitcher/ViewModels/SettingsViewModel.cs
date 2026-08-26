@@ -5,6 +5,7 @@ using SteamSwitcher.Core;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
 using SteamSwitcher.Services.Updates;
+using SteamSwitcher.Services.Themes;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -50,6 +51,8 @@ public partial class SettingsViewModel(
     [ObservableProperty] private bool _isCleaningOldAccounts;
     [ObservableProperty] private ObservableCollection<SteamInstallation> _steamInstallations = [];
     [ObservableProperty] private SteamInstallation? _selectedSteamInstallation;
+    [ObservableProperty] private ObservableCollection<string> _themeOptions = [];
+    [ObservableProperty] private string _selectedThemeName = "Sistema";
 
     private readonly HashSet<Key> _pressedHotkeyKeys = [];
     private Key _capturedMainKey = Key.None;
@@ -102,6 +105,7 @@ public partial class SettingsViewModel(
         var s = settingsService.Current;
         _original = s;
         Theme = s.Theme;
+        RefreshThemeOptions(s);
         AfterAccountSwitch = s.AfterAccountSwitch;
         AfterGameLaunch = s.AfterGameLaunch;
         DefaultLoginStateOverride = s.DefaultLoginStateOverride;
@@ -142,7 +146,7 @@ public partial class SettingsViewModel(
             ? settings.GlobalHotkey
             : null);
         systemService.SetStartWithWindows(StartWithWindows);
-        App.ApplyTheme(Theme);
+        App.ApplyTheme(settings.Theme, ResolveActiveTheme(settings));
         _original = settings;
         HasUnsavedChanges = false;
         _mainViewModel.StatusLoginState =
@@ -169,6 +173,7 @@ public partial class SettingsViewModel(
         Theme = theme;
         var settings = BuildSettingsFromCurrent();
         if (settings.CustomTheme is not null) settings.CustomTheme.IsEnabled = false;
+        settings.ActiveThemePresetName = null;
         await settingsService.SaveAsync(settings);
         App.ApplyTheme(theme);
         _original = settings;
@@ -222,13 +227,99 @@ public partial class SettingsViewModel(
         Theme = theme.BaseTheme;
         var settings = BuildSettingsFromCurrent();
         settings.Theme = theme.BaseTheme;
-        settings.CustomTheme = theme.Clone();
+        if (CustomThemeManager.BuiltInPresetNames.Contains(theme.Name))
+        {
+            settings.ActiveThemePresetName = theme.Name;
+            if (settings.CustomTheme is not null) settings.CustomTheme.IsEnabled = false;
+        }
+        else
+        {
+            settings.ActiveThemePresetName = null;
+            settings.CustomTheme = theme.Clone();
+        }
         await settingsService.SaveAsync(settings);
         App.ApplyTheme(theme.BaseTheme, theme);
         _original = settings;
+        RefreshThemeOptions(settings);
         HasUnsavedChanges = false;
         RefreshStatusBar();
         snackbarService.Show("Tema aplicado", theme.Name, ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
+    }
+
+    public async Task ApplySelectedThemeAsync(string? themeName)
+    {
+        if (_initializing || string.IsNullOrWhiteSpace(themeName)) return;
+        var current = settingsService.Current;
+        var currentName = CurrentThemeName(current);
+        if (string.Equals(themeName, currentName, StringComparison.Ordinal)) return;
+
+        var settings = BuildSettingsFromCurrent();
+        if (themeName == "Sistema")
+        {
+            settings.Theme = Theme = AppTheme.System;
+            settings.ActiveThemePresetName = null;
+            if (settings.CustomTheme is not null) settings.CustomTheme.IsEnabled = false;
+            App.ApplyTheme(AppTheme.System);
+        }
+        else if (CustomThemeManager.BuiltInPresetNames.Contains(themeName))
+        {
+            var preset = CustomThemeManager.CreateBuiltInPreset(themeName);
+            preset.IsEnabled = true;
+            settings.Theme = Theme = preset.BaseTheme;
+            settings.ActiveThemePresetName = themeName;
+            if (settings.CustomTheme is not null) settings.CustomTheme.IsEnabled = false;
+            App.ApplyTheme(preset.BaseTheme, preset);
+        }
+        else if (settings.CustomTheme is not null && settings.CustomTheme.Name == themeName)
+        {
+            settings.CustomTheme.IsEnabled = true;
+            settings.ActiveThemePresetName = null;
+            settings.Theme = Theme = settings.CustomTheme.BaseTheme;
+            App.ApplyTheme(settings.Theme, settings.CustomTheme);
+        }
+        else return;
+
+        await settingsService.SaveAsync(settings);
+        _original = settings;
+        RefreshThemeOptions(settings);
+        HasUnsavedChanges = false;
+        RefreshStatusBar();
+    }
+
+    private void RefreshThemeOptions(AppSettings settings)
+    {
+        var wasInitializing = _initializing;
+        _initializing = true;
+        var options = new List<string> { "Sistema" };
+        options.AddRange(CustomThemeManager.BuiltInPresetNames);
+        if (settings.CustomTheme is not null
+            && !CustomThemeManager.BuiltInPresetNames.Contains(settings.CustomTheme.Name))
+            options.Add(settings.CustomTheme.Name);
+        ThemeOptions = new ObservableCollection<string>(options.Distinct());
+        SelectedThemeName = CurrentThemeName(settings);
+        _initializing = wasInitializing;
+    }
+
+    private static string CurrentThemeName(AppSettings settings)
+    {
+        if (!string.IsNullOrWhiteSpace(settings.ActiveThemePresetName))
+            return settings.ActiveThemePresetName;
+        if (settings.CustomTheme is { IsEnabled: true })
+            return settings.CustomTheme.Name;
+        return settings.Theme == AppTheme.System
+            ? "Sistema"
+            : settings.Theme == AppTheme.Light ? "SteamNexus Light" : "SteamNexus Dark";
+    }
+
+    private static CustomThemeSettings? ResolveActiveTheme(AppSettings settings)
+    {
+        if (!string.IsNullOrWhiteSpace(settings.ActiveThemePresetName))
+        {
+            var preset = CustomThemeManager.CreateBuiltInPreset(settings.ActiveThemePresetName);
+            preset.IsEnabled = true;
+            return preset;
+        }
+        return settings.CustomTheme is { IsEnabled: true } ? settings.CustomTheme : null;
     }
 
     private void RefreshSteamInstallations()
@@ -538,6 +629,7 @@ public partial class SettingsViewModel(
             StartSilent = StartSilent,
             StartAsAdmin = StartAsAdmin,
             CheckForUpdatesAutomatically = CheckForUpdatesAutomatically,
+            ActiveThemePresetName = current.ActiveThemePresetName,
             CustomTheme = current.CustomTheme?.Clone(),
             SteamApiKey = FeatureFlags.SteamWebApiKey
                 ? (string.IsNullOrWhiteSpace(SteamApiKey) ? null : SteamApiKey)

@@ -13,6 +13,7 @@ public class AppSettings
 
     // Atualizações
     public bool CheckForUpdatesAutomatically { get; set; } = true;
+    public string? ActiveThemePresetName { get; set; }
     public CustomThemeSettings? CustomTheme { get; set; }
 
     // Comportamento após troca de conta
