@@ -395,6 +395,7 @@
                                             <ui:Button Command="{Binding DataContext.SetDefaultSteamInstallationCommand,
                                                     RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                        CommandParameter="{Binding}" ToolTip="Definir como padrão"
+                                                       Foreground="{DynamicResource AppTextPrimaryBrush}"
                                                        Padding="10,8" Margin="0,0,6,0"
                                                        IsEnabled="{Binding IsValid}"
                                                        Visibility="{Binding IsSelected, Converter={StaticResource InverseBoolToVisibility}}">
@@ -403,24 +404,28 @@
                                             <ui:Button Command="{Binding DataContext.RenameSteamInstallationCommand,
                                                     RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                        CommandParameter="{Binding}" ToolTip="Renomear"
+                                                       Foreground="{DynamicResource AppTextPrimaryBrush}"
                                                        Padding="10,8" Margin="0,0,6,0">
                                                 <ic:SymbolIcon Symbol="Edit" FontSize="15" />
                                             </ui:Button>
                                             <ui:Button Command="{Binding DataContext.OpenSteamInstallationFolderCommand,
                                                     RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                        CommandParameter="{Binding}" ToolTip="Abrir pasta"
+                                                       Foreground="{DynamicResource AppTextPrimaryBrush}"
                                                        Padding="10,8" Margin="0,0,6,0" IsEnabled="{Binding IsValid}">
                                                 <ic:SymbolIcon Symbol="FolderOpen" FontSize="15" />
                                             </ui:Button>
                                             <ui:Button Command="{Binding DataContext.RelocateSteamInstallationCommand,
                                                     RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                        CommandParameter="{Binding}" ToolTip="Localizar novamente"
+                                                       Foreground="{DynamicResource AppTextPrimaryBrush}"
                                                        Padding="10,8" Margin="0,0,6,0">
                                                 <ic:SymbolIcon Symbol="FolderSearch" FontSize="15" />
                                             </ui:Button>
                                             <ui:Button Command="{Binding DataContext.RemoveSteamInstallationCommand,
                                                     RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                        CommandParameter="{Binding}" ToolTip="Remover"
+                                                       Foreground="{DynamicResource AppDangerBrush}"
                                                        Padding="10,8" IsEnabled="{Binding IsCustom}">
                                                 <ic:SymbolIcon Symbol="Delete" FontSize="15"
                                                                Foreground="{DynamicResource AppDangerBrush}" />

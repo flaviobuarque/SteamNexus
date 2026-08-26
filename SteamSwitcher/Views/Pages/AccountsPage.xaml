@@ -435,11 +435,11 @@
 
                                 <Grid Width="40" Height="40" VerticalAlignment="Center">
                                     <Ellipse Fill="{DynamicResource AccountCardHeaderBrush}" />
-                                    <Ellipse Margin="2">
-                                        <Ellipse.Fill>
-                                            <ImageBrush ImageSource="{Binding AvatarImage}" Stretch="UniformToFill" />
-                                        </Ellipse.Fill>
-                                    </Ellipse>
+                                    <Image Margin="2" Source="{Binding AvatarImage}" Stretch="UniformToFill">
+                                        <Image.Clip>
+                                            <EllipseGeometry Center="18,18" RadiusX="18" RadiusY="18" />
+                                        </Image.Clip>
+                                    </Image>
                                     <ic:SymbolIcon Symbol="Person" FontSize="21"
                                         Foreground="{DynamicResource AppTextMutedBrush}"
                                         Visibility="{Binding HasAvatar, Converter={StaticResource InverseBoolToVisibility}}" />
@@ -499,12 +499,14 @@
                                     </Button>
                                     <ui:Button Width="34" Height="34" Padding="0" Margin="0,0,6,0"
                                         ToolTip="Editar conta"
+                                        Foreground="{DynamicResource AppTextPrimaryBrush}"
                                         Command="{Binding DataContext.EditAccountCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}">
                                         <ui:SymbolIcon Symbol="Edit24" />
                                     </ui:Button>
                                     <ui:Button Width="34" Height="34" Padding="0"
                                         ToolTip="Trocar para esta conta"
+                                        Foreground="{DynamicResource AppTextPrimaryBrush}"
                                         Command="{Binding DataContext.SwitchAccountCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}"
                                         Visibility="{Binding IsActive, Converter={StaticResource InverseBoolToVisibility}}">

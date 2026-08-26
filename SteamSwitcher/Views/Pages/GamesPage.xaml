@@ -122,15 +122,14 @@
                             </Grid.ColumnDefinitions>
                             <Grid Width="24" Height="24"
                                 Margin="0,0,9,0" VerticalAlignment="Center">
-                                <Ellipse
-                                    Visibility="{Binding SelectedFilterAccount.HasAvatar,
-                                        Converter={StaticResource BoolToVisibility}}">
-                                    <Ellipse.Fill>
-                                        <ImageBrush
-                                            ImageSource="{Binding SelectedFilterAccount.AvatarImage}"
-                                            Stretch="UniformToFill" />
-                                    </Ellipse.Fill>
-                                </Ellipse>
+                                <Image Source="{Binding SelectedFilterAccount.AvatarImage}"
+                                       Stretch="UniformToFill"
+                                       Visibility="{Binding SelectedFilterAccount.HasAvatar,
+                                           Converter={StaticResource BoolToVisibility}}">
+                                    <Image.Clip>
+                                        <EllipseGeometry Center="12,12" RadiusX="12" RadiusY="12" />
+                                    </Image.Clip>
+                                </Image>
                                 <ic:SymbolIcon FontSize="16">
                                     <ic:SymbolIcon.Style>
                                         <Style TargetType="ic:SymbolIcon">
@@ -286,14 +285,14 @@
                                                         <Grid Width="24" Height="24"
                                                             HorizontalAlignment="Left"
                                                             VerticalAlignment="Center">
-                                                            <Ellipse
-                                                                Visibility="{Binding HasAvatar,
-                                                                    Converter={StaticResource BoolToVisibility}}">
-                                                                <Ellipse.Fill>
-                                                                    <ImageBrush ImageSource="{Binding AvatarImage}"
-                                                                        Stretch="UniformToFill" />
-                                                                </Ellipse.Fill>
-                                                            </Ellipse>
+                                                            <Image Source="{Binding AvatarImage}"
+                                                                   Stretch="UniformToFill"
+                                                                   Visibility="{Binding HasAvatar,
+                                                                       Converter={StaticResource BoolToVisibility}}">
+                                                                <Image.Clip>
+                                                                    <EllipseGeometry Center="12,12" RadiusX="12" RadiusY="12" />
+                                                                </Image.Clip>
+                                                            </Image>
                                                             <ic:SymbolIcon FontSize="16">
                                                                 <ic:SymbolIcon.Style>
                                                                     <Style TargetType="ic:SymbolIcon">

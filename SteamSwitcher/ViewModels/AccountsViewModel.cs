@@ -533,7 +533,8 @@ public partial class AccountsViewModel(
             c => c.UniqueKey,
             StringComparer.Ordinal);
         var reconciled = new List<AccountCardViewModel>(incoming.Count);
-        var showInstallationBadge = installationService.Installations.Count(i => i.IsValid) > 1;
+        var showInstallationBadge = incoming.Any(account =>
+            !string.IsNullOrWhiteSpace(account.InstallationId));
 
         foreach (var account in incoming)
         {
