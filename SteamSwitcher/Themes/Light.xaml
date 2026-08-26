@@ -168,6 +168,9 @@
     <SolidColorBrush x:Key="AccountCardHeaderBrush"
                  Color="#E8F1FC"/>
 
+    <SolidColorBrush x:Key="AccountCardActiveHeaderBrush"
+                 Color="#BBF7D0"/>
+
     <SolidColorBrush x:Key="AccountCardSeparatorBrush"
                  Color="#B8C5D1"/>
 

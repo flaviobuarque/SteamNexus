@@ -58,7 +58,7 @@ public partial class AccountsViewModel(
     };
     public Size AccountGridItemSize => new(
         Math.Ceiling(188 * AccountCardScale),
-        Math.Ceiling(264 * AccountCardScale));
+        Math.Ceiling(220 * AccountCardScale));
 
     public void RefreshAccountGridDensity()
     {
