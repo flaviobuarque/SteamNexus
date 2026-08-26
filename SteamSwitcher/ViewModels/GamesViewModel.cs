@@ -79,7 +79,6 @@ public partial class GamesViewModel(
         settingsService.Current.GameGridDensityPercent) switch
     {
         70 => 0.80,
-        85 => 0.90,
         _ => 1d,
     };
     public Size GameGridItemSize => new(
@@ -95,7 +94,6 @@ public partial class GamesViewModel(
     private static int NormalizeGridDensity(int percent) => percent switch
     {
         <= 70 => 70,
-        <= 85 => 85,
         _ => 100,
     };
 

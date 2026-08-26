@@ -100,11 +100,11 @@ public partial class MainViewModel(
 
     [RelayCommand]
     private async Task DecreaseGameGridDensityAsync()
-        => await SetGameGridDensityAsync(GameGridDensityPercent == 100 ? 85 : 70);
+        => await SetGameGridDensityAsync(70);
 
     [RelayCommand]
     private async Task IncreaseGameGridDensityAsync()
-        => await SetGameGridDensityAsync(GameGridDensityPercent == 70 ? 85 : 100);
+        => await SetGameGridDensityAsync(100);
 
     private async Task SetGameGridDensityAsync(int percent)
     {
@@ -125,7 +125,6 @@ public partial class MainViewModel(
     private static int NormalizeGameGridDensity(int percent) => percent switch
     {
         <= 70 => 70,
-        <= 85 => 85,
         _ => 100,
     };
 
