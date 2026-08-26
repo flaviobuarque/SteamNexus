@@ -1,0 +1,54 @@
+<Window
+    x:Class="SteamSwitcher.Views.Dialogs.ThemeColorPickerDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Escolher cor" Width="410" Height="390" ResizeMode="NoResize"
+    WindowStartupLocation="CenterOwner" Background="{DynamicResource AppBackgroundBrush}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Escolher cor" FontSize="22" FontWeight="SemiBold"
+                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
+
+        <Border x:Name="PreviewBorder" Grid.Row="1" Height="72" Margin="0,16"
+                CornerRadius="12" BorderThickness="1"
+                BorderBrush="{DynamicResource AppBorderBrush}" />
+
+        <StackPanel Grid.Row="2">
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
+                <TextBlock Text="R" VerticalAlignment="Center" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                <Slider x:Name="RedSlider" Grid.Column="1" Minimum="0" Maximum="255" ValueChanged="RgbSlider_ValueChanged" />
+                <TextBlock Grid.Column="2" Text="{Binding ElementName=RedSlider, Path=Value, StringFormat={}{0:F0}}" HorizontalAlignment="Right" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+            </Grid>
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
+                <TextBlock Text="G" VerticalAlignment="Center" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                <Slider x:Name="GreenSlider" Grid.Column="1" Minimum="0" Maximum="255" ValueChanged="RgbSlider_ValueChanged" />
+                <TextBlock Grid.Column="2" Text="{Binding ElementName=GreenSlider, Path=Value, StringFormat={}{0:F0}}" HorizontalAlignment="Right" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+            </Grid>
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
+                <TextBlock Text="B" VerticalAlignment="Center" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                <Slider x:Name="BlueSlider" Grid.Column="1" Minimum="0" Maximum="255" ValueChanged="RgbSlider_ValueChanged" />
+                <TextBlock Grid.Column="2" Text="{Binding ElementName=BlueSlider, Path=Value, StringFormat={}{0:F0}}" HorizontalAlignment="Right" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+            </Grid>
+            <TextBlock Text="Hexadecimal" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+            <TextBox x:Name="HexTextBox" Margin="0,6,0,0" TextChanged="HexTextBox_TextChanged" MaxLength="7" />
+            <TextBlock x:Name="ValidationText" Margin="0,4,0,0" FontSize="12"
+                       Foreground="{DynamicResource AppDangerBrush}" />
+        </StackPanel>
+
+        <Grid Grid.Row="3" Margin="0,18,0,0">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <ui:Button Content="Cancelar" Appearance="Secondary" Margin="0,0,6,0" Click="Cancel_Click" />
+            <ui:Button Grid.Column="1" Content="Usar esta cor" Appearance="Primary" Margin="6,0,0,0" Click="Apply_Click" />
+        </Grid>
+    </Grid>
+</Window>

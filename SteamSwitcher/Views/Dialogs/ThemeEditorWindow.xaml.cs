@@ -150,6 +150,21 @@ public partial class ThemeEditorWindow : Window
         PreviewTheme();
     }
 
+    private void CreateTheme_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CreateTheme();
+        PreviewTheme();
+    }
+
+    private void ColorSwatch_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: ThemeColorEntry color }) return;
+        var dialog = new ThemeColorPickerDialog(color.Value) { Owner = this };
+        if (dialog.ShowDialog() != true) return;
+        color.Value = dialog.SelectedColor;
+        PreviewTheme();
+    }
+
     private void FixContrast_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.FixContrast();
@@ -285,7 +300,7 @@ public partial class ThemeEditorViewModel : ObservableObject
         var theme = SelectedPreset == "SteamNexus Light"
             ? CustomThemeSettings.CreateLight()
             : CustomThemeSettings.CreateDark();
-        theme.Name = SelectedPreset;
+        theme.Name = $"Cópia de {SelectedPreset}";
         if (SelectedPreset == "AMOLED")
         {
             theme.Background = "#000000";
@@ -307,6 +322,15 @@ public partial class ThemeEditorViewModel : ObservableObject
             theme.AccentAlt = "#E879F9";
             theme.AccentSurface = "#3B1760";
         }
+        Load(theme);
+    }
+
+    public void CreateTheme()
+    {
+        var theme = BaseTheme == AppTheme.Light
+            ? CustomThemeSettings.CreateLight()
+            : CustomThemeSettings.CreateDark();
+        theme.Name = "Novo tema";
         Load(theme);
     }
 

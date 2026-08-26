@@ -60,10 +60,19 @@
                                               Margin="0,6,0,0" SelectionChanged="BaseTheme_SelectionChanged" />
                                 </StackPanel>
                             </Grid>
-                            <Grid Margin="0,0,0,16">
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="Modelo inicial (somente leitura)" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                            <Grid Margin="0,6,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
                                 <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}" Margin="0,0,8,0" />
-                                <ui:Button Grid.Column="1" Content="Aplicar preset" Appearance="Secondary" Click="ApplyPreset_Click" />
+                                <ui:Button Grid.Column="1" Content="Duplicar para editar" Appearance="Secondary"
+                                           Margin="0,0,8,0" Click="ApplyPreset_Click" />
+                                <ui:Button Grid.Column="2" Content="Criar novo" Appearance="Secondary"
+                                           Click="CreateTheme_Click" />
                             </Grid>
                             <ItemsControl ItemsSource="{Binding Colors}">
                                 <ItemsControl.ItemTemplate>
@@ -76,9 +85,13 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="{Binding Label}" VerticalAlignment="Center"
                                                        Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                            <Border Grid.Column="1" Width="24" Height="24" CornerRadius="5"
-                                                    BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
-                                                    Background="{Binding PreviewBrush}" />
+                                            <Button Grid.Column="1" Width="26" Height="26" Padding="0"
+                                                    ToolTip="Escolher cor" Click="ColorSwatch_Click"
+                                                    Background="Transparent" BorderThickness="0">
+                                                <Border Width="24" Height="24" CornerRadius="5"
+                                                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                                                        Background="{Binding PreviewBrush}" />
+                                            </Button>
                                             <TextBox Grid.Column="2" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
                                                      TextChanged="EditorValue_Changed" />
                                         </Grid>
