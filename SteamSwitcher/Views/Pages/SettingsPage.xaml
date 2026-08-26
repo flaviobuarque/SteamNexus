@@ -615,6 +615,25 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Verificar atualizações automaticamente" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                <TextBlock Text="Procura novas versões ao abrir o aplicativo e enquanto ele estiver em execução."
+                                           FontSize="12" Foreground="{DynamicResource AppTextMutedBrush}"
+                                           Margin="0,3,20,0" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ui:ToggleSwitch Grid.Column="1"
+                                             IsChecked="{Binding CheckForUpdatesAutomatically}"
+                                             VerticalAlignment="Center" Cursor="Hand" />
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource TileMiddleStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="Versão instalada" FontWeight="SemiBold"
                                     Foreground="{DynamicResource AppTextPrimaryBrush}" />
                                 <TextBlock Text="{Binding UpdateService.CurrentVersion, StringFormat=Versão {0}}"

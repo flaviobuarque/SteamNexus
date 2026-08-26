@@ -36,6 +36,7 @@ public partial class SettingsViewModel(
     [ObservableProperty] private bool _startSilent;
     [ObservableProperty] private bool _startAsAdmin;
     [ObservableProperty] private bool _startWithWindows;
+    [ObservableProperty] private bool _checkForUpdatesAutomatically = true;
     [ObservableProperty] private string _steamApiKey = string.Empty;
     [ObservableProperty] private string _steamGridDbApiKey = string.Empty;
     [ObservableProperty] private bool _hasUnsavedChanges;
@@ -63,6 +64,7 @@ public partial class SettingsViewModel(
     partial void OnStartSilentChanged(bool value) => CheckDirty();
     partial void OnStartAsAdminChanged(bool value) => CheckDirty();
     partial void OnStartWithWindowsChanged(bool value) => CheckDirty();
+    partial void OnCheckForUpdatesAutomaticallyChanged(bool value) => CheckDirty();
     partial void OnSteamApiKeyChanged(string value) => CheckDirty();
     partial void OnSteamGridDbApiKeyChanged(string value) => CheckDirty();
     partial void OnSelectedSteamInstallationChanged(SteamInstallation? value)
@@ -84,6 +86,7 @@ public partial class SettingsViewModel(
             DefaultLoginStateOverride != _original.DefaultLoginStateOverride ||
             StartSilent != _original.StartSilent ||
             StartAsAdmin != _original.StartAsAdmin ||
+            CheckForUpdatesAutomatically != _original.CheckForUpdatesAutomatically ||
             StartWithWindows != systemService.GetStartWithWindows() ||
             (FeatureFlags.SteamWebApiKey && SteamApiKey != (_original.SteamApiKey ?? string.Empty)) ||
             IsGlobalHotkeyEnabled != _original.IsGlobalHotkeyEnabled ||
@@ -103,6 +106,7 @@ public partial class SettingsViewModel(
         DefaultLoginStateOverride = s.DefaultLoginStateOverride;
         StartSilent = s.StartSilent;
         StartAsAdmin = s.StartAsAdmin;
+        CheckForUpdatesAutomatically = s.CheckForUpdatesAutomatically;
         StartWithWindows = systemService.GetStartWithWindows();
         SteamApiKey = s.SteamApiKey ?? string.Empty;
         SteamGridDbApiKey = s.SteamGridDbApiKey ?? string.Empty;
@@ -129,6 +133,7 @@ public partial class SettingsViewModel(
     private async Task SaveAsync()
     {
         var hadKey = string.IsNullOrWhiteSpace(_original.SteamGridDbApiKey);
+        var automaticUpdatesWereEnabled = _original.CheckForUpdatesAutomatically;
         var settings = BuildSettingsFromCurrent();
         await settingsService.SaveAsync(settings);
         _mainViewModel.ApplyGlobalHotkey(
@@ -142,6 +147,9 @@ public partial class SettingsViewModel(
         _mainViewModel.StatusLoginState =
             DefaultLoginStateOverride?.ToString() ?? "Não alterar";
         RefreshStatusBar();
+
+        if (!automaticUpdatesWereEnabled && settings.CheckForUpdatesAutomatically)
+            await UpdateService.CheckForUpdatesAsync();
 
         if (hadKey && !string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey))
             WeakReferenceMessenger.Default.Send(new SteamGridDbKeyChanged());
@@ -512,6 +520,7 @@ public partial class SettingsViewModel(
             DefaultLoginStateOverride = DefaultLoginStateOverride,
             StartSilent = StartSilent,
             StartAsAdmin = StartAsAdmin,
+            CheckForUpdatesAutomatically = CheckForUpdatesAutomatically,
             SteamApiKey = FeatureFlags.SteamWebApiKey
                 ? (string.IsNullOrWhiteSpace(SteamApiKey) ? null : SteamApiKey)
                 : null,

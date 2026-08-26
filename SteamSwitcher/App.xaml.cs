@@ -132,6 +132,7 @@ public partial class App : Application
             return;
 
         var updateService = _host.Services.GetRequiredService<IUpdateService>();
+        var settingsService = _host.Services.GetRequiredService<IAppSettingsService>();
         if (!updateService.IsConfigured || !updateService.IsInstalled)
             return;
 
@@ -140,6 +141,12 @@ public partial class App : Application
             await Task.Delay(TimeSpan.FromSeconds(5), ct);
             while (!ct.IsCancellationRequested)
             {
+                if (!settingsService.Current.CheckForUpdatesAutomatically)
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(5), ct);
+                    continue;
+                }
+
                 if (!updateService.IsUpdateAvailable && updateService.CanCheckForUpdates)
                     await updateService.CheckForUpdatesAsync(ct);
 

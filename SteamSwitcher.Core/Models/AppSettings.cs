@@ -11,6 +11,9 @@ public class AppSettings
     public GameViewMode GameViewMode { get; set; } = GameViewMode.Grid;
     public int GameGridDensityPercent { get; set; } = 100;
 
+    // Atualizações
+    public bool CheckForUpdatesAutomatically { get; set; } = true;
+
     // Comportamento após troca de conta
     public PostSwitchBehavior AfterAccountSwitch { get; set; } = PostSwitchBehavior.KeepOpen;
     public PostSwitchBehavior AfterGameLaunch { get; set; } = PostSwitchBehavior.KeepOpen;
