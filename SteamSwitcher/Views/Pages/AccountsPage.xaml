@@ -242,7 +242,7 @@
             <!-- Grid View (virtualizado) -->
             <ItemsControl
                 x:Name="AccountsItemsControl"
-                Padding="20,20,20,88"
+                Padding="10,10,10,76"
                 ItemsSource="{Binding AccountsView}"
                 Focusable="False"
                 ClipToBounds="True"
@@ -268,20 +268,19 @@
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <vwp:VirtualizingWrapPanel
-                            ItemSize="{Binding DataContext.AccountGridItemSize,
-                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            ItemSize="{Binding AccountGridItemSize}"
                             Orientation="Horizontal" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:AccountCardViewModel}">
-                        <Grid Margin="0,0,16,12">
+                        <Grid Margin="0">
                             <Grid.LayoutTransform>
                                 <ScaleTransform
                                     ScaleX="{Binding DataContext.AccountCardScale,
-                                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        Source={x:Reference AccountsItemsControl}}"
                                     ScaleY="{Binding DataContext.AccountCardScale,
-                                        RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                                        Source={x:Reference AccountsItemsControl}}" />
                             </Grid.LayoutTransform>
                             <local:AccountGridCard
                                 DataContext="{Binding}"

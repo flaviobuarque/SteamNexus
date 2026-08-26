@@ -47,8 +47,15 @@ public partial class AccountsViewModel(
     public bool IsGridContentVisible => !IsLoading && IsGridView;
     public bool IsCompactContentVisible => !IsLoading && IsCompactView;
     public double AccountCardScale => NormalizeGridDensity(
-        settingsService.Current.AccountGridDensityPercent) / 100d;
-    public Size AccountGridItemSize => new(196 * AccountCardScale, 272 * AccountCardScale);
+        settingsService.Current.AccountGridDensityPercent) switch
+    {
+        50 => 0.72,
+        75 => 0.85,
+        _ => 1d,
+    };
+    public Size AccountGridItemSize => new(
+        Math.Ceiling(188 * AccountCardScale),
+        Math.Ceiling(264 * AccountCardScale));
 
     public void RefreshAccountGridDensity()
     {
