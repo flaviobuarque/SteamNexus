@@ -29,10 +29,10 @@
                 </Trigger>
                 <DataTrigger Binding="{Binding IsActive}" Value="True">
                     <Setter Property="BorderBrush"
-            Value="{DynamicResource AppAccentBrush}" />
+            Value="{DynamicResource AppSuccessBrush}" />
                     <Setter Property="BorderThickness" Value="2" />
                     <Setter Property="Background"
-            Value="{DynamicResource AppAccentSurfaceBrush}" />
+            Value="{DynamicResource AppSuccessSurfaceBrush}" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -291,28 +291,9 @@
             Margin="0,3,0,0" />
 
                         <Border
-                            Margin="0,7,0,0"
-                            Padding="7,2"
-                            HorizontalAlignment="Center"
-                            CornerRadius="6"
-                            Background="{DynamicResource AppChromeBrush}"
-                            BorderBrush="{DynamicResource AppBorderBrush}"
-                            BorderThickness="1"
-                            ToolTip="{Binding InstallationRootPath}"
-                            Visibility="{Binding ShowInstallationBadge, Converter={StaticResource BoolToVisibility}}">
-                            <StackPanel Orientation="Horizontal">
-                                <ic:SymbolIcon Symbol="HardDrive" FontSize="10" Margin="0,0,4,0"
-                                               Foreground="{DynamicResource AppAccentBrush}" />
-                                <TextBlock Text="{Binding InstallationName}" FontSize="9"
-                                           MaxWidth="120" TextTrimming="CharacterEllipsis"
-                                           Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border
             Height="1"
             Background="{DynamicResource AccountCardSeparatorBrush}"
-            Margin="0,7,0,7" />
+            Margin="0,9,0,7" />
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <ic:SymbolIcon
@@ -329,28 +310,21 @@
                         </StackPanel>
 
                         <Border
-    CornerRadius="7"
-    Padding="12,5"
-    HorizontalAlignment="Center"
-    Margin="0,9,0,0"
-    BorderThickness="1"
-    Background="{DynamicResource AppAccentSurfaceBrush}"
-    BorderBrush="{DynamicResource AppAccentBrush}"
-    Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibility}}">
-
+                            Margin="0,7,0,0"
+                            Padding="7,2"
+                            HorizontalAlignment="Center"
+                            CornerRadius="6"
+                            Background="{DynamicResource AppChromeBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            ToolTip="{Binding InstallationRootPath}"
+                            Visibility="{Binding ShowInstallationBadge, Converter={StaticResource BoolToVisibility}}">
                             <StackPanel Orientation="Horizontal">
-                                <Ellipse
-            Width="7"
-            Height="7"
-            Margin="0,0,6,0"
-            VerticalAlignment="Center"
-            Fill="{DynamicResource AppSuccessBrush}" />
-
-                                <TextBlock
-            Text="CONTA ATIVA"
-            Foreground="{DynamicResource AppAccentBrush}"
-            FontSize="10"
-            FontWeight="Bold" />
+                                <ic:SymbolIcon Symbol="HardDrive" FontSize="10" Margin="0,0,4,0"
+                                               Foreground="{DynamicResource AppAccentBrush}" />
+                                <TextBlock Text="{Binding InstallationName}" FontSize="9"
+                                           MaxWidth="120" TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource AppTextSecondaryBrush}" />
                             </StackPanel>
                         </Border>
 

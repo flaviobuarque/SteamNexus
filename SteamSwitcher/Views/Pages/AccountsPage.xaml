@@ -374,8 +374,8 @@
                                     <Setter Property="BorderThickness" Value="1" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource AppAccentSurfaceBrush}" />
-                                            <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource AppSuccessSurfaceBrush}" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AppSuccessBrush}" />
                                             <Setter Property="BorderThickness" Value="2" />
                                         </DataTrigger>
                                     </Style.Triggers>
@@ -460,23 +460,6 @@
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding LastLoginFormatted}" FontSize="11"
                                         Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                                    <Border
-                                        Margin="0,3,0,0"
-                                        Padding="7,2"
-                                        HorizontalAlignment="Left"
-                                        CornerRadius="6"
-                                        Background="{DynamicResource AppAccentSurfaceBrush}"
-                                        BorderBrush="{DynamicResource AppAccentBrush}"
-                                        BorderThickness="1"
-                                        Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibility}}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Ellipse Width="6" Height="6" Margin="0,0,5,0"
-                                                VerticalAlignment="Center"
-                                                Fill="{DynamicResource AppSuccessBrush}" />
-                                            <TextBlock Text="CONTA ATIVA" FontSize="9" FontWeight="Bold"
-                                                Foreground="{DynamicResource AppAccentBrush}" />
-                                        </StackPanel>
-                                    </Border>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
