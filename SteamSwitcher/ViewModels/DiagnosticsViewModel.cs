@@ -33,11 +33,9 @@ public partial class DiagnosticsViewModel(
                 .ToHashSet(StringComparer.Ordinal);
             _report = await diagnosticsService.CheckAsync();
             Installations = new ObservableCollection<DiagnosticInstallationItem>(
-                _report.Installations.Select((report, index) => new DiagnosticInstallationItem(
+                _report.Installations.Select(report => new DiagnosticInstallationItem(
                     report,
-                    expandedIds.Count > 0
-                        ? expandedIds.Contains(report.InstallationId)
-                        : report.IsSelected || report.IsRunning || index == 0,
+                    expandedIds.Contains(report.InstallationId),
                     $"Verificado às {_report.CheckedAt:HH:mm:ss}")));
             LastCheckText = $"Verificado às {_report.CheckedAt:HH:mm:ss}";
             mainViewModel.UpdateStatusBar(
