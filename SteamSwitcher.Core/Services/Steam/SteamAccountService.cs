@@ -133,9 +133,7 @@ public class SteamAccountService(
 
                 return snapshot.Accounts;
             }
-            catch (Exception ex) when (ex is IOException
-                or UnauthorizedAccessException
-                or InvalidDataException)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 logger.LogWarning(
                     ex,

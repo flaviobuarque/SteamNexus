@@ -12,6 +12,25 @@ public sealed class GameScaleTests(ITestOutputHelper output)
 {
     public static TheoryData<int> ScaleSizes => new() { 100, 500, 1_000, 5_000 };
 
+    [Fact]
+    public void UniqueKey_SeparatesSameGameAcrossInstallations()
+    {
+        var first = new SteamGame
+        {
+            AppId = "123",
+            Name = "Same game",
+            InstallationId = "primary",
+        };
+        var second = new SteamGame
+        {
+            AppId = "123",
+            Name = "Same game",
+            InstallationId = "secondary",
+        };
+
+        first.UniqueKey.Should().NotBe(second.UniqueKey);
+    }
+
     [Theory]
     [MemberData(nameof(ScaleSizes))]
     public void FilterSortAndPaginate_RemainsBounded(int count)
