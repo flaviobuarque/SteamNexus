@@ -54,6 +54,13 @@ public partial class ThemeEditorWindow : Window
         _previewTimer.Start();
     }
 
+    private void BaseTheme_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (!_ready) return;
+        ViewModel.ApplyBasePalette();
+        PreviewTheme();
+    }
+
     private void PreviewTheme()
     {
         try
@@ -301,6 +308,40 @@ public partial class ThemeEditorViewModel : ObservableObject
             theme.AccentSurface = "#3B1760";
         }
         Load(theme);
+    }
+
+    public void ApplyBasePalette()
+    {
+        var palette = BaseTheme == AppTheme.Light
+            ? CustomThemeSettings.CreateLight()
+            : CustomThemeSettings.CreateDark();
+
+        string Value(string key) => key switch
+        {
+            "Background" => palette.Background,
+            "Chrome" => palette.Chrome,
+            "Surface" => palette.Surface,
+            "SurfaceAlt" => palette.SurfaceAlt,
+            "SurfaceHover" => palette.SurfaceHover,
+            "Border" => palette.Border,
+            "Focus" => palette.Focus,
+            "TextPrimary" => palette.TextPrimary,
+            "TextSecondary" => palette.TextSecondary,
+            "TextMuted" => palette.TextMuted,
+            "Accent" => palette.Accent,
+            "AccentAlt" => palette.AccentAlt,
+            "AccentSurface" => palette.AccentSurface,
+            "Success" => palette.Success,
+            "Warning" => palette.Warning,
+            "Danger" => palette.Danger,
+            _ => throw new InvalidOperationException($"Cor de tema desconhecida: {key}"),
+        };
+
+        foreach (var color in Colors)
+            color.Value = Value(color.Key);
+
+        BackgroundOverlay = palette.BackgroundOverlay;
+        SelectedPreset = BaseTheme == AppTheme.Light ? "SteamNexus Light" : "SteamNexus Dark";
     }
 
     public void FixContrast()
