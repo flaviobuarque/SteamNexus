@@ -2,6 +2,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SteamSwitcher.Core.Models;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Text.RegularExpressions;
 
 namespace SteamSwitcher.Core.Services;
@@ -1100,16 +1102,25 @@ public class SteamAccountService(
 
         if (settings.StartSilent) args.Add("-silent");
 
-        var psi = new System.Diagnostics.ProcessStartInfo
+        if (SteamLaunchPolicy.ShouldLaunchAsDesktopUser(
+                IsCurrentProcessElevated(), settings.StartAsAdmin))
+        {
+            StartAsDesktopUser(steamExe, string.Join(" ", args), SteamPath);
+            await Task.Delay(1500, ct);
+            if (!IsSteamMainProcessRunning())
+                throw new InvalidOperationException(
+                    "A Steam não pôde ser iniciada no usuário da área de trabalho.");
+            return;
+        }
+
+        using var process = Process.Start(new ProcessStartInfo
         {
             FileName = steamExe,
             Arguments = string.Join(" ", args),
             WorkingDirectory = SteamPath,
             UseShellExecute = settings.StartAsAdmin,
             Verb = settings.StartAsAdmin ? "runas" : string.Empty,
-        };
-
-        using var process = Process.Start(psi)
+        })
             ?? throw new InvalidOperationException("A Steam não pôde ser iniciada.");
         await Task.Delay(1500, ct);
 
@@ -1123,6 +1134,41 @@ public class SteamAccountService(
         {
             // UseShellExecute pode entregar um processo intermediário enquanto a
             // instância real da Steam já está em execução.
+        }
+    }
+
+    private static bool IsCurrentProcessElevated()
+    {
+        using var identity = WindowsIdentity.GetCurrent();
+        return new WindowsPrincipal(identity)
+            .IsInRole(WindowsBuiltInRole.Administrator);
+    }
+
+    private static void StartAsDesktopUser(
+        string executable,
+        string arguments,
+        string workingDirectory)
+    {
+        var shellType = Type.GetTypeFromProgID("Shell.Application")
+            ?? throw new InvalidOperationException(
+                "O shell da área de trabalho não está disponível.");
+        object? shell = null;
+        try
+        {
+            shell = Activator.CreateInstance(shellType)
+                ?? throw new InvalidOperationException(
+                    "Não foi possível acessar o shell da área de trabalho.");
+            shellType.InvokeMember(
+                "ShellExecute",
+                System.Reflection.BindingFlags.InvokeMethod,
+                binder: null,
+                target: shell,
+                args: [executable, arguments, workingDirectory, string.Empty, 1]);
+        }
+        finally
+        {
+            if (shell is not null && Marshal.IsComObject(shell))
+                Marshal.FinalReleaseComObject(shell);
         }
     }
 
