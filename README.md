@@ -47,6 +47,21 @@ O SteamNexus é um projeto independente, com identidade, interface, arquitetura 
 objetivos próprios. Não é uma versão oficial, derivação endossada ou produto
 afiliado ao TcNo Account Switcher ou aos seus responsáveis.
 
+## 🧠 Engenharia e aprendizado
+
+O SteamNexus também é um projeto de engenharia aplicada criado para aprofundar
+conhecimentos em **C#**, **.NET** e **WPF** por meio do desenvolvimento de um
+produto real. O trabalho envolve arquitetura, integração com o Windows e a
+Steam, persistência local, desempenho, experiência do usuário, testes e entrega
+contínua.
+
+Ferramentas de inteligência artificial foram utilizadas como apoio ao processo
+de desenvolvimento, incluindo pesquisa, análise de alternativas e revisão de
+implementações. As decisões técnicas, a integração das mudanças, os testes e a
+validação do comportamento do aplicativo permanecem sob responsabilidade do
+autor. Essa abordagem combina estudo contínuo com práticas profissionais de
+engenharia de software e desenvolvimento orientado a produto.
+
 ## 🚀 Recursos
 
 ### 👥 Contas
