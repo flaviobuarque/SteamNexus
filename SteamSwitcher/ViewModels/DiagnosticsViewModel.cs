@@ -70,6 +70,26 @@ public partial class DiagnosticsViewModel(
     }
 
     [RelayCommand]
+    private async Task RefreshInstallationAsync(DiagnosticInstallationItem item)
+    {
+        try
+        {
+            var report = await diagnosticsService.CheckInstallationAsync(item.Report.InstallationId);
+            var index = Installations.IndexOf(item);
+            if (index >= 0)
+                Installations[index] = new DiagnosticInstallationItem(
+                    report, item.IsExpanded, $"Verificado às {DateTime.Now:HH:mm:ss}");
+
+            mainViewModel.UpdateStatusBar("Instalação verificada", report.InstallationName);
+        }
+        catch (Exception ex)
+        {
+            snackbarService.Show("Falha no diagnóstico", ex.Message,
+                ControlAppearance.Danger, null, TimeSpan.FromSeconds(5));
+        }
+    }
+
+    [RelayCommand]
     private async Task RepairRegistryAsync(DiagnosticInstallationItem item)
     {
         try

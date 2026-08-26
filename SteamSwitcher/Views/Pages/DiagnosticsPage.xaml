@@ -63,7 +63,6 @@
                                                         <ColumnDefinition Width="Auto" />
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
                                                     <ic:SymbolIcon Symbol="HardDrive" FontSize="19" Margin="0,2,12,0"
                                                                    VerticalAlignment="Top" IsHitTestVisible="False"
@@ -85,16 +84,8 @@
                                                         </StackPanel>
                                                         <TextBlock Text="{Binding Report.InstallationPath}" Margin="0,4,0,0"
                                                                    Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                                                        <Grid Margin="0,8,0,0">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="Auto" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock Text="Clique para ver mais informações" FontSize="11"
-                                                                       Foreground="{DynamicResource AppTextMutedBrush}" />
-                                                            <TextBlock Grid.Column="1" Text="{Binding CheckedAtText}" FontSize="11" Margin="16,0,0,0"
-                                                                       Foreground="{DynamicResource AppTextMutedBrush}" />
-                                                        </Grid>
+                                                        <TextBlock Text="{Binding CheckedAtText}" FontSize="11" Margin="0,8,0,0"
+                                                                   Foreground="{DynamicResource AppTextMutedBrush}" />
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="2" Margin="16,0,10,0" VerticalAlignment="Center"
@@ -115,9 +106,6 @@
                                                                        Foreground="{DynamicResource AppDangerBrush}" />
                                                         </Border>
                                                     </StackPanel>
-
-                                                    <ic:SymbolIcon Grid.Column="3" Symbol="ChevronDown" FontSize="16" Margin="14,0,0,0"
-                                                                   VerticalAlignment="Center" Foreground="{DynamicResource AppTextMutedBrush}" />
                                                     </Grid>
                                                 </ToggleButton>
 
@@ -128,6 +116,12 @@
                                                                    Command="{Binding DataContext.CopyInstallationReportCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                    CommandParameter="{Binding}">
                                                             <ic:SymbolIcon Symbol="Copy" FontSize="15" />
+                                                        </ui:Button>
+                                                        <ui:Button Width="34" Height="34" Padding="0" Margin="6,0,0,0" Appearance="Secondary"
+                                                                   ToolTip="Verificar somente esta instalação"
+                                                                   Command="{Binding DataContext.RefreshInstallationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                   CommandParameter="{Binding}">
+                                                            <ic:SymbolIcon Symbol="ArrowClockwise" FontSize="15" />
                                                         </ui:Button>
                                                         <ui:Button Width="34" Height="34" Padding="0" Margin="6,0,0,0" Appearance="Secondary"
                                                                    ToolTip="Corrigir autologin do Registro"
@@ -143,6 +137,13 @@
                                                                    CommandParameter="{Binding}">
                                                             <ic:SymbolIcon Symbol="Person" FontSize="15" />
                                                         </ui:Button>
+                                                        <ToggleButton Width="34" Height="34" Margin="8,0,0,0" Padding="0"
+                                                                      Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                                      ToolTip="Expandir ou recolher detalhes"
+                                                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}">
+                                                            <ic:SymbolIcon Symbol="ChevronDown" FontSize="16"
+                                                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                                                        </ToggleButton>
                                                 </StackPanel>
                                             </Grid>
                                             <ContentPresenter x:Name="ExpandSite" ContentSource="Content" Visibility="Collapsed" />

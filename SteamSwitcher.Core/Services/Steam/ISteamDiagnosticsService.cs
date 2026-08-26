@@ -3,6 +3,7 @@ namespace SteamSwitcher.Core.Services;
 public interface ISteamDiagnosticsService
 {
     Task<SteamDiagnosticReport> CheckAsync(CancellationToken ct = default);
+    Task<SteamInstallationDiagnosticReport> CheckInstallationAsync(string installationId, CancellationToken ct = default);
     Task DisableAccountChooserAsync(string installationId, CancellationToken ct = default);
     Task RepairRegistryAsync(string installationId, CancellationToken ct = default);
 }

@@ -14,7 +14,7 @@ public sealed class SteamDiagnosticsService(
         foreach (var installation in installationService.Installations)
         {
             ct.ThrowIfCancellationRequested();
-            reports.Add(await CheckInstallationAsync(
+            reports.Add(await BuildInstallationReportAsync(
                 installation,
                 runningPaths,
                 ct));
@@ -35,6 +35,11 @@ public sealed class SteamDiagnosticsService(
             Installations = reports,
         };
     }
+
+    public Task<SteamInstallationDiagnosticReport> CheckInstallationAsync(
+        string installationId,
+        CancellationToken ct = default) =>
+        BuildInstallationReportAsync(RequireInstallation(installationId), GetRunningSteamPaths(), ct);
 
     public async Task DisableAccountChooserAsync(
         string installationId,
@@ -62,7 +67,7 @@ public sealed class SteamDiagnosticsService(
         Registry.SetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "RememberPassword", 1, RegistryValueKind.DWord);
     }
 
-    private async Task<SteamInstallationDiagnosticReport> CheckInstallationAsync(
+    private async Task<SteamInstallationDiagnosticReport> BuildInstallationReportAsync(
         SteamInstallation installation,
         IReadOnlyList<string> runningPaths,
         CancellationToken ct)
