@@ -605,13 +605,21 @@
                                         CornerRadius="6" Panel.ZIndex="20"
                                         Background="{DynamicResource AppChromeBrush}"
                                         BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
-                                        ToolTip="{Binding InstallationRootPath}">
+                                        ToolTip="Conta proprietária do jogo">
                                         <StackPanel Orientation="Horizontal">
-                                            <ic:SymbolIcon Symbol="HardDrive" FontSize="10" Margin="0,0,4,0"
-                                                           Foreground="{DynamicResource AppAccentBrush}" />
-                                            <TextBlock Text="{Binding InstallationName}" FontSize="9" MaxWidth="88"
+                                            <ic:SymbolIcon Symbol="Person" FontSize="10" Margin="0,0,4,0"
+                                                           Foreground="{DynamicResource AppAccentBrush}"
+                                                           Visibility="{Binding HasOwner, Converter={StaticResource BoolToVisibility}}" />
+                                            <ic:SymbolIcon Symbol="PersonQuestionMark" FontSize="10" Margin="0,0,4,0"
+                                                           Foreground="{DynamicResource AppTextMutedBrush}"
+                                                           Visibility="{Binding HasOwner, Converter={StaticResource InverseBoolToVisibility}}" />
+                                            <TextBlock Text="{Binding OwnerAccountName}" FontSize="9" MaxWidth="88"
                                                        TextTrimming="CharacterEllipsis"
-                                                       Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                                       Visibility="{Binding HasOwner, Converter={StaticResource BoolToVisibility}}" />
+                                            <TextBlock Text="Sem conta" FontSize="9"
+                                                       Foreground="{DynamicResource AppTextMutedBrush}"
+                                                       Visibility="{Binding HasOwner, Converter={StaticResource InverseBoolToVisibility}}" />
                                         </StackPanel>
                                     </Border>
                                     <!-- 2. Capa do jogo -->
@@ -777,50 +785,24 @@
                                                 Foreground="{DynamicResource AppTextPrimaryBrush}"
                                                 TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
                                                 ToolTip="{Binding Game.Name}" />
-                                            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ic:SymbolIcon
-                                                    Symbol="Person" FontSize="10"
-                                                    Foreground="{DynamicResource AppTextSecondaryBrush}"
-                                                    Margin="0,0,4,0" VerticalAlignment="Center"
-                                                    Visibility="{Binding HasOwner, Converter={StaticResource BoolToVisibility}}" />
-                                                <ic:SymbolIcon
-                                                    Symbol="PersonQuestionMark" FontSize="10"
+                                            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center"
+                                                        ToolTip="{Binding InstallFullPath}">
+                                                <ic:SymbolIcon Symbol="Folder" FontSize="10"
                                                     Foreground="{DynamicResource AppTextMutedBrush}"
-                                                    Margin="0,0,4,0" VerticalAlignment="Center"
-                                                    Visibility="{Binding HasOwner, Converter={StaticResource InverseBoolToVisibility}}" />
-                                                <TextBlock
-                                                    Text="{Binding OwnerAccountName}" FontSize="11"
+                                                    Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding InstallLocationAndSize}" FontSize="10"
                                                     Foreground="{DynamicResource AppTextSecondaryBrush}"
-                                                    TextTrimming="CharacterEllipsis"
-                                                    Visibility="{Binding HasOwner, Converter={StaticResource BoolToVisibility}}" />
-                                                <TextBlock
-                                                    Text="Conta desconhecida" FontSize="11"
-                                                    Foreground="{DynamicResource AppTextMutedBrush}"
-                                                    FontStyle="Italic"
-                                                    Visibility="{Binding HasOwner, Converter={StaticResource InverseBoolToVisibility}}" />
+                                                    TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                             </StackPanel>
-                                            <Grid Grid.Row="2" VerticalAlignment="Center">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <StackPanel Grid.Row="2" Orientation="Horizontal"
+                                                        HorizontalAlignment="Center" VerticalAlignment="Center">
                                                     <ic:SymbolIcon Symbol="Clock" FontSize="10"
                                                         Foreground="{DynamicResource AppTextMutedBrush}"
                                                         Margin="0,0,4,0" VerticalAlignment="Center" />
                                                     <TextBlock Text="{Binding Game.PlaytimeFormatted}" FontSize="10"
                                                         Foreground="{DynamicResource AppTextSecondaryBrush}"
                                                         VerticalAlignment="Center" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <ic:SymbolIcon Symbol="HardDrive" FontSize="10"
-                                                        Foreground="{DynamicResource AppTextMutedBrush}"
-                                                        Margin="0,0,4,0" VerticalAlignment="Center" />
-                                                    <TextBlock Text="{Binding SizeAndDrive}" FontSize="10"
-                                                        Foreground="{DynamicResource AppTextMutedBrush}"
-                                                        VerticalAlignment="Center" />
-                                                </StackPanel>
-                                            </Grid>
+                                            </StackPanel>
                                         </Grid>
                                     </Border>
                                 </Grid>
