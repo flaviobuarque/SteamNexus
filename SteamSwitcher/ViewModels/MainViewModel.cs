@@ -229,7 +229,9 @@ public partial class MainViewModel(
 
         var appliedState = active.LoginStateOverride
             ?? settingsService.Current.DefaultLoginStateOverride;
-        StatusLoginState = appliedState?.ToString() ?? "Online";
+        StatusLoginState = appliedState == LoginState.Offline
+            ? "Offline"
+            : "Online";
 
         foreach (var a in TrayAccounts)
             a.IsActive = a.SteamId64 == active.SteamId64;

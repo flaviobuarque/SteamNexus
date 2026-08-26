@@ -26,8 +26,6 @@ public partial class EditAccountViewModel(
     new() { Value = -1, Label = "Padrão global", Icon = "Settings",   Color = "#6593B0" },
     new() { Value =  1, Label = "Online",        Icon = "Circle",      Color = "#57E389" },
     new() { Value =  0, Label = "Offline",       Icon = "CircleOff",   Color = "#6593B0" },
-    new() { Value =  7, Label = "Invisível",      Icon = "EyeOff",      Color = "#A9C8DE" },
-    new() { Value =  3, Label = "Away",           Icon = "Clock",       Color = "#F2B84B" },
 ];
 
     [ObservableProperty]

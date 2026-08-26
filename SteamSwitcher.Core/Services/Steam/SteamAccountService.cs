@@ -115,17 +115,20 @@ public class SteamAccountService(
 
         var operation = Stopwatch.StartNew();
         var settings = settingsService.Current;
-        LoginState? targetState = stateOverride
+        var requestedState = stateOverride
             ?? account.LoginStateOverride
             ?? settings.DefaultLoginStateOverride;
+        var targetState = requestedState == LoginState.Offline
+            ? LoginState.Offline
+            : LoginState.Online;
 
         logger.LogInformation(
             "Troca Steam iniciada. Target={Target}, State={State}",
-            MaskSteamId(account.SteamId64), targetState ?? LoginState.Online);
+            MaskSteamId(account.SteamId64), targetState);
 
         if (await PreflightSwitchAsync(
                 account,
-                targetState ?? LoginState.Online,
+                targetState,
                 ct))
         {
             logger.LogInformation(
@@ -153,7 +156,7 @@ public class SteamAccountService(
 
             await ValidateSwitchStateAsync(
                 account,
-                targetState ?? LoginState.Online,
+                targetState,
                 validateRegistry: true,
                 ct);
             LogSwitchPhase("state-validated", operation, account.SteamId64);
@@ -164,7 +167,7 @@ public class SteamAccountService(
 
             await ValidateSwitchStateAsync(
                 account,
-                targetState ?? LoginState.Online,
+                targetState,
                 validateRegistry: false,
                 ct);
             LogSwitchPhase("post-start-validated", operation, account.SteamId64);
