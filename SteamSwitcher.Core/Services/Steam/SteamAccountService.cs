@@ -106,7 +106,8 @@ public class SteamAccountService(
             .ToList();
         if (installations.Count == 0) return [];
 
-        var selectedId = installationService.SelectedInstallation?.Id;
+        var activeInstallationId = FindRunningInstallationId(installations)
+            ?? installationService.SelectedInstallation?.Id;
         var tasks = installations.Select(async installation =>
         {
             try
@@ -119,7 +120,7 @@ public class SteamAccountService(
                     bufferSize: 4096,
                     useAsync: true);
                 var snapshot = SteamAccountSnapshotParser.Parse(stream);
-                var activeId = installation.Id == selectedId
+                var activeId = installation.Id == activeInstallationId
                     ? snapshot.ActiveAccount?.SteamId64
                     : null;
 
@@ -349,7 +350,41 @@ public class SteamAccountService(
         // Exigimos EXATAMENTE UM usuario com a flag — retorna null se 0 ou 2+.
         // Preferimos null em vez de adivinhar errado.
 
-        return (await GetSnapshotAsync(ct)).ActiveAccount;
+        return (await GetAllAccountsAsync(ct)).FirstOrDefault(account => account.IsActive);
+    }
+
+    private static string? FindRunningInstallationId(
+        IReadOnlyList<SteamInstallation> installations)
+    {
+        var processes = Process.GetProcessesByName("steam");
+        try
+        {
+            foreach (var process in processes)
+            {
+                try
+                {
+                    var executablePath = process.MainModule?.FileName;
+                    if (string.IsNullOrWhiteSpace(executablePath)) continue;
+                    var installation = installations.FirstOrDefault(item =>
+                        string.Equals(
+                            Path.GetFullPath(item.SteamExePath),
+                            Path.GetFullPath(executablePath),
+                            StringComparison.OrdinalIgnoreCase));
+                    if (installation is not null)
+                        return installation.Id;
+                }
+                catch
+                {
+                    // Processos protegidos não impedem o fallback para a seleção padrão.
+                }
+            }
+
+            return null;
+        }
+        finally
+        {
+            DisposeProcesses(processes);
+        }
     }
 
     public async Task ForgetAccountAsync(
