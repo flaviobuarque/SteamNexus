@@ -7,6 +7,7 @@ public interface ISteamAccountService
     bool IsOperationInProgress { get; }
     Task<SteamAccountsSnapshot> GetSnapshotAsync(CancellationToken ct = default);
     Task<IReadOnlyList<SteamAccount>> GetAccountsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<SteamAccount>> GetAllAccountsAsync(CancellationToken ct = default);
     Task SwitchAccountAsync(SteamAccount account, LoginState? stateOverride = null, CancellationToken ct = default);
     Task<SteamAccount?> GetActiveAccountAsync(CancellationToken ct = default);
     Task ForgetAccountAsync(SteamAccount account, CancellationToken ct = default);

@@ -123,6 +123,37 @@ public sealed class SteamInstallationServiceTests : IDisposable
         service.SelectedInstallation!.RootPath.Should().Be(first);
     }
 
+    [Fact]
+    public async Task GetAllAccounts_KeepsDuplicateSteamIdSeparatedByInstallation()
+    {
+        const string sharedSteamId = "76561198000000009";
+        var first = CreateSteam("UnifiedFirst", sharedSteamId);
+        var second = CreateSteam("UnifiedSecond", sharedSteamId);
+        var installations = new[]
+        {
+            CreateInstallation("first", first),
+            CreateInstallation("second", second),
+        };
+        var installationService = Substitute.For<ISteamInstallationService>();
+        installationService.Installations.Returns(installations);
+        installationService.SelectedInstallation.Returns(installations[0]);
+        var locator = Substitute.For<ISteamLocatorService>();
+        var settingsService = Substitute.For<IAppSettingsService>();
+        settingsService.Current.Returns(new AppSettings());
+        var accountService = new SteamAccountService(
+            locator,
+            installationService,
+            settingsService,
+            NullLogger<SteamAccountService>.Instance);
+
+        var accounts = await accountService.GetAllAccountsAsync();
+
+        accounts.Should().HaveCount(2);
+        accounts.Select(account => account.UniqueKey).Should().OnlyHaveUniqueItems();
+        accounts.Select(account => account.InstallationId)
+            .Should().BeEquivalentTo("first", "second");
+    }
+
     private (SteamInstallationService Service, AppSettings Settings, IAppSettingsService SettingsService)
         CreateService(AppSettings? settings = null)
     {
@@ -156,6 +187,16 @@ public sealed class SteamInstallationServiceTests : IDisposable
             """);
         return root;
     }
+
+    private static SteamInstallation CreateInstallation(string id, string root) => new()
+    {
+        Id = id,
+        RootPath = root,
+        SteamExePath = Path.Combine(root, "Steam.exe"),
+        LoginUsersPath = Path.Combine(root, "config", "loginusers.vdf"),
+        DisplayName = id,
+        IsValid = true,
+    };
 
     public void Dispose()
     {

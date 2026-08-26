@@ -23,6 +23,7 @@ public partial class AccountsViewModel(
     IWatchdogService watchdogService,
     ISnackbarService snackbarService,
     IAppSettingsService settingsService,
+    ISteamInstallationService installationService,
     IServiceProvider serviceProvider,
     MainViewModel mainViewModel) : ObservableObject
 {
@@ -182,7 +183,7 @@ public partial class AccountsViewModel(
         ? $"{FilteredAccountsCount} de {FormatAccountCount(AccountsCount)}"
         : FormatAccountCount(AccountsCount);
 
-    private FileSystemWatcher? _vdfWatcher;
+    private readonly List<FileSystemWatcher> _vdfWatchers = [];
     private CancellationTokenSource? _vdfReloadCts;
     private CancellationTokenSource? _avatarLoadCts;
     private readonly SemaphoreSlim _initLock = new(1, 1);
@@ -214,22 +215,21 @@ public partial class AccountsViewModel(
                 IsLoading = true;
             try
             {
-                var snapshot = await accountService.GetSnapshotAsync(ct);
-                var rawAccounts = snapshot.Accounts;
-                var activeAccount = snapshot.ActiveAccount
-                    ?? rawAccounts.FirstOrDefault(a => a.MostRecent);
+                var rawAccounts = await accountService.GetAllAccountsAsync(ct);
+                var activeAccount = rawAccounts.FirstOrDefault(a => a.IsActive);
 
                 System.Diagnostics.Debug.WriteLine(
                     $"[AccountsViewModel.InitializeAsync] active={(activeAccount is null ? "NULL" : activeAccount.AccountName)}, rawCount={rawAccounts.Count}");
 
                 foreach (var account in rawAccounts)
                 {
-                    account.IsActive = account.SteamId64 == activeAccount?.SteamId64;
+                    account.IsActive = account.UniqueKey == activeAccount?.UniqueKey;
                 }
 
                 foreach (var account in rawAccounts)
                 {
-                    var ovr = await overrideService.GetOverrideAsync(account.SteamId64);
+                    var ovr = await overrideService.GetOverrideAsync(account.UniqueKey)
+                        ?? await overrideService.GetOverrideAsync(account.SteamId64);
                     if (ovr is not null)
                     {
                         account.CustomDisplayName = ovr.CustomDisplayName;
@@ -273,7 +273,9 @@ public partial class AccountsViewModel(
         if (ShowFavoritesOnly && !a.IsFavorite) return false;
         if (string.IsNullOrWhiteSpace(SearchText)) return true;
         return a.DisplayName.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
-            || a.AccountName.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
+            || a.AccountName.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+            || a.InstallationName.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+            || a.InstallationRootPath.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
     }
 
     partial void OnSearchTextChanged(string value)
@@ -317,10 +319,11 @@ public partial class AccountsViewModel(
 
     private async Task SaveOrganizationAsync(AccountCardViewModel card)
     {
-        var current = await overrideService.GetOverrideAsync(card.SteamId64)
+        var current = await overrideService.GetOverrideAsync(card.UniqueKey)
+            ?? await overrideService.GetOverrideAsync(card.SteamId64)
             ?? new AccountOverride();
         current.IsFavorite = card.IsFavorite;
-        await overrideService.SaveOverrideAsync(card.SteamId64, current);
+        await overrideService.SaveOverrideAsync(card.UniqueKey, current);
     }
 
     private void UpdateAccountCounts()
@@ -344,26 +347,26 @@ public partial class AccountsViewModel(
 
     private void StartWatchingLoginUsers()
     {
-        if (_vdfWatcher is not null)
-            return;
-
-        var locator = App.GetService<ISteamLocatorService>();
-        var steamPath = locator.FindSteamInstallPath();
-        if (string.IsNullOrEmpty(steamPath))
-            return;
-
-        var vdfPath = locator.GetLoginUsersVdfPath(steamPath);
-        var dir = Path.GetDirectoryName(vdfPath);
-        if (!Directory.Exists(dir))
-            return;
-
-        _vdfWatcher = new FileSystemWatcher(dir, "loginusers.vdf")
+        foreach (var watcher in _vdfWatchers)
         {
-            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
-            EnableRaisingEvents = true
-        };
+            watcher.EnableRaisingEvents = false;
+            watcher.Dispose();
+        }
+        _vdfWatchers.Clear();
 
-        _vdfWatcher.Changed += (_, _) => QueueLoginUsersRefresh();
+        foreach (var installation in installationService.Installations.Where(i => i.IsValid))
+        {
+            var dir = Path.GetDirectoryName(installation.LoginUsersPath);
+            if (!Directory.Exists(dir)) continue;
+
+            var watcher = new FileSystemWatcher(dir, Path.GetFileName(installation.LoginUsersPath))
+            {
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
+                EnableRaisingEvents = true,
+            };
+            watcher.Changed += (_, _) => QueueLoginUsersRefresh();
+            _vdfWatchers.Add(watcher);
+        }
     }
 
     private void QueueLoginUsersRefresh()
@@ -499,13 +502,13 @@ public partial class AccountsViewModel(
     private void ApplyAccountsIncrementally(IReadOnlyList<SteamAccount> incoming)
     {
         var existingById = _accounts.ToDictionary(
-            c => c.Account.SteamId64,
+            c => c.UniqueKey,
             StringComparer.Ordinal);
         var reconciled = new List<AccountCardViewModel>(incoming.Count);
 
         foreach (var account in incoming)
         {
-            if (existingById.TryGetValue(account.SteamId64, out var existing))
+            if (existingById.TryGetValue(account.UniqueKey, out var existing))
             {
                 existing.ApplySnapshot(account);
                 existing.PrepareAvatarReloadIfMissing();
@@ -518,8 +521,8 @@ public partial class AccountsViewModel(
         }
 
         var membershipChanged = _accounts.Count != reconciled.Count
-            || !_accounts.Select(c => c.Account.SteamId64)
-                .SequenceEqual(reconciled.Select(c => c.Account.SteamId64),
+            || !_accounts.Select(c => c.UniqueKey)
+                .SequenceEqual(reconciled.Select(c => c.UniqueKey),
                     StringComparer.Ordinal);
 
         if (membershipChanged)
@@ -670,7 +673,7 @@ public partial class AccountsViewModel(
         {
             var wasActive = cardVm.IsActive;
             await accountService.ForgetAccountAsync(cardVm.Account);
-            await overrideService.RemoveOverrideAsync(cardVm.Account.SteamId64);
+            await overrideService.RemoveOverrideAsync(cardVm.UniqueKey);
 
             _accounts.Remove(cardVm);
             AccountsView.Refresh();

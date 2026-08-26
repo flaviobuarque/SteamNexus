@@ -98,6 +98,57 @@ public class SteamAccountService(
     public async Task<IReadOnlyList<SteamAccount>> GetAccountsAsync(CancellationToken ct = default)
         => (await GetSnapshotAsync(ct)).Accounts;
 
+    public async Task<IReadOnlyList<SteamAccount>> GetAllAccountsAsync(
+        CancellationToken ct = default)
+    {
+        var installations = installationService.Installations
+            .Where(i => i.IsValid)
+            .ToList();
+        if (installations.Count == 0) return [];
+
+        var selectedId = installationService.SelectedInstallation?.Id;
+        var tasks = installations.Select(async installation =>
+        {
+            try
+            {
+                await using var stream = new FileStream(
+                    installation.LoginUsersPath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete,
+                    bufferSize: 4096,
+                    useAsync: true);
+                var snapshot = SteamAccountSnapshotParser.Parse(stream);
+                var activeId = installation.Id == selectedId
+                    ? snapshot.ActiveAccount?.SteamId64
+                    : null;
+
+                foreach (var account in snapshot.Accounts)
+                {
+                    account.InstallationId = installation.Id;
+                    account.InstallationName = installation.DisplayName;
+                    account.InstallationRootPath = installation.RootPath;
+                    account.IsActive = account.SteamId64 == activeId;
+                }
+
+                return snapshot.Accounts;
+            }
+            catch (Exception ex) when (ex is IOException
+                or UnauthorizedAccessException
+                or InvalidDataException)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Não foi possível ler contas da instalação {Installation}",
+                    installation.RootPath);
+                return (IReadOnlyList<SteamAccount>)[];
+            }
+        });
+
+        var accountGroups = await Task.WhenAll(tasks);
+        return accountGroups.SelectMany(accounts => accounts).ToList();
+    }
+
     public async Task SwitchAccountAsync(
         SteamAccount account,
         LoginState? stateOverride = null,
