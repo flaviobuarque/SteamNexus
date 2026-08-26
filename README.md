@@ -107,8 +107,8 @@ engenharia de software e desenvolvimento orientado a produto.
 ## 📸 Capturas de tela
 
 <p align="center">
-  <img src="docs/images/accounts.png" alt="Tela de contas do SteamNexus" width="49%">
-  <img src="docs/images/games.png" alt="Biblioteca de jogos do SteamNexus" width="49%">
+  <img src="docs/images/accounts-v2.png" alt="Tela de contas do SteamNexus" width="49%">
+  <img src="docs/images/games-v2.png" alt="Biblioteca de jogos do SteamNexus" width="49%">
 </p>
 
 ## 📥 Instalação
