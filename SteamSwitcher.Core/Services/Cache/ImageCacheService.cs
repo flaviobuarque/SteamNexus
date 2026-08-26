@@ -19,22 +19,44 @@ public class ImageCacheService(ILogger<ImageCacheService> logger) : IImageCacheS
 
     public string GetCacheDirectory() => _cacheDir;
 
+    public string? TryGetCachedPath(string url)
+    {
+        var localPath = GetLocalPath(url);
+        return File.Exists(localPath) && new FileInfo(localPath).Length > 1024
+            ? localPath
+            : null;
+    }
+
+    public string? TryGetString(string key)
+    {
+        var path = Path.Combine(_metaDir, SanitizeKey(key) + ".txt");
+        if (!File.Exists(path)) return null;
+
+        try
+        {
+            var lines = File.ReadAllLines(path);
+            if (lines.Length < 2
+                || !long.TryParse(lines[0], out var expiryTicks)
+                || DateTime.UtcNow.Ticks > expiryTicks)
+                return null;
+
+            return lines[1];
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
     public async Task<string?> GetCachedPathAsync(string url, CancellationToken ct = default)
     {
         Directory.CreateDirectory(_cacheDir);
 
-        var ext = Path.GetExtension(url).Split('?')[0];
-        if (string.IsNullOrEmpty(ext)) ext = ".jpg";
-
-        if (!_hashCache.TryGetValue(url, out var hash))
-        {
-            hash = Convert.ToHexString(
-                System.Security.Cryptography.SHA256.HashData(
-                    System.Text.Encoding.UTF8.GetBytes(url)))[..16];
-            _hashCache.TryAdd(url, hash);
-        }
-
-        var localPath = Path.Combine(_cacheDir, hash + ext);
+        var localPath = GetLocalPath(url);
 
         // Arquivo existe e tem tamanho válido (> 1KB descarta páginas de erro)
         if (File.Exists(localPath) && new FileInfo(localPath).Length > 1024)
@@ -118,6 +140,19 @@ public class ImageCacheService(ILogger<ImageCacheService> logger) : IImageCacheS
 
     private static string SanitizeKey(string key) =>
         string.Concat(key.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+
+    private string GetLocalPath(string url)
+    {
+        var ext = Path.GetExtension(url).Split('?')[0];
+        if (string.IsNullOrEmpty(ext)) ext = ".jpg";
+
+        var hash = _hashCache.GetOrAdd(url, static value =>
+            Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(
+                    System.Text.Encoding.UTF8.GetBytes(value)))[..16]);
+
+        return Path.Combine(_cacheDir, hash + ext);
+    }
 
     public Task<long> GetCacheSizeAsync() => Task.Run(() =>
     {

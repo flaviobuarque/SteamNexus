@@ -216,6 +216,7 @@ public partial class GamesViewModel(
                     _favoriteGameIds.Contains(game.UniqueKey)
                         || _favoriteGameIds.Contains(game.AppId)))
                 .ToList();
+            HydrateCachedCoverPaths(cards);
             _allGames = cards;
 
             _savedOwners = await LoadGameOwnersAsync();
@@ -747,6 +748,33 @@ public partial class GamesViewModel(
         return await AtomicJsonFile.ReadAsync(
             _favoriteGamesPath,
             static () => new HashSet<string>(StringComparer.Ordinal));
+    }
+
+    private void HydrateCachedCoverPaths(IEnumerable<GameCardViewModel> cards)
+    {
+        foreach (var card in cards)
+        {
+            if (!string.IsNullOrEmpty(card.Game.ManualCoverPath)
+                && File.Exists(card.Game.ManualCoverPath))
+            {
+                card.CoverPath = card.Game.ManualCoverPath;
+                continue;
+            }
+
+            var steamUrl = $"https://cdn.akamai.steamstatic.com/steam/apps/{card.Game.AppId}/library_600x900.jpg";
+            var cachedPath = imageCacheService.TryGetCachedPath(steamUrl);
+
+            if (string.IsNullOrEmpty(cachedPath))
+            {
+                var cachedAlternativeUrl = imageCacheService.TryGetString(
+                    $"sgdb_url_{card.Game.AppId}");
+                if (!string.IsNullOrEmpty(cachedAlternativeUrl))
+                    cachedPath = imageCacheService.TryGetCachedPath(cachedAlternativeUrl);
+            }
+
+            if (!string.IsNullOrEmpty(cachedPath))
+                card.CoverPath = cachedPath;
+        }
     }
 
     private static async Task PersistGameOwnerAsync(string appId, string steamId64)
