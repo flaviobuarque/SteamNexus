@@ -93,7 +93,7 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Border
-                                    Margin="0,0,0,8"
+                                    Margin="0,0,12,8"
                                     Padding="14,11"
                                     CornerRadius="10"
                                     BorderThickness="2"
