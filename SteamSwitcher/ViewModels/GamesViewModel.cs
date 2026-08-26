@@ -625,8 +625,9 @@ public partial class GamesViewModel(
             return;
         }
 
-        var installationAccounts = _allAccounts
-            .Where(account => account.InstallationId == cardVm.Game.InstallationId)
+        var installationAccounts = FilterAccounts
+            .Where(account => !string.IsNullOrEmpty(account.SteamId64)
+                && account.Account.InstallationId == cardVm.Game.InstallationId)
             .ToList();
         if (installationAccounts.Count == 0)
         {
@@ -638,6 +639,7 @@ public partial class GamesViewModel(
                 TimeSpan.FromSeconds(4));
             return;
         }
+        _ = LoadFilterAvatarsAsync(installationAccounts);
         var dialog = new SteamSwitcher.Views.Dialogs.PickAccountDialog(
             cardVm.Game.Name,
             installationAccounts,
@@ -1094,8 +1096,9 @@ public partial class GamesViewModel(
                 return;
             }
 
-            var installationAccounts = _allAccounts
-                .Where(candidate => candidate.InstallationId == cardVm.Game.InstallationId)
+            var installationAccounts = FilterAccounts
+                .Where(candidate => !string.IsNullOrEmpty(candidate.SteamId64)
+                    && candidate.Account.InstallationId == cardVm.Game.InstallationId)
                 .ToList();
             if (installationAccounts.Count == 0)
             {
@@ -1107,6 +1110,7 @@ public partial class GamesViewModel(
                     TimeSpan.FromSeconds(4));
                 return;
             }
+            _ = LoadFilterAvatarsAsync(installationAccounts);
             var dialog = new SteamSwitcher.Views.Dialogs.PickAccountDialog(
                 cardVm.Game.Name, installationAccounts, cardVm.Game.LoginStateOverride)
             {

@@ -14,12 +14,12 @@ public partial class PickAccountDialog : Window
     public LoginState? SelectedLoginState { get; private set; }
     private readonly PickAccountDialogViewModel _vm;
 
-    public PickAccountDialog(string gameName, IReadOnlyList<SteamAccount> accounts)
+    public PickAccountDialog(string gameName, IReadOnlyList<AccountCardViewModel> accounts)
         : this(gameName, accounts, currentLoginState: null) { }
 
     public PickAccountDialog(
         string gameName,
-        IReadOnlyList<SteamAccount> accounts,
+        IReadOnlyList<AccountCardViewModel> accounts,
         LoginState? currentLoginState)
     {
         InitializeComponent();
@@ -102,7 +102,7 @@ public partial class PickAccountDialogViewModel : ObservableObject
 
     public PickAccountDialogViewModel(
         string gameName,
-        IReadOnlyList<SteamAccount> accounts,
+        IReadOnlyList<AccountCardViewModel> accounts,
         LoginState? currentLoginState)
     {
         GameName = gameName;
@@ -139,11 +139,12 @@ public partial class PickAccountDialogViewModel : ObservableObject
     }
 }
 
-public partial class SelectableAccount(SteamAccount account) : ObservableObject
+public partial class SelectableAccount(AccountCardViewModel card) : ObservableObject
 {
-    public SteamAccount Account { get; } = account;
-    public string DisplayName => Account.DisplayName;
-    public string AccountName => Account.AccountName;
+    public AccountCardViewModel Card { get; } = card;
+    public SteamAccount Account => Card.Account;
+    public string DisplayName => Card.DisplayName;
+    public string AccountName => Card.AccountName;
 
     [ObservableProperty]
     private bool _isSelected;

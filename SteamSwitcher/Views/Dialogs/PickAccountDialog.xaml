@@ -118,11 +118,20 @@
                                             CommandParameter="{Binding}" />
                                     </Border.InputBindings>
                                     <StackPanel Orientation="Horizontal">
-                                        <ui:SymbolIcon
-                                            Symbol="Person24"
-                                            Foreground="#A9C8DE"
-                                            Margin="0,0,12,0"
-                                            VerticalAlignment="Center" />
+                                        <Grid Width="38" Height="38" Margin="0,0,12,0">
+                                            <Ellipse Fill="#143A5C" />
+                                            <Image Source="{Binding Card.AvatarImage}" Stretch="UniformToFill">
+                                                <Image.Clip>
+                                                    <EllipseGeometry Center="19,19" RadiusX="19" RadiusY="19" />
+                                                </Image.Clip>
+                                            </Image>
+                                            <ui:SymbolIcon
+                                                Symbol="Person24"
+                                                Foreground="#A9C8DE"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Visibility="{Binding Card.HasAvatar, Converter={StaticResource InverseBoolToVisibility}}" />
+                                        </Grid>
                                         <StackPanel VerticalAlignment="Center">
                                             <TextBlock
                                                 Text="{Binding DisplayName}"
