@@ -27,6 +27,8 @@ public partial class GameCardViewModel : ObservableObject
     public bool HasOwner => Game.OwnerAccount is not null;
 
     public string SizeAndDrive => Game.SizeAndDrive;
+    public string InstallationName => Game.InstallationName;
+    public string InstallationRootPath => Game.InstallationRootPath;
 
     public void ApplySnapshot(SteamGame game)
     {
@@ -35,6 +37,8 @@ public partial class GameCardViewModel : ObservableObject
         OnPropertyChanged(nameof(OwnerAccountName));
         OnPropertyChanged(nameof(HasOwner));
         OnPropertyChanged(nameof(SizeAndDrive));
+        OnPropertyChanged(nameof(InstallationName));
+        OnPropertyChanged(nameof(InstallationRootPath));
     }
 
     public void OnOwnerChanged()

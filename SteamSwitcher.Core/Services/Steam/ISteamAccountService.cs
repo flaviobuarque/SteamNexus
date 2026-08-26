@@ -14,5 +14,8 @@ public interface ISteamAccountService
     Task<IReadOnlyList<string>> ForgetAccountsAsync(
         IReadOnlyCollection<string> steamIds64,
         CancellationToken ct = default);
+    Task<IReadOnlyList<string>> ForgetAccountsAsync(
+        IReadOnlyCollection<SteamAccount> accounts,
+        CancellationToken ct = default);
     Task AddAccountAsync(CancellationToken ct = default);
 }

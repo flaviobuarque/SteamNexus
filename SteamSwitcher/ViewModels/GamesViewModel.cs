@@ -170,7 +170,7 @@ public partial class GamesViewModel(
         IsLoading = true;
         try
         {
-            var accounts = await accountService.GetAccountsAsync(ct);
+            var accounts = await accountService.GetAllAccountsAsync(ct);
             _allAccounts = accounts;
 
             // Monta lista de filtros
@@ -191,7 +191,8 @@ public partial class GamesViewModel(
             var cards = rawGames
                 .Select(game => new GameCardViewModel(
                     game,
-                    _favoriteGameIds.Contains(game.AppId)))
+                    _favoriteGameIds.Contains(game.UniqueKey)
+                        || _favoriteGameIds.Contains(game.AppId)))
                 .ToList();
             _allGames = cards;
 
@@ -200,9 +201,13 @@ public partial class GamesViewModel(
             {
                 foreach (var card in cards)
                 {
-                    if (_savedOwners.TryGetValue(card.Game.AppId, out var savedId))
+                    if (_savedOwners.TryGetValue(card.Game.UniqueKey, out var savedId)
+                        || _savedOwners.TryGetValue(card.Game.AppId, out savedId))
                     {
-                        var owner = _allAccounts.FirstOrDefault(a => a.SteamId64 == savedId);
+                        var owner = _allAccounts.FirstOrDefault(a => a.UniqueKey == savedId)
+                            ?? _allAccounts.FirstOrDefault(a =>
+                                a.InstallationId == card.Game.InstallationId
+                                && a.SteamId64 == savedId);
                         if (owner is not null)
                         {
                             card.Game.OwnerAccount = owner;
@@ -596,9 +601,12 @@ public partial class GamesViewModel(
             return;
         }
 
+        var installationAccounts = _allAccounts
+            .Where(account => account.InstallationId == cardVm.Game.InstallationId)
+            .ToList();
         var dialog = new SteamSwitcher.Views.Dialogs.PickAccountDialog(
             cardVm.Game.Name,
-            _allAccounts,
+            installationAccounts,
             cardVm.Game.LoginStateOverride)
         {
             Owner = System.Windows.Application.Current.MainWindow
@@ -610,15 +618,15 @@ public partial class GamesViewModel(
         cardVm.Game.OwnerAccount = dialog.SelectedAccount;
         cardVm.Game.OwnerSteamId64 = dialog.SelectedAccount.SteamId64;
         cardVm.Game.LoginStateOverride = dialog.SelectedLoginState;
-        _savedOwners[cardVm.Game.AppId] = dialog.SelectedAccount.SteamId64;
+        _savedOwners[cardVm.Game.UniqueKey] = dialog.SelectedAccount.UniqueKey;
         cardVm.OnOwnerChanged();
 
         await PersistGameOwnerAsync(
-            cardVm.Game.AppId,
-            dialog.SelectedAccount.SteamId64);
+            cardVm.Game.UniqueKey,
+            dialog.SelectedAccount.UniqueKey);
 
         await gameService.SetGameLoginStateAsync(
-            cardVm.Game.AppId, dialog.SelectedLoginState);
+            cardVm.Game.UniqueKey, dialog.SelectedLoginState);
 
         snackbarService.Show(
             "Conta do jogo alterada",
@@ -798,16 +806,20 @@ public partial class GamesViewModel(
     private void ApplyLibrarySnapshot(IReadOnlyList<SteamGame> rawGames)
     {
         var existing = _allGames.ToDictionary(
-            card => card.Game.AppId,
+            card => card.Game.UniqueKey,
             StringComparer.Ordinal);
         var updated = new List<GameCardViewModel>(rawGames.Count);
 
         foreach (var game in rawGames)
         {
-            if (_savedOwners.TryGetValue(game.AppId, out var savedId))
+            if (_savedOwners.TryGetValue(game.UniqueKey, out var savedId)
+                || _savedOwners.TryGetValue(game.AppId, out savedId))
             {
                 var owner = _allAccounts.FirstOrDefault(account =>
-                    account.SteamId64 == savedId);
+                        account.UniqueKey == savedId)
+                    ?? _allAccounts.FirstOrDefault(account =>
+                        account.InstallationId == game.InstallationId
+                        && account.SteamId64 == savedId);
                 if (owner is not null)
                 {
                     game.OwnerAccount = owner;
@@ -815,7 +827,7 @@ public partial class GamesViewModel(
                 }
             }
 
-            if (existing.TryGetValue(game.AppId, out var card))
+            if (existing.TryGetValue(game.UniqueKey, out var card))
             {
                 card.ApplySnapshot(game);
                 updated.Add(card);
@@ -824,7 +836,8 @@ public partial class GamesViewModel(
             {
                 updated.Add(new GameCardViewModel(
                     game,
-                    _favoriteGameIds.Contains(game.AppId)));
+                    _favoriteGameIds.Contains(game.UniqueKey)
+                        || _favoriteGameIds.Contains(game.AppId)));
             }
         }
 
@@ -844,7 +857,7 @@ public partial class GamesViewModel(
     {
         _filteredGames = Helpers.GameLibraryProjection.FilterAndSort(
             _allGames,
-            SelectedFilterAccount?.SteamId64,
+            SelectedFilterAccount?.UniqueKey,
             SearchText,
             GameSortMode);
 
@@ -871,9 +884,9 @@ public partial class GamesViewModel(
     {
         card.IsFavorite = !card.IsFavorite;
         if (card.IsFavorite)
-            _favoriteGameIds.Add(card.Game.AppId);
+            _favoriteGameIds.Add(card.Game.UniqueKey);
         else
-            _favoriteGameIds.Remove(card.Game.AppId);
+            _favoriteGameIds.Remove(card.Game.UniqueKey);
 
         await AtomicJsonFile.UpdateAsync(
             _favoriteGamesPath,
@@ -881,9 +894,9 @@ public partial class GamesViewModel(
             favorites =>
             {
                 if (card.IsFavorite)
-                    favorites.Add(card.Game.AppId);
+                    favorites.Add(card.Game.UniqueKey);
                 else
-                    favorites.Remove(card.Game.AppId);
+                    favorites.Remove(card.Game.UniqueKey);
             });
 
         ApplyFilters(resetPage: false);
@@ -1046,8 +1059,11 @@ public partial class GamesViewModel(
                 return;
             }
 
+            var installationAccounts = _allAccounts
+                .Where(candidate => candidate.InstallationId == cardVm.Game.InstallationId)
+                .ToList();
             var dialog = new SteamSwitcher.Views.Dialogs.PickAccountDialog(
-                cardVm.Game.Name, _allAccounts, cardVm.Game.LoginStateOverride)
+                cardVm.Game.Name, installationAccounts, cardVm.Game.LoginStateOverride)
             {
                 Owner = System.Windows.Application.Current.MainWindow
             };
@@ -1061,15 +1077,15 @@ public partial class GamesViewModel(
             cardVm.Game.OwnerAccount = dialog.SelectedAccount;
             cardVm.Game.OwnerSteamId64 = dialog.SelectedAccount.SteamId64;
             cardVm.Game.LoginStateOverride = dialog.SelectedLoginState;
-            _savedOwners[cardVm.Game.AppId] = dialog.SelectedAccount.SteamId64;
+            _savedOwners[cardVm.Game.UniqueKey] = dialog.SelectedAccount.UniqueKey;
             cardVm.OnOwnerChanged();
 
             await Task.WhenAll(
                 PersistGameOwnerAsync(
-                    cardVm.Game.AppId,
-                    dialog.SelectedAccount.SteamId64),
+                    cardVm.Game.UniqueKey,
+                    dialog.SelectedAccount.UniqueKey),
                 gameService.SetGameLoginStateAsync(
-                    cardVm.Game.AppId,
+                    cardVm.Game.UniqueKey,
                     dialog.SelectedLoginState));
 
             snackbarService.Show(

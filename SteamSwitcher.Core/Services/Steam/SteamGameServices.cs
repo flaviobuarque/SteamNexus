@@ -12,7 +12,6 @@ public class SteamGameService(
     IAppSettingsService settingsService,
     ILogger<SteamGameService> logger) : ISteamGameService
 {
-    private string SteamPath => installationService.SelectedInstallation?.RootPath ?? string.Empty;
     private readonly SemaphoreSlim _launchGate = new(1, 1);
 
     private static readonly string _gameLoginStatesPath = System.IO.Path.Combine(
@@ -28,7 +27,9 @@ public class SteamGameService(
         "SteamSwitcher", "covers_manual");
 
     public IReadOnlyList<string> GetLibraryManifestDirectories() =>
-        GetLibraryPaths()
+        installationService.Installations
+            .Where(installation => installation.IsValid)
+            .SelectMany(installation => GetLibraryPaths(installation.RootPath))
             .Select(path => Path.Combine(path, "steamapps"))
             .Where(Directory.Exists)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -38,25 +39,36 @@ public class SteamGameService(
         IReadOnlyList<SteamAccount> accounts,
         CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(SteamPath)) return [];
+        var installations = installationService.Installations
+            .Where(installation => installation.IsValid)
+            .ToList();
+        if (installations.Count == 0) return [];
 
         return await Task.Run(async () =>
         {
             var games = new List<SteamGame>();
-            var libraryPaths = GetLibraryPaths();
-
-            foreach (var libraryPath in libraryPaths)
+            foreach (var installation in installations)
             {
-                var steamAppsPath = Path.Combine(libraryPath, "steamapps");
-                if (!Directory.Exists(steamAppsPath)) continue;
-
-                var manifests = Directory.GetFiles(steamAppsPath, "appmanifest_*.acf");
-                foreach (var manifest in manifests)
+                var installationAccounts = accounts
+                    .Where(account => account.InstallationId == installation.Id)
+                    .ToList();
+                foreach (var libraryPath in GetLibraryPaths(installation.RootPath))
                 {
-                    ct.ThrowIfCancellationRequested();
-                    var game = ParseAppManifest(manifest, accounts, libraryPath);
-                    if (game is not null)
-                        games.Add(game);
+                    var steamAppsPath = Path.Combine(libraryPath, "steamapps");
+                    if (!Directory.Exists(steamAppsPath)) continue;
+
+                    var manifests = Directory.GetFiles(steamAppsPath, "appmanifest_*.acf");
+                    foreach (var manifest in manifests)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        var game = ParseAppManifest(
+                            manifest,
+                            installationAccounts,
+                            libraryPath,
+                            installation);
+                        if (game is not null)
+                            games.Add(game);
+                    }
                 }
             }
 
@@ -64,11 +76,16 @@ public class SteamGameService(
             // possui centenas de jogos instalados.
             foreach (var ownerGroup in games
                 .Where(g => g.OwnerAccount is not null)
-                .GroupBy(g => g.OwnerAccount!.SteamId32))
+                .GroupBy(g => new
+                {
+                    g.InstallationRootPath,
+                    g.OwnerAccount!.SteamId32,
+                }))
             {
                 ct.ThrowIfCancellationRequested();
                 var localConfigPath = locator.GetLocalConfigVdfPath(
-                    SteamPath, ownerGroup.Key);
+                    ownerGroup.Key.InstallationRootPath,
+                    ownerGroup.Key.SteamId32);
                 var playtimes = ReadPlaytimes(localConfigPath);
 
                 foreach (var game in ownerGroup)
@@ -83,13 +100,15 @@ public class SteamGameService(
             var manualCovers = await LoadManualCoversAsync();
             foreach (var game in games)
             {
-                if (loginStates.TryGetValue(game.AppId, out var rawState)
+                if ((loginStates.TryGetValue(game.UniqueKey, out var rawState)
+                        || loginStates.TryGetValue(game.AppId, out rawState))
                     && Enum.IsDefined(typeof(LoginState), rawState))
                 {
                     game.LoginStateOverride = (LoginState)rawState;
                 }
 
-                if (manualCovers.TryGetValue(game.AppId, out var manualPath)
+                if ((manualCovers.TryGetValue(game.UniqueKey, out var manualPath)
+                        || manualCovers.TryGetValue(game.AppId, out manualPath))
                     && System.IO.File.Exists(manualPath))
                 {
                     game.ManualCoverPath = manualPath;
@@ -97,7 +116,7 @@ public class SteamGameService(
             }
 
             return (IReadOnlyList<SteamGame>)games
-                .GroupBy(g => g.AppId)
+                .GroupBy(g => g.UniqueKey)
                 .Select(g => g.First())
                 .OrderBy(g => g.Name)
                 .ToList();
@@ -120,8 +139,8 @@ public class SteamGameService(
 
             var activeAccount = await accountService.GetActiveAccountAsync(ct);
             var accountAlreadyActive = string.Equals(
-                activeAccount?.SteamId64,
-                account.SteamId64,
+                activeAccount?.UniqueKey,
+                account.UniqueKey,
                 StringComparison.Ordinal);
 
             if (!accountAlreadyActive)
@@ -279,11 +298,11 @@ public class SteamGameService(
 
     // --- Privados ---
 
-    private List<string> GetLibraryPaths()
+    private List<string> GetLibraryPaths(string steamPath)
     {
-        var paths = new List<string> { SteamPath };
+        var paths = new List<string> { steamPath };
 
-        var libraryFoldersVdf = locator.GetLibraryFoldersVdfPath(SteamPath);
+        var libraryFoldersVdf = locator.GetLibraryFoldersVdfPath(steamPath);
         if (!File.Exists(libraryFoldersVdf)) return paths;
 
         try
@@ -308,9 +327,10 @@ public class SteamGameService(
     }
 
     private SteamGame? ParseAppManifest(
-    string manifestPath,
-    IReadOnlyList<SteamAccount> accounts,
-    string libraryPath)
+        string manifestPath,
+        IReadOnlyList<SteamAccount> accounts,
+        string libraryPath,
+        SteamInstallation installation)
     {
         try
         {
@@ -338,6 +358,9 @@ public class SteamGameService(
 
             var game = new SteamGame
             {
+                InstallationId = installation.Id,
+                InstallationName = installation.DisplayName,
+                InstallationRootPath = installation.RootPath,
                 AppId = appId,
                 Name = name,
                 InstallDir = installDir ?? string.Empty,

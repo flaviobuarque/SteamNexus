@@ -7,16 +7,19 @@ public static class GameLibraryProjection
 {
     public static IReadOnlyList<GameCardViewModel> FilterAndSort(
         IReadOnlyList<GameCardViewModel> games,
-        string? ownerSteamId64,
+        string? ownerUniqueKey,
         string? searchText,
         GameSortMode sortMode)
     {
         var filtered = games.AsEnumerable();
 
-        if (!string.IsNullOrEmpty(ownerSteamId64))
+        if (!string.IsNullOrEmpty(ownerUniqueKey))
         {
             filtered = filtered.Where(game =>
-                game.Game.OwnerSteamId64 == ownerSteamId64);
+                string.Equals(
+                    game.Game.OwnerAccount?.UniqueKey ?? game.Game.OwnerSteamId64,
+                    ownerUniqueKey,
+                    StringComparison.Ordinal));
         }
 
         if (!string.IsNullOrWhiteSpace(searchText))

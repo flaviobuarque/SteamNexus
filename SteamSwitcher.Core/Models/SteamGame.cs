@@ -2,6 +2,9 @@
 
 public class SteamGame
 {
+    public string InstallationId { get; set; } = string.Empty;
+    public string InstallationName { get; set; } = string.Empty;
+    public string InstallationRootPath { get; set; } = string.Empty;
     public required string AppId { get; init; }
     public required string Name { get; init; }
     public string InstallDir { get; init; } = string.Empty;
@@ -11,6 +14,9 @@ public class SteamGame
     // Qual conta tem esse jogo (LastOwner do appmanifest)
     public string? OwnerSteamId64 { get; set; }
     public SteamAccount? OwnerAccount { get; set; }
+    public string UniqueKey => string.IsNullOrWhiteSpace(InstallationId)
+        ? AppId
+        : $"{InstallationId}:{AppId}";
 
     // Preferência de status de login exclusiva deste jogo.
     // Precedência: per-game > per-account > global.

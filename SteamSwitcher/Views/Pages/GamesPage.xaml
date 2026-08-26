@@ -796,6 +796,10 @@
                                                         Foreground="{DynamicResource AppTextMutedBrush}"
                                                         VerticalAlignment="Center" />
                                             </StackPanel>
+                                            <TextBlock Text="{Binding InstallationName}" FontSize="9" Margin="0,3,0,0"
+                                                       ToolTip="{Binding InstallationRootPath}"
+                                                       Foreground="{DynamicResource AppAccentBrush}"
+                                                       TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
                                     </Border>
                                 </Grid>
@@ -915,6 +919,9 @@
                                         TextTrimming="CharacterEllipsis" ToolTip="{Binding Game.Name}" />
                                     <TextBlock Text="{Binding Game.AppId, StringFormat=App {0}}" FontSize="10"
                                         Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,3,0,0" />
+                                    <TextBlock Text="{Binding InstallationName}" FontSize="10"
+                                        Foreground="{DynamicResource AppAccentBrush}" Margin="0,2,0,0"
+                                        ToolTip="{Binding InstallationRootPath}" TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="3" VerticalAlignment="Center">

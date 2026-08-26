@@ -492,6 +492,30 @@ public class SteamAccountService(
             () => ForgetAccountsCoreAsync(steamIds64, ct),
             ct);
 
+    public async Task<IReadOnlyList<string>> ForgetAccountsAsync(
+        IReadOnlyCollection<SteamAccount> accounts,
+        CancellationToken ct = default)
+    {
+        var removedKeys = new List<string>();
+        foreach (var group in accounts
+            .Where(account => !string.IsNullOrWhiteSpace(account.InstallationId))
+            .GroupBy(account => account.InstallationId))
+        {
+            var groupAccounts = group.ToList();
+            var removedIds = await RunSteamMutationAsync(
+                () => ForgetAccountsCoreAsync(
+                    groupAccounts.Select(account => account.SteamId64).ToList(),
+                    ct),
+                ct,
+                group.Key);
+            removedKeys.AddRange(groupAccounts
+                .Where(account => removedIds.Contains(account.SteamId64, StringComparer.Ordinal))
+                .Select(account => account.UniqueKey));
+        }
+
+        return removedKeys;
+    }
+
     private async Task<IReadOnlyList<string>> ForgetAccountsCoreAsync(
         IReadOnlyCollection<string> steamIds64,
         CancellationToken ct)
@@ -1151,7 +1175,8 @@ public class SteamAccountService(
 
     private async Task<T> RunSteamMutationAsync<T>(
         Func<Task<T>> operation,
-        CancellationToken ct)
+        CancellationToken ct,
+        string? installationId = null)
     {
         if (!await _steamMutationGate.WaitAsync(0, ct))
             throw new InvalidOperationException(
@@ -1159,7 +1184,9 @@ public class SteamAccountService(
 
         try
         {
-            _operationContext.Value = installationService.CaptureContext();
+            _operationContext.Value = string.IsNullOrWhiteSpace(installationId)
+                ? installationService.CaptureContext()
+                : installationService.CaptureContext(installationId);
             return await operation();
         }
         finally

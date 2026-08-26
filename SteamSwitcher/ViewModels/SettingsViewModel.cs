@@ -365,7 +365,7 @@ public partial class SettingsViewModel(
     }
 
     public Task<IReadOnlyList<SteamAccount>> GetAccountsForCleanupAsync(
-        CancellationToken ct = default) => accountService.GetAccountsAsync(ct);
+        CancellationToken ct = default) => accountService.GetAllAccountsAsync(ct);
 
     public async Task CleanupOldAccountsAsync(
         IReadOnlyList<SteamAccount> accounts,
@@ -379,13 +379,13 @@ public partial class SettingsViewModel(
             var active = await accountService.GetActiveAccountAsync(ct);
             var targets = accounts
                 .Where(account => !string.Equals(
-                    account.SteamId64,
-                    active?.SteamId64,
+                    account.UniqueKey,
+                    active?.UniqueKey,
                     StringComparison.Ordinal))
                 .ToList();
 
             var removedIds = await accountService.ForgetAccountsAsync(
-                targets.Select(account => account.SteamId64).ToList(),
+                targets,
                 ct);
 
             foreach (var steamId64 in removedIds)
