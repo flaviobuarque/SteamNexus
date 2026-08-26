@@ -284,6 +284,7 @@
                     <ItemsPanelTemplate>
                         <vwp:VirtualizingWrapPanel
                             ItemSize="{Binding AccountGridItemSize}"
+                            SpacingMode="{Binding AccountGridSpacingMode}"
                             Orientation="Horizontal" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
