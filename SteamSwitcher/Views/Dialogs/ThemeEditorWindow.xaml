@@ -51,6 +51,7 @@
                                     <TextBlock Text="Nome do tema" FontWeight="SemiBold"
                                                Foreground="{DynamicResource AppTextPrimaryBrush}" />
                                     <TextBox Text="{Binding ThemeName, UpdateSourceTrigger=PropertyChanged}"
+                                             IsReadOnly="{Binding IsPresetReadOnly}"
                                              Margin="0,6,12,0" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
@@ -68,13 +69,14 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}" Margin="0,0,8,0" />
+                                <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}"
+                                          Margin="0,0,8,0" SelectionChanged="Preset_SelectionChanged" />
                                 <ui:Button Grid.Column="1" Content="Duplicar para editar" Appearance="Secondary"
                                            Margin="0,0,8,0" Click="ApplyPreset_Click" />
                                 <ui:Button Grid.Column="2" Content="Criar novo" Appearance="Secondary"
                                            Click="CreateTheme_Click" />
                             </Grid>
-                            <ItemsControl ItemsSource="{Binding Colors}">
+                            <ItemsControl ItemsSource="{Binding Colors}" IsEnabled="{Binding IsCustomTheme}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Grid Margin="0,0,0,8">
@@ -102,7 +104,7 @@
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="Fundo">
+                <TabItem Header="Fundo" IsEnabled="{Binding IsCustomTheme}">
                     <StackPanel Margin="18">
                         <TextBlock Text="Imagem de fundo" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextPrimaryBrush}" />
@@ -150,7 +152,7 @@
                     </StackPanel>
                 </TabItem>
 
-                <TabItem Header="Componentes">
+                <TabItem Header="Componentes" IsEnabled="{Binding IsCustomTheme}">
                     <StackPanel Margin="18">
                         <TextBlock Text="Arredondamento dos cartões" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextPrimaryBrush}" />

@@ -61,6 +61,13 @@ public partial class ThemeEditorWindow : Window
         PreviewTheme();
     }
 
+    private void Preset_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (!_ready) return;
+        ViewModel.LoadSelectedPreset(asCopy: false);
+        PreviewTheme();
+    }
+
     private void PreviewTheme()
     {
         try
@@ -112,6 +119,7 @@ public partial class ThemeEditorWindow : Window
         try
         {
             ViewModel.Load(await CustomThemeManager.ImportAsync(dialog.FileName));
+            ViewModel.IsPresetReadOnly = false;
             PreviewTheme();
         }
         catch (Exception ex) { ViewModel.ValidationMessage = ex.Message; }
@@ -141,12 +149,13 @@ public partial class ThemeEditorWindow : Window
         ViewModel.Load(ViewModel.BaseTheme == AppTheme.Light
             ? CustomThemeSettings.CreateLight()
             : CustomThemeSettings.CreateDark());
+        ViewModel.IsPresetReadOnly = false;
         PreviewTheme();
     }
 
     private void ApplyPreset_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.ApplyPreset();
+        ViewModel.LoadSelectedPreset(asCopy: true);
         PreviewTheme();
     }
 
@@ -215,6 +224,9 @@ public partial class ThemeEditorViewModel : ObservableObject
     [ObservableProperty] private string _contrastStatus = "Contraste adequado";
     [ObservableProperty] private string _contrastDetail = string.Empty;
     [ObservableProperty] private string _validationMessage = string.Empty;
+    [ObservableProperty] private bool _isPresetReadOnly;
+
+    public bool IsCustomTheme => !IsPresetReadOnly;
 
     public string BackgroundImageDisplay => string.IsNullOrWhiteSpace(BackgroundImagePath)
         ? "Nenhuma imagem selecionada"
@@ -223,6 +235,7 @@ public partial class ThemeEditorViewModel : ObservableObject
     public ThemeEditorViewModel(CustomThemeSettings theme) => Load(theme);
 
     partial void OnBackgroundImagePathChanged(string? value) => OnPropertyChanged(nameof(BackgroundImageDisplay));
+    partial void OnIsPresetReadOnlyChanged(bool value) => OnPropertyChanged(nameof(IsCustomTheme));
 
     public void Load(CustomThemeSettings theme)
     {
@@ -295,12 +308,12 @@ public partial class ThemeEditorViewModel : ObservableObject
                 "Aumente a diferença entre o texto principal e os cartões.");
     }
 
-    public void ApplyPreset()
+    public void LoadSelectedPreset(bool asCopy)
     {
         var theme = SelectedPreset == "SteamNexus Light"
             ? CustomThemeSettings.CreateLight()
             : CustomThemeSettings.CreateDark();
-        theme.Name = $"Cópia de {SelectedPreset}";
+        theme.Name = asCopy ? $"Cópia de {SelectedPreset}" : SelectedPreset;
         if (SelectedPreset == "AMOLED")
         {
             theme.Background = "#000000";
@@ -323,6 +336,7 @@ public partial class ThemeEditorViewModel : ObservableObject
             theme.AccentSurface = "#3B1760";
         }
         Load(theme);
+        IsPresetReadOnly = !asCopy;
     }
 
     public void CreateTheme()
@@ -332,6 +346,7 @@ public partial class ThemeEditorViewModel : ObservableObject
             : CustomThemeSettings.CreateDark();
         theme.Name = "Novo tema";
         Load(theme);
+        IsPresetReadOnly = false;
     }
 
     public void ApplyBasePalette()
