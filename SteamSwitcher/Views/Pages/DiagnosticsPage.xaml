@@ -6,7 +6,7 @@
     xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
     Background="{DynamicResource AppBackgroundBrush}">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="30,26,30,36" MaxWidth="920" HorizontalAlignment="Center">
+        <Grid Margin="30,26,30,36" MaxWidth="940" HorizontalAlignment="Center">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -21,7 +21,7 @@
                 <StackPanel>
                     <TextBlock Text="Diagnóstico da Steam" FontSize="25" FontWeight="Bold"
                                Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                    <TextBlock Text="Verifique a instalação e aplique somente os reparos necessários."
+                    <TextBlock Text="Expanda uma instalação para ver verificações e reparos específicos."
                                Margin="0,7,0,0" Foreground="{DynamicResource AppTextSecondaryBrush}" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
@@ -32,78 +32,113 @@
                 </StackPanel>
             </Grid>
 
-            <Border Grid.Row="1" Margin="0,18,0,12" Padding="18" CornerRadius="14"
-                    Background="{DynamicResource AppSurfaceBrush}"
-                    BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="{Binding InstallationName}" FontSize="16" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                        <TextBlock Text="{Binding InstallationPath}" Margin="0,5,0,0"
-                                   Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                    </StackPanel>
-                    <TextBlock Grid.Column="1" Text="{Binding LastCheckText}" VerticalAlignment="Center"
-                               Foreground="{DynamicResource AppTextMutedBrush}" />
-                </Grid>
-            </Border>
+            <TextBlock Grid.Row="1" Text="{Binding LastCheckText}" Margin="0,17,0,9"
+                       HorizontalAlignment="Right" Foreground="{DynamicResource AppTextMutedBrush}" />
 
-            <StackPanel Grid.Row="2">
-                <ItemsControl ItemsSource="{Binding Items}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Margin="0,0,0,8" Padding="16,13" CornerRadius="12"
-                                    Background="{DynamicResource AppSurfaceBrush}"
-                                    BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="32" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <ic:SymbolIcon Symbol="CheckmarkCircle" FontSize="20"
-                                                   Foreground="{DynamicResource AppSuccessBrush}"
-                                                   Visibility="{Binding IsSuccess, Converter={StaticResource BoolToVisibility}}" />
-                                    <ic:SymbolIcon Symbol="Warning" FontSize="20"
-                                                   Foreground="{DynamicResource AppWarningBrush}"
-                                                   Visibility="{Binding IsWarning, Converter={StaticResource BoolToVisibility}}" />
-                                    <ic:SymbolIcon Symbol="Dismiss" FontSize="20"
-                                                   Foreground="{DynamicResource AppDangerBrush}"
-                                                   Visibility="{Binding IsError, Converter={StaticResource BoolToVisibility}}" />
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                        <TextBlock Text="{Binding Detail}" Margin="0,4,0,0" TextWrapping="Wrap"
-                                                   Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+            <ItemsControl Grid.Row="2" ItemsSource="{Binding Installations}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,0,0,10">
+                            <Expander.Template>
+                                <ControlTemplate TargetType="Expander">
+                                    <Border CornerRadius="14" Background="{DynamicResource AppSurfaceBrush}"
+                                            BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                                        <StackPanel>
+                                            <ToggleButton IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                                          Background="Transparent" BorderThickness="0" Padding="18,15"
+                                                          HorizontalContentAlignment="Stretch" Cursor="Hand">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <ic:SymbolIcon Symbol="HardDrive" FontSize="19" Margin="0,0,12,0"
+                                                                   Foreground="{DynamicResource AppAccentBrush}" />
+                                                    <StackPanel Grid.Column="1">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding Report.InstallationName}" FontSize="16" FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                                            <Border Margin="8,0,0,0" Padding="6,1" CornerRadius="5"
+                                                                    Background="{DynamicResource AppAccentSurfaceBrush}"
+                                                                    Visibility="{Binding Report.IsSelected, Converter={StaticResource BoolToVisibility}}">
+                                                                <TextBlock Text="Selecionada" FontSize="9" Foreground="{DynamicResource AppAccentBrush}" />
+                                                            </Border>
+                                                            <Border Margin="6,0,0,0" Padding="6,1" CornerRadius="5"
+                                                                    Background="{DynamicResource AppSuccessSurfaceBrush}"
+                                                                    Visibility="{Binding Report.IsRunning, Converter={StaticResource BoolToVisibility}}">
+                                                                <TextBlock Text="Em execução" FontSize="9" Foreground="{DynamicResource AppSuccessBrush}" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{Binding Report.InstallationPath}" Margin="0,4,0,0"
+                                                                   Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Text="{Binding Report.Summary}" Margin="16,0"
+                                                               VerticalAlignment="Center" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                                    <ic:SymbolIcon Grid.Column="3" Symbol="ChevronDown20" FontSize="16"
+                                                                   VerticalAlignment="Center" Foreground="{DynamicResource AppTextMutedBrush}" />
+                                                </Grid>
+                                            </ToggleButton>
+                                            <ContentPresenter x:Name="ExpandSite" ContentSource="Content" Visibility="Collapsed" />
+                                        </StackPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsExpanded" Value="True">
+                                            <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Expander.Template>
 
-                <Border Margin="0,8,0,0" Padding="18" CornerRadius="14"
-                        Background="{DynamicResource AppSurfaceAltBrush}"
-                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
-                    <StackPanel>
-                        <TextBlock Text="Reparos disponíveis" FontSize="15" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                        <TextBlock Text="Os reparos são independentes e só ficam disponíveis quando uma inconsistência é detectada."
-                                   Margin="0,5,0,12" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                        <StackPanel Orientation="Horizontal">
-                            <ui:Button Content="Corrigir autologin do Registro"
-                                       Command="{Binding RepairRegistryCommand}"
-                                       IsEnabled="{Binding CanRepairRegistry}" Margin="0,0,8,0" />
-                            <ui:Button Content="Desativar seletor de contas"
-                                       Command="{Binding DisableChooserCommand}"
-                                       IsEnabled="{Binding CanDisableChooser}" />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                            <StackPanel Margin="16,0,16,16">
+                                <Border Height="1" Background="{DynamicResource AppBorderBrush}" Margin="0,0,0,12" />
+                                <ItemsControl ItemsSource="{Binding Report.Items}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Margin="0,0,0,7" Padding="13,11" CornerRadius="10"
+                                                    Background="{DynamicResource AppSurfaceAltBrush}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="30" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <ic:SymbolIcon Symbol="CheckmarkCircle" FontSize="18"
+                                                                   Foreground="{DynamicResource AppSuccessBrush}"
+                                                                   Visibility="{Binding IsSuccess, Converter={StaticResource BoolToVisibility}}" />
+                                                    <ic:SymbolIcon Symbol="Warning" FontSize="18"
+                                                                   Foreground="{DynamicResource AppWarningBrush}"
+                                                                   Visibility="{Binding IsWarning, Converter={StaticResource BoolToVisibility}}" />
+                                                    <ic:SymbolIcon Symbol="Dismiss" FontSize="18"
+                                                                   Foreground="{DynamicResource AppDangerBrush}"
+                                                                   Visibility="{Binding IsError, Converter={StaticResource BoolToVisibility}}" />
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                                        <TextBlock Text="{Binding Detail}" Margin="0,3,0,0" TextWrapping="Wrap"
+                                                                   Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                    <ui:Button Content="Corrigir autologin do Registro"
+                                               Command="{Binding DataContext.RepairRegistryCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                               CommandParameter="{Binding}"
+                                               IsEnabled="{Binding Report.CanRepairRegistry}" Margin="0,0,8,0" />
+                                    <ui:Button Content="Desativar seletor de contas"
+                                               Command="{Binding DataContext.DisableChooserCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                               CommandParameter="{Binding}"
+                                               IsEnabled="{Binding Report.CanDisableChooser}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </Grid>
     </ScrollViewer>
 </Page>

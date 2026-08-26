@@ -14,13 +14,9 @@ public partial class DiagnosticsViewModel(
     ISnackbarService snackbarService,
     MainViewModel mainViewModel) : ObservableObject
 {
-    [ObservableProperty] private ObservableCollection<SteamDiagnosticItem> _items = [];
+    [ObservableProperty] private ObservableCollection<DiagnosticInstallationItem> _installations = [];
     [ObservableProperty] private bool _isChecking;
-    [ObservableProperty] private string _installationName = "Nenhuma instalação";
-    [ObservableProperty] private string _installationPath = string.Empty;
     [ObservableProperty] private string _lastCheckText = "Ainda não verificado";
-    [ObservableProperty] private bool _canDisableChooser;
-    [ObservableProperty] private bool _canRepairRegistry;
     private SteamDiagnosticReport? _report;
 
     public async Task InitializeAsync() => await RefreshAsync();
@@ -32,36 +28,36 @@ public partial class DiagnosticsViewModel(
         IsChecking = true;
         try
         {
+            var expandedIds = Installations.Where(item => item.IsExpanded)
+                .Select(item => item.Report.InstallationId)
+                .ToHashSet(StringComparer.Ordinal);
             _report = await diagnosticsService.CheckAsync();
-            Items = new ObservableCollection<SteamDiagnosticItem>(_report.Items);
-            InstallationName = string.IsNullOrWhiteSpace(_report.InstallationName)
-                ? "Nenhuma instalação" : _report.InstallationName;
-            InstallationPath = _report.InstallationPath;
+            Installations = new ObservableCollection<DiagnosticInstallationItem>(
+                _report.Installations.Select((report, index) => new DiagnosticInstallationItem(
+                    report,
+                    expandedIds.Count > 0
+                        ? expandedIds.Contains(report.InstallationId)
+                        : report.IsSelected || report.IsRunning || index == 0)));
             LastCheckText = $"Verificado às {_report.CheckedAt:HH:mm:ss}";
-            CanDisableChooser = _report.CanDisableChooser;
-            CanRepairRegistry = _report.CanRepairRegistry;
             mainViewModel.UpdateStatusBar(
                 _report.HasBlockingIssues ? "Diagnóstico encontrou problemas" : "Diagnóstico concluído",
-                $"{Items.Count} verificações");
+                $"{Installations.Count} instalação(ões)");
         }
         catch (Exception ex)
         {
             snackbarService.Show("Falha no diagnóstico", ex.Message,
                 ControlAppearance.Danger, null, TimeSpan.FromSeconds(5));
         }
-        finally
-        {
-            IsChecking = false;
-        }
+        finally { IsChecking = false; }
     }
 
     [RelayCommand]
-    private async Task DisableChooserAsync()
+    private async Task DisableChooserAsync(DiagnosticInstallationItem item)
     {
         try
         {
-            await diagnosticsService.DisableAccountChooserAsync();
-            snackbarService.Show("Seletor corrigido", "O seletor obrigatório de contas foi desativado.",
+            await diagnosticsService.DisableAccountChooserAsync(item.Report.InstallationId);
+            snackbarService.Show("Seletor corrigido", $"Corrigido em {item.Report.InstallationName}.",
                 ControlAppearance.Success, null, TimeSpan.FromSeconds(4));
             await RefreshAsync();
         }
@@ -73,12 +69,12 @@ public partial class DiagnosticsViewModel(
     }
 
     [RelayCommand]
-    private async Task RepairRegistryAsync()
+    private async Task RepairRegistryAsync(DiagnosticInstallationItem item)
     {
         try
         {
-            await diagnosticsService.RepairRegistryAsync();
-            snackbarService.Show("Registro corrigido", "O autologin agora corresponde à conta ativa.",
+            await diagnosticsService.RepairRegistryAsync(item.Report.InstallationId);
+            snackbarService.Show("Registro corrigido", "O autologin corresponde à conta ativa.",
                 ControlAppearance.Success, null, TimeSpan.FromSeconds(4));
             await RefreshAsync();
         }
@@ -95,15 +91,28 @@ public partial class DiagnosticsViewModel(
         if (_report is null) return;
         var text = new StringBuilder()
             .AppendLine("SteamNexus — Diagnóstico da Steam")
-            .AppendLine($"Data: {_report.CheckedAt:yyyy-MM-dd HH:mm:ss}")
-            .AppendLine($"Instalação: {_report.InstallationName}")
-            .AppendLine($"Diretório: {_report.InstallationPath}")
-            .AppendLine($"Steam em execução: {_report.RunningSteamPath}")
-            .AppendLine($"Conta ativa: {_report.ActiveAccountName}");
-        foreach (var item in _report.Items)
-            text.AppendLine($"[{item.Severity}] {item.Title}: {item.Detail}");
+            .AppendLine($"Data: {_report.CheckedAt:yyyy-MM-dd HH:mm:ss}");
+        foreach (var installation in _report.Installations)
+        {
+            text.AppendLine()
+                .AppendLine($"## {installation.InstallationName}")
+                .AppendLine($"Diretório: {installation.InstallationPath}")
+                .AppendLine($"Selecionada: {installation.IsSelected}")
+                .AppendLine($"Em execução: {installation.RunningSteamPath}")
+                .AppendLine($"Conta ativa: {installation.ActiveAccountName}");
+            foreach (var diagnostic in installation.Items)
+                text.AppendLine($"[{diagnostic.Severity}] {diagnostic.Title}: {diagnostic.Detail}");
+        }
         Clipboard.SetText(text.ToString());
-        snackbarService.Show("Diagnóstico copiado", "O relatório foi copiado para a área de transferência.",
+        snackbarService.Show("Diagnóstico copiado", "O relatório de todas as instalações foi copiado.",
             ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
     }
+}
+
+public partial class DiagnosticInstallationItem(
+    SteamInstallationDiagnosticReport report,
+    bool isExpanded) : ObservableObject
+{
+    public SteamInstallationDiagnosticReport Report { get; } = report;
+    [ObservableProperty] private bool _isExpanded = isExpanded;
 }

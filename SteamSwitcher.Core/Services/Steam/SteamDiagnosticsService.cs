@@ -9,14 +9,65 @@ public sealed class SteamDiagnosticsService(
 {
     public async Task<SteamDiagnosticReport> CheckAsync(CancellationToken ct = default)
     {
-        var installation = installationService.SelectedInstallation;
-        var items = new List<SteamDiagnosticItem>();
-        if (installation is null)
+        var runningPaths = GetRunningSteamPaths();
+        var reports = new List<SteamInstallationDiagnosticReport>();
+        foreach (var installation in installationService.Installations)
         {
-            items.Add(Error("Instalação", "Nenhuma instalação Steam está selecionada."));
-            return new SteamDiagnosticReport { Items = items };
+            ct.ThrowIfCancellationRequested();
+            reports.Add(await CheckInstallationAsync(
+                installation,
+                runningPaths,
+                ct));
         }
 
+        if (reports.Count == 0)
+        {
+            reports.Add(new SteamInstallationDiagnosticReport
+            {
+                InstallationName = "Nenhuma instalação",
+                Items = [Error("Instalação", "Nenhuma instalação Steam foi cadastrada.")],
+            });
+        }
+
+        return new SteamDiagnosticReport
+        {
+            CheckedAt = DateTime.Now,
+            Installations = reports,
+        };
+    }
+
+    public async Task DisableAccountChooserAsync(
+        string installationId,
+        CancellationToken ct = default)
+    {
+        var installation = RequireInstallation(installationId);
+        var path = Path.Combine(installation.RootPath, "config", "config.vdf");
+        var content = await File.ReadAllTextAsync(path, ct);
+        var updated = SteamConfigEditor.DisableAccountChooser(content, out var changed);
+        if (changed) await WriteAtomicallyAsync(path, updated, ct);
+    }
+
+    public async Task RepairRegistryAsync(
+        string installationId,
+        CancellationToken ct = default)
+    {
+        var installation = RequireInstallation(installationId);
+        await using var stream = new FileStream(
+            installation.LoginUsersPath, FileMode.Open, FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete, 4096, true);
+        var active = SteamAccountSnapshotParser.Parse(stream).ActiveAccount
+            ?? throw new InvalidOperationException("Não existe uma conta ativa inequívoca no VDF.");
+        ct.ThrowIfCancellationRequested();
+        Registry.SetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "AutoLoginUser", active.AccountName);
+        Registry.SetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "RememberPassword", 1, RegistryValueKind.DWord);
+    }
+
+    private async Task<SteamInstallationDiagnosticReport> CheckInstallationAsync(
+        SteamInstallation installation,
+        IReadOnlyList<string> runningPaths,
+        CancellationToken ct)
+    {
+        var items = new List<SteamDiagnosticItem>();
         items.Add(File.Exists(installation.SteamExePath)
             ? Success("Executável", installation.SteamExePath)
             : Error("Executável", $"Não encontrado: {installation.SteamExePath}"));
@@ -39,28 +90,15 @@ public sealed class SteamDiagnosticsService(
         }
         else
         {
-            items.Add(Error("loginusers.vdf", "Arquivo ausente. A recuperação será necessária."));
+            items.Add(Error("loginusers.vdf", "Arquivo ausente. Contas arquivadas podem recuperá-lo."));
         }
 
-        var steamProcesses = Process.GetProcessesByName("steam");
-        var runningPath = string.Empty;
-        try
-        {
-            var paths = steamProcesses.Select(TryGetPath)
-                .Where(path => !string.IsNullOrWhiteSpace(path))
-                .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-            runningPath = paths.FirstOrDefault() ?? string.Empty;
-            if (paths.Count == 0)
-                items.Add(Warning("Processos", "A Steam não está em execução."));
-            else if (paths.Any(path => !IsUnder(path, installation.RootPath)))
-                items.Add(Error("Processos", $"Outra instalação está em execução: {string.Join(", ", paths)}"));
-            else
-                items.Add(Success("Processos", $"Instalação correta em execução: {runningPath}"));
-        }
-        finally
-        {
-            foreach (var process in steamProcesses) process.Dispose();
-        }
+        var pathsForInstallation = runningPaths
+            .Where(path => IsUnder(path, installation.RootPath)).ToList();
+        var isRunning = pathsForInstallation.Count > 0;
+        items.Add(isRunning
+            ? Success("Processos", $"Esta instalação está em execução: {pathsForInstallation[0]}")
+            : Warning("Processos", "Esta instalação não está em execução."));
 
         var active = snapshot.ActiveAccount;
         if (snapshot.Accounts.Count > 0)
@@ -68,15 +106,25 @@ public sealed class SteamDiagnosticsService(
                 ? Error("Conta ativa", "O VDF não possui exatamente uma conta ativa.")
                 : Success("Conta ativa", $"{active.PersonaName} (@{active.AccountName})"));
 
-        var registryName = Registry.GetValue(
-            @"HKEY_CURRENT_USER\Software\Valve\Steam", "AutoLoginUser", null)?.ToString() ?? string.Empty;
-        var registryRemember = Convert.ToInt32(Registry.GetValue(
-            @"HKEY_CURRENT_USER\Software\Valve\Steam", "RememberPassword", 0)) == 1;
-        var registryMatches = active is not null && registryRemember
-            && string.Equals(registryName, active.AccountName, StringComparison.OrdinalIgnoreCase);
-        items.Add(registryMatches
-            ? Success("Registro", $"Autologin configurado para @{registryName}.")
-            : Warning("Registro", "O autologin do Registro não corresponde à conta ativa do VDF."));
+        var shouldCheckGlobalRegistry = isRunning
+            || (runningPaths.Count == 0 && installation.IsSelected);
+        var registryMatches = false;
+        if (shouldCheckGlobalRegistry)
+        {
+            var registryName = Registry.GetValue(
+                @"HKEY_CURRENT_USER\Software\Valve\Steam", "AutoLoginUser", null)?.ToString() ?? string.Empty;
+            var registryRemember = Convert.ToInt32(Registry.GetValue(
+                @"HKEY_CURRENT_USER\Software\Valve\Steam", "RememberPassword", 0)) == 1;
+            registryMatches = active is not null && registryRemember
+                && string.Equals(registryName, active.AccountName, StringComparison.OrdinalIgnoreCase);
+            items.Add(registryMatches
+                ? Success("Registro", $"Autologin configurado para @{registryName}.")
+                : Warning("Registro", "O autologin global não corresponde à conta ativa desta instalação."));
+        }
+        else
+        {
+            items.Add(Success("Registro", "Não se aplica enquanto outra instalação estiver ativa."));
+        }
 
         var chooserEnabled = false;
         var configPath = Path.Combine(installation.RootPath, "config", "config.vdf");
@@ -96,42 +144,39 @@ public sealed class SteamDiagnosticsService(
             }
         }
 
-        return new SteamDiagnosticReport
+        return new SteamInstallationDiagnosticReport
         {
+            InstallationId = installation.Id,
             InstallationName = installation.DisplayName,
             InstallationPath = installation.RootPath,
-            RunningSteamPath = runningPath,
+            RunningSteamPath = pathsForInstallation.FirstOrDefault() ?? string.Empty,
             ActiveAccountName = active?.AccountName ?? string.Empty,
+            IsSelected = installation.IsSelected,
+            IsRunning = isRunning,
             CanDisableChooser = chooserEnabled,
-            CanRepairRegistry = active is not null && !registryMatches,
+            CanRepairRegistry = shouldCheckGlobalRegistry && active is not null && !registryMatches,
             Items = items,
         };
     }
 
-    public async Task DisableAccountChooserAsync(CancellationToken ct = default)
-    {
-        var installation = RequireInstallation();
-        var path = Path.Combine(installation.RootPath, "config", "config.vdf");
-        var content = await File.ReadAllTextAsync(path, ct);
-        var updated = SteamConfigEditor.DisableAccountChooser(content, out var changed);
-        if (changed) await WriteAtomicallyAsync(path, updated, ct);
-    }
+    private SteamInstallation RequireInstallation(string installationId) =>
+        installationService.Installations.FirstOrDefault(item => item.Id == installationId)
+        ?? throw new InvalidOperationException("A instalação Steam não foi encontrada.");
 
-    public async Task RepairRegistryAsync(CancellationToken ct = default)
+    private static List<string> GetRunningSteamPaths()
     {
-        var installation = RequireInstallation();
-        await using var stream = new FileStream(
-            installation.LoginUsersPath, FileMode.Open, FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete, 4096, true);
-        var active = SteamAccountSnapshotParser.Parse(stream).ActiveAccount
-            ?? throw new InvalidOperationException("Não existe uma conta ativa inequívoca no VDF.");
-        ct.ThrowIfCancellationRequested();
-        Registry.SetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "AutoLoginUser", active.AccountName);
-        Registry.SetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "RememberPassword", 1, RegistryValueKind.DWord);
+        var processes = Process.GetProcessesByName("steam");
+        try
+        {
+            return processes.Select(TryGetPath)
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+        finally
+        {
+            foreach (var process in processes) process.Dispose();
+        }
     }
-
-    private SteamInstallation RequireInstallation() => installationService.SelectedInstallation
-        ?? throw new InvalidOperationException("Nenhuma instalação Steam está selecionada.");
 
     private static async Task WriteAtomicallyAsync(string path, string content, CancellationToken ct)
     {
@@ -155,9 +200,13 @@ public sealed class SteamDiagnosticsService(
 
     private static bool IsUnder(string path, string root)
     {
-        var normalizedRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar)
-            + Path.DirectorySeparatorChar;
-        return Path.GetFullPath(path).StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
+        try
+        {
+            var normalizedRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar)
+                + Path.DirectorySeparatorChar;
+            return Path.GetFullPath(path).StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
+        }
+        catch { return false; }
     }
 
     private static SteamDiagnosticItem Success(string title, string detail) =>
