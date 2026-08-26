@@ -26,10 +26,14 @@ public partial class ThemeEditorWindow : Window
     {
         _originalBaseTheme = baseTheme;
         _originalCustomTheme = customTheme?.Clone();
+        var hasActiveCustomTheme = customTheme is { IsEnabled: true };
         ViewModel = new ThemeEditorViewModel(
-            customTheme?.Clone() ?? (baseTheme == AppTheme.Light
+            hasActiveCustomTheme ? customTheme!.Clone() : (baseTheme == AppTheme.Light
                 ? CustomThemeSettings.CreateLight()
                 : CustomThemeSettings.CreateDark()));
+        ViewModel.SelectedPreset = baseTheme == AppTheme.Light ? "SteamNexus Light" : "SteamNexus Dark";
+        ViewModel.IsPresetReadOnly = !hasActiveCustomTheme;
+        if (!hasActiveCustomTheme) ViewModel.LoadSelectedPreset(asCopy: false);
 
         InitializeComponent();
         DataContext = ViewModel;
@@ -52,13 +56,6 @@ public partial class ThemeEditorWindow : Window
         if (!_ready) return;
         _previewTimer.Stop();
         _previewTimer.Start();
-    }
-
-    private void BaseTheme_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-    {
-        if (!_ready) return;
-        ViewModel.ApplyBasePalette();
-        PreviewTheme();
     }
 
     private void Preset_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -165,6 +162,12 @@ public partial class ThemeEditorWindow : Window
         PreviewTheme();
     }
 
+    private void BackToPresets_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.LoadSelectedPreset(asCopy: false);
+        PreviewTheme();
+    }
+
     private void ColorSwatch_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { DataContext: ThemeColorEntry color }) return;
@@ -205,7 +208,6 @@ public partial class ThemeEditorWindow : Window
 public partial class ThemeEditorViewModel : ObservableObject
 {
     public ObservableCollection<ThemeColorEntry> Colors { get; } = [];
-    public IReadOnlyList<AppTheme> BaseThemes { get; } = [AppTheme.Dark, AppTheme.Light];
     public IReadOnlyList<string> StretchOptions { get; } = ["UniformToFill", "Uniform", "Fill", "None"];
     public IReadOnlyList<string> Presets { get; } = ["SteamNexus Dark", "SteamNexus Light", "AMOLED", "Roxo neon"];
 
@@ -227,6 +229,14 @@ public partial class ThemeEditorViewModel : ObservableObject
     [ObservableProperty] private bool _isPresetReadOnly;
 
     public bool IsCustomTheme => !IsPresetReadOnly;
+    public string BaseThemeLabel => BaseTheme == AppTheme.Light ? "Base clara" : "Base escura";
+    public string PresetDescription => SelectedPreset switch
+    {
+        "SteamNexus Light" => "Visual claro, limpo e com contraste equilibrado para ambientes iluminados.",
+        "AMOLED" => "Preto profundo, superfícies discretas e menor emissão de luz em telas OLED.",
+        "Roxo neon" => "Composição escura com destaques vibrantes em roxo e magenta.",
+        _ => "Visual original do SteamNexus, com tons escuros e destaques em azul.",
+    };
 
     public string BackgroundImageDisplay => string.IsNullOrWhiteSpace(BackgroundImagePath)
         ? "Nenhuma imagem selecionada"
@@ -236,6 +246,8 @@ public partial class ThemeEditorViewModel : ObservableObject
 
     partial void OnBackgroundImagePathChanged(string? value) => OnPropertyChanged(nameof(BackgroundImageDisplay));
     partial void OnIsPresetReadOnlyChanged(bool value) => OnPropertyChanged(nameof(IsCustomTheme));
+    partial void OnBaseThemeChanged(AppTheme value) => OnPropertyChanged(nameof(BaseThemeLabel));
+    partial void OnSelectedPresetChanged(string value) => OnPropertyChanged(nameof(PresetDescription));
 
     public void Load(CustomThemeSettings theme)
     {
@@ -347,40 +359,6 @@ public partial class ThemeEditorViewModel : ObservableObject
         theme.Name = "Novo tema";
         Load(theme);
         IsPresetReadOnly = false;
-    }
-
-    public void ApplyBasePalette()
-    {
-        var palette = BaseTheme == AppTheme.Light
-            ? CustomThemeSettings.CreateLight()
-            : CustomThemeSettings.CreateDark();
-
-        string Value(string key) => key switch
-        {
-            "Background" => palette.Background,
-            "Chrome" => palette.Chrome,
-            "Surface" => palette.Surface,
-            "SurfaceAlt" => palette.SurfaceAlt,
-            "SurfaceHover" => palette.SurfaceHover,
-            "Border" => palette.Border,
-            "Focus" => palette.Focus,
-            "TextPrimary" => palette.TextPrimary,
-            "TextSecondary" => palette.TextSecondary,
-            "TextMuted" => palette.TextMuted,
-            "Accent" => palette.Accent,
-            "AccentAlt" => palette.AccentAlt,
-            "AccentSurface" => palette.AccentSurface,
-            "Success" => palette.Success,
-            "Warning" => palette.Warning,
-            "Danger" => palette.Danger,
-            _ => throw new InvalidOperationException($"Cor de tema desconhecida: {key}"),
-        };
-
-        foreach (var color in Colors)
-            color.Value = Value(color.Key);
-
-        BackgroundOverlay = palette.BackgroundOverlay;
-        SelectedPreset = BaseTheme == AppTheme.Light ? "SteamNexus Light" : "SteamNexus Dark";
     }
 
     public void FixContrast()

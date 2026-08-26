@@ -42,40 +42,52 @@
                 <TabItem Header="Cores">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="16">
-                            <Grid Margin="0,0,0,14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="150" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Text="Nome do tema" FontWeight="SemiBold"
+                            <StackPanel Visibility="{Binding IsPresetReadOnly, Converter={StaticResource BoolToVisibility}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="Escolha um tema" FontWeight="SemiBold"
                                                Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                    <TextBox Text="{Binding ThemeName, UpdateSourceTrigger=PropertyChanged}"
-                                             IsReadOnly="{Binding IsPresetReadOnly}"
-                                             Margin="0,6,12,0" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Tema-base" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                    <ComboBox ItemsSource="{Binding BaseThemes}" SelectedItem="{Binding BaseTheme}"
-                                              Margin="0,6,0,0" SelectionChanged="BaseTheme_SelectionChanged" />
-                                </StackPanel>
-                            </Grid>
-                            <TextBlock Text="Modelo inicial (somente leitura)" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                            <Grid Margin="0,6,0,16">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="1" Padding="8,3" CornerRadius="6"
+                                            Background="{DynamicResource AppAccentSurfaceBrush}">
+                                        <TextBlock Text="Tema oficial" FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AppAccentBrush}" />
+                                    </Border>
+                                </Grid>
                                 <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}"
-                                          Margin="0,0,8,0" SelectionChanged="Preset_SelectionChanged" />
-                                <ui:Button Grid.Column="1" Content="Duplicar para editar" Appearance="Secondary"
-                                           Margin="0,0,8,0" Click="ApplyPreset_Click" />
-                                <ui:Button Grid.Column="2" Content="Criar novo" Appearance="Secondary"
-                                           Click="CreateTheme_Click" />
-                            </Grid>
+                                          Margin="0,7,0,0" SelectionChanged="Preset_SelectionChanged" />
+                                <TextBlock Text="{Binding PresetDescription}" Margin="0,8,0,14" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                                    <ui:Button Content="Usar este tema" Appearance="Primary"
+                                               Margin="0,0,8,0" Click="Apply_Click" />
+                                    <ui:Button Content="Personalizar uma cópia" Appearance="Secondary"
+                                               Margin="0,0,8,0" Click="ApplyPreset_Click" />
+                                    <ui:Button Content="Criar tema" Appearance="Secondary"
+                                               Click="CreateTheme_Click" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Border Margin="0,0,0,18" Padding="14" CornerRadius="10"
+                                    Background="{DynamicResource AppSurfaceAltBrush}"
+                                    Visibility="{Binding IsPresetReadOnly, Converter={StaticResource InverseBoolToVisibility}}">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="Editando tema personalizado" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                        <Border Grid.Column="1" Padding="8,3" CornerRadius="6"
+                                                Background="{DynamicResource AppAccentSurfaceBrush}">
+                                            <TextBlock Text="{Binding BaseThemeLabel}" FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource AppAccentBrush}" />
+                                        </Border>
+                                    </Grid>
+                                    <TextBlock Text="Nome" Margin="0,12,0,0" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                    <TextBox Text="{Binding ThemeName, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,10" />
+                                    <ui:Button Content="Escolher outro tema" Appearance="Secondary"
+                                               HorizontalAlignment="Left" Click="BackToPresets_Click" />
+                                </StackPanel>
+                            </Border>
                             <ItemsControl ItemsSource="{Binding Colors}" IsEnabled="{Binding IsCustomTheme}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -247,11 +259,13 @@
         <Grid Grid.Row="2" Margin="0,18,0,0">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal">
-                <ui:Button Content="Restaurar tema-base" Appearance="Secondary" Click="Reset_Click" />
+                <ui:Button Content="Restaurar cores" Appearance="Secondary" Click="Reset_Click"
+                           Visibility="{Binding IsPresetReadOnly, Converter={StaticResource InverseBoolToVisibility}}" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <ui:Button Content="Cancelar" Appearance="Secondary" Width="110" Click="Cancel_Click" Margin="0,0,10,0" />
-                <ui:Button Content="Aplicar tema" Appearance="Primary" Width="130" Click="Apply_Click" />
+                <ui:Button Content="Salvar tema" Appearance="Primary" Width="130" Click="Apply_Click"
+                           Visibility="{Binding IsPresetReadOnly, Converter={StaticResource InverseBoolToVisibility}}" />
             </StackPanel>
         </Grid>
     </Grid>
