@@ -28,6 +28,8 @@ public static class CustomThemeManager
         if (theme is not { IsEnabled: true }) return;
         Validate(theme);
 
+        ApplyAccent(theme);
+
         var resources = new ResourceDictionary();
         AddBrush(resources, "AppBackgroundBrush", theme.Background);
         AddBrush(resources, "AppChromeBrush", theme.Chrome);
@@ -60,6 +62,21 @@ public static class CustomThemeManager
 
         _customResources = resources;
         Application.Current.Resources.MergedDictionaries.Add(resources);
+    }
+
+    public static void ApplyBaseAccent(AppTheme baseTheme) => ApplyAccent(
+        baseTheme == AppTheme.Light
+            ? CustomThemeSettings.CreateLight()
+            : CustomThemeSettings.CreateDark());
+
+    private static void ApplyAccent(CustomThemeSettings theme)
+    {
+        var accent = ParseColor(theme.Accent);
+        Wpf.Ui.Appearance.ApplicationAccentColorManager.Apply(
+            accent,
+            accent,
+            ParseColor(theme.AccentAlt),
+            ParseColor(theme.AccentSurface));
     }
 
     public static async Task ExportAsync(CustomThemeSettings theme, string path, CancellationToken ct = default)

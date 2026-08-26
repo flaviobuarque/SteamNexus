@@ -280,6 +280,8 @@ public partial class App : Application
             Current.Resources.MergedDictionaries.Remove(existing);
 
         Current.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = uri });
+        if (customTheme is not { IsEnabled: true })
+            CustomThemeManager.ApplyBaseAccent(theme);
         CustomThemeManager.Apply(customTheme);
     }
 
