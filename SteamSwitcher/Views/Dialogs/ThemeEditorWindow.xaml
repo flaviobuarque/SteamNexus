@@ -6,6 +6,77 @@
     xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
     Title="Editor de tema — SteamNexus" Width="1050" Height="720" MinWidth="920" MinHeight="620"
     WindowStartupLocation="CenterOwner" Background="{DynamicResource AppBackgroundBrush}">
+    <Window.Resources>
+        <Style x:Key="ThemeEditorAccentButtonStyle" TargetType="ui:Button">
+            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+            <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccentAltBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ui:Button">
+                        <Border x:Name="ButtonBorder" Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource AppButtonCornerRadius}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource AppAccentAltBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.78" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True" Orientation="Vertical">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Border x:Name="ThumbBorder" Width="4"
+                                                    Background="{DynamicResource AppAccentBrush}" CornerRadius="2" />
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="ThumbBorder" Property="Width" Value="6" />
+                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="{DynamicResource AppAccentAltBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" />
+                            </Track.IncreaseRepeatButton>
+                        </Track>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -58,7 +129,7 @@
                                 <TextBlock Text="{Binding PresetDescription}" Margin="0,8,0,14" TextWrapping="Wrap"
                                            Foreground="{DynamicResource AppTextSecondaryBrush}" />
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
-                                    <ui:Button Content="Usar este tema" Appearance="Primary"
+                                    <ui:Button Content="Usar este tema" Style="{StaticResource ThemeEditorAccentButtonStyle}"
                                                Margin="0,0,8,0" Click="Apply_Click" />
                                     <ui:Button Content="Personalizar uma cópia" Appearance="Secondary"
                                                Margin="0,0,8,0" Click="ApplyPreset_Click" />
@@ -234,7 +305,7 @@
                                        Foreground="{DynamicResource AppTextSecondaryBrush}" />
                             <TextBox Text="Campo de busca" Margin="0,0,0,12" />
                             <StackPanel Orientation="Horizontal">
-                                <ui:Button Content="Ação principal" Appearance="Primary" Margin="0,0,8,0" />
+                                <ui:Button Content="Ação principal" Style="{StaticResource ThemeEditorAccentButtonStyle}" Margin="0,0,8,0" />
                                 <ui:Button Content="Secundário" Appearance="Secondary" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
@@ -264,7 +335,7 @@
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <ui:Button Content="Cancelar" Appearance="Secondary" Width="110" Click="Cancel_Click" Margin="0,0,10,0" />
-                <ui:Button Content="Salvar tema" Appearance="Primary" Width="130" Click="Apply_Click"
+                <ui:Button Content="Salvar tema" Style="{StaticResource ThemeEditorAccentButtonStyle}" Width="130" Click="Apply_Click"
                            Visibility="{Binding IsPresetReadOnly, Converter={StaticResource InverseBoolToVisibility}}" />
             </StackPanel>
         </Grid>
