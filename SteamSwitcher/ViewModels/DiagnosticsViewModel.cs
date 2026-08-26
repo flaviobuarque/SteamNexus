@@ -86,25 +86,22 @@ public partial class DiagnosticsViewModel(
     }
 
     [RelayCommand]
-    private void CopyReport()
+    private void CopyInstallationReport(DiagnosticInstallationItem item)
     {
-        if (_report is null) return;
+        var installation = item.Report;
         var text = new StringBuilder()
             .AppendLine("SteamNexus — Diagnóstico da Steam")
-            .AppendLine($"Data: {_report.CheckedAt:yyyy-MM-dd HH:mm:ss}");
-        foreach (var installation in _report.Installations)
-        {
-            text.AppendLine()
-                .AppendLine($"## {installation.InstallationName}")
-                .AppendLine($"Diretório: {installation.InstallationPath}")
-                .AppendLine($"Selecionada: {installation.IsSelected}")
-                .AppendLine($"Em execução: {installation.RunningSteamPath}")
-                .AppendLine($"Conta ativa: {installation.ActiveAccountName}");
-            foreach (var diagnostic in installation.Items)
-                text.AppendLine($"[{diagnostic.Severity}] {diagnostic.Title}: {diagnostic.Detail}");
-        }
+            .AppendLine($"Data: {_report?.CheckedAt:yyyy-MM-dd HH:mm:ss}")
+            .AppendLine($"Instalação: {installation.InstallationName}")
+            .AppendLine($"Diretório: {installation.InstallationPath}")
+            .AppendLine($"Selecionada: {installation.IsSelected}")
+            .AppendLine($"Em execução: {installation.RunningSteamPath}")
+            .AppendLine($"Conta ativa: {installation.ActiveAccountName}");
+        foreach (var diagnostic in installation.Items)
+            text.AppendLine($"[{diagnostic.Severity}] {diagnostic.Title}: {diagnostic.Detail}");
+
         Clipboard.SetText(text.ToString());
-        snackbarService.Show("Diagnóstico copiado", "O relatório de todas as instalações foi copiado.",
+        snackbarService.Show("Diagnóstico copiado", $"Relatório de {installation.InstallationName} copiado.",
             ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
     }
 }

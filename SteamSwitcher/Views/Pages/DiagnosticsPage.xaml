@@ -13,24 +13,12 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="Diagnóstico da Steam" FontSize="25" FontWeight="Bold"
-                               Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                    <TextBlock Text="Expanda uma instalação para ver verificações e reparos específicos."
-                               Margin="0,7,0,0" Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <ui:Button Content="Copiar relatório" Command="{Binding CopyReportCommand}"
-                               Appearance="Secondary" Margin="0,0,8,0" />
-                    <ui:Button Content="Verificar novamente" Command="{Binding RefreshCommand}"
-                               Appearance="Primary" />
-                </StackPanel>
-            </Grid>
+            <StackPanel>
+                <TextBlock Text="Diagnóstico da Steam" FontSize="25" FontWeight="Bold"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                <TextBlock Text="Acompanhe e repare cada instalação separadamente."
+                           Margin="0,7,0,0" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+            </StackPanel>
 
             <TextBlock Grid.Row="1" Text="{Binding LastCheckText}" Margin="0,17,0,9"
                        HorizontalAlignment="Right" Foreground="{DynamicResource AppTextMutedBrush}" />
@@ -44,19 +32,21 @@
                                     <Border CornerRadius="14" Background="{DynamicResource AppSurfaceBrush}"
                                             BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
                                         <StackPanel>
-                                            <ToggleButton IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
-                                                          Background="Transparent" BorderThickness="0" Padding="18,15"
-                                                          HorizontalContentAlignment="Stretch" Cursor="Hand">
-                                                <Grid>
+                                            <Grid>
+                                                <ToggleButton IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                                              Background="Transparent" BorderThickness="0"
+                                                              HorizontalContentAlignment="Stretch" Cursor="Hand" />
+                                                <Grid Margin="18,14">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto" />
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
-                                                    <ic:SymbolIcon Symbol="HardDrive" FontSize="19" Margin="0,0,12,0"
+                                                    <ic:SymbolIcon Symbol="HardDrive" FontSize="19" Margin="0,2,12,0"
+                                                                   VerticalAlignment="Top" IsHitTestVisible="False"
                                                                    Foreground="{DynamicResource AppAccentBrush}" />
-                                                    <StackPanel Grid.Column="1">
+                                                    <StackPanel Grid.Column="1" IsHitTestVisible="False">
                                                         <StackPanel Orientation="Horizontal">
                                                             <TextBlock Text="{Binding Report.InstallationName}" FontSize="16" FontWeight="SemiBold"
                                                                        Foreground="{DynamicResource AppTextPrimaryBrush}" />
@@ -73,13 +63,61 @@
                                                         </StackPanel>
                                                         <TextBlock Text="{Binding Report.InstallationPath}" Margin="0,4,0,0"
                                                                    Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                                        <TextBlock Text="Clique para ver mais informações" Margin="0,8,0,0" FontSize="11"
+                                                                   Foreground="{DynamicResource AppTextMutedBrush}" />
                                                     </StackPanel>
-                                                    <TextBlock Grid.Column="2" Text="{Binding Report.Summary}" Margin="16,0"
-                                                               VerticalAlignment="Center" Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                                                    <ic:SymbolIcon Grid.Column="3" Symbol="ChevronDown" FontSize="16"
-                                                                   VerticalAlignment="Center" Foreground="{DynamicResource AppTextMutedBrush}" />
+
+                                                    <StackPanel Grid.Column="2" Margin="16,0,10,0" VerticalAlignment="Center"
+                                                                IsHitTestVisible="False">
+                                                        <Border Padding="8,3" CornerRadius="6" Background="{DynamicResource AppSuccessSurfaceBrush}"
+                                                                Visibility="{Binding Report.IsHealthy, Converter={StaticResource BoolToVisibility}}">
+                                                            <TextBlock Text="Saudável" FontSize="10" FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource AppSuccessBrush}" />
+                                                        </Border>
+                                                        <Border Padding="8,3" Margin="0,2" CornerRadius="6" Background="{DynamicResource AppWarningSurfaceBrush}"
+                                                                Visibility="{Binding Report.HasWarnings, Converter={StaticResource BoolToVisibility}}">
+                                                            <TextBlock Text="{Binding Report.WarningBadgeText}" FontSize="10" FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource AppWarningBrush}" />
+                                                        </Border>
+                                                        <Border Padding="8,3" Margin="0,2" CornerRadius="6" Background="{DynamicResource AppDangerSurfaceBrush}"
+                                                                Visibility="{Binding Report.HasErrors, Converter={StaticResource BoolToVisibility}}">
+                                                            <TextBlock Text="{Binding Report.ErrorBadgeText}" FontSize="10" FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource AppDangerBrush}" />
+                                                        </Border>
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ui:Button Width="34" Height="34" Padding="0" Appearance="Secondary"
+                                                                   ToolTip="Copiar relatório desta instalação"
+                                                                   Command="{Binding DataContext.CopyInstallationReportCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                   CommandParameter="{Binding}">
+                                                            <ic:SymbolIcon Symbol="Copy" FontSize="15" />
+                                                        </ui:Button>
+                                                        <ui:Button Width="34" Height="34" Padding="0" Margin="6,0,0,0" Appearance="Secondary"
+                                                                   ToolTip="Verificar todas as instalações novamente"
+                                                                   Command="{Binding DataContext.RefreshCommand, RelativeSource={RelativeSource AncestorType=Page}}">
+                                                            <ic:SymbolIcon Symbol="ArrowClockwise" FontSize="15" />
+                                                        </ui:Button>
+                                                        <ui:Button Width="34" Height="34" Padding="0" Margin="6,0,0,0" Appearance="Secondary"
+                                                                   ToolTip="Corrigir autologin do Registro"
+                                                                   Visibility="{Binding Report.CanRepairRegistry, Converter={StaticResource BoolToVisibility}}"
+                                                                   Command="{Binding DataContext.RepairRegistryCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                   CommandParameter="{Binding}">
+                                                            <ic:SymbolIcon Symbol="Wrench" FontSize="15" />
+                                                        </ui:Button>
+                                                        <ui:Button Width="34" Height="34" Padding="0" Margin="6,0,0,0" Appearance="Secondary"
+                                                                   ToolTip="Desativar seletor de contas"
+                                                                   Visibility="{Binding Report.CanDisableChooser, Converter={StaticResource BoolToVisibility}}"
+                                                                   Command="{Binding DataContext.DisableChooserCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                   CommandParameter="{Binding}">
+                                                            <ic:SymbolIcon Symbol="Person" FontSize="15" />
+                                                        </ui:Button>
+                                                        <ic:SymbolIcon Symbol="ChevronDown" FontSize="16" Margin="12,0,0,0"
+                                                                       IsHitTestVisible="False" VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource AppTextMutedBrush}" />
+                                                    </StackPanel>
                                                 </Grid>
-                                            </ToggleButton>
+                                            </Grid>
                                             <ContentPresenter x:Name="ExpandSite" ContentSource="Content" Visibility="Collapsed" />
                                         </StackPanel>
                                     </Border>
@@ -123,17 +161,6 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-
-                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                    <ui:Button Content="Corrigir autologin do Registro"
-                                               Command="{Binding DataContext.RepairRegistryCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                               CommandParameter="{Binding}"
-                                               IsEnabled="{Binding Report.CanRepairRegistry}" Margin="0,0,8,0" />
-                                    <ui:Button Content="Desativar seletor de contas"
-                                               Command="{Binding DataContext.DisableChooserCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                               CommandParameter="{Binding}"
-                                               IsEnabled="{Binding Report.CanDisableChooser}" />
-                                </StackPanel>
                             </StackPanel>
                         </Expander>
                     </DataTemplate>

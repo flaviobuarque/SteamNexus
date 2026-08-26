@@ -26,9 +26,11 @@ public sealed class SteamInstallationDiagnosticReport
     public bool HasBlockingIssues => Items.Any(item => item.Severity == DiagnosticSeverity.Error);
     public int ErrorCount => Items.Count(item => item.Severity == DiagnosticSeverity.Error);
     public int WarningCount => Items.Count(item => item.Severity == DiagnosticSeverity.Warning);
-    public string Summary => ErrorCount > 0
-        ? $"{ErrorCount} problema(s)"
-        : WarningCount > 0 ? $"{WarningCount} aviso(s)" : "Tudo certo";
+    public bool HasErrors => ErrorCount > 0;
+    public bool HasWarnings => WarningCount > 0;
+    public bool IsHealthy => !HasErrors && !HasWarnings;
+    public string ErrorBadgeText => ErrorCount == 1 ? "1 problema" : $"{ErrorCount} problemas";
+    public string WarningBadgeText => WarningCount == 1 ? "1 aviso" : $"{WarningCount} avisos";
     public bool CanDisableChooser { get; init; }
     public bool CanRepairRegistry { get; init; }
     public IReadOnlyList<SteamDiagnosticItem> Items { get; init; } = [];
