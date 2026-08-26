@@ -48,4 +48,16 @@ public sealed class SteamConfigEditorTests
         changed.Should().BeFalse();
         result.Should().Be(source);
     }
+
+    [Theory]
+    [InlineData("\"AlwaysShowUserChooser\" \"1\"", true)]
+    [InlineData("\"alwaysshowuserchooser\" \"true\"", true)]
+    [InlineData("\"AlwaysShowUserChooser\" \"0\"", false)]
+    [InlineData("\"OtherSetting\" \"1\"", false)]
+    public void IsAccountChooserEnabled_RecognizesCurrentSetting(
+        string source,
+        bool expected)
+    {
+        SteamConfigEditor.IsAccountChooserEnabled(source).Should().Be(expected);
+    }
 }

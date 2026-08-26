@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAppSettingsService, AppSettingsService>();
         services.AddSingleton<IImageCacheService, ImageCacheService>();
         services.AddSingleton<ISteamKnownAccountStore, SteamKnownAccountStore>();
+        services.AddSingleton<ISteamDiagnosticsService, SteamDiagnosticsService>();
 
         // Contas
         services.AddSingleton<IAccountOverrideService, AccountOverrideService>();

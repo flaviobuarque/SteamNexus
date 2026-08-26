@@ -24,6 +24,13 @@ public static partial class SteamConfigEditor
         return result;
     }
 
+    public static bool IsAccountChooserEnabled(string content)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        var match = AccountChooserRegex().Match(content);
+        return match.Success && match.Groups["value"].Value != "0";
+    }
+
     [GeneratedRegex(
         "^(?<prefix>\\s*\"AlwaysShowUserChooser\"\\s*\")(?<value>[^\"]*)(?<suffix>\".*)$",
         RegexOptions.IgnoreCase | RegexOptions.Multiline)]

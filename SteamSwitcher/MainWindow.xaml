@@ -220,6 +220,44 @@
                             </ui:SymbolIcon>
                         </Border>
 
+                        <!-- Diagnóstico -->
+                        <Border
+                    Width="40" Height="40"
+                    CornerRadius="10"
+                    Margin="8,2"
+                    Cursor="Hand"
+                    ToolTip="Diagnóstico da Steam"
+                    ToolTipService.InitialShowDelay="300"
+                    MouseLeftButtonUp="NavItem_Diagnostics_Click">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding ActivePage}" Value="Diagnostics">
+                                            <Setter Property="Background" Value="{DynamicResource AppAccentBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <ui:SymbolIcon Symbol="Wrench24" FontSize="18"
+                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <ui:SymbolIcon.Style>
+                                    <Style TargetType="ui:SymbolIcon">
+                                        <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.ActivePage,
+                    RelativeSource={RelativeSource AncestorType=Window}}" Value="Diagnostics">
+                                                <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:SymbolIcon.Style>
+                            </ui:SymbolIcon>
+                        </Border>
+
                         <!-- Sobre -->
                         <Border
                     Width="40" Height="40"

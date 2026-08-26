@@ -214,6 +214,7 @@ public partial class App : Application
         services.AddSingleton<AccountsViewModel>();
         services.AddSingleton<GamesViewModel>();
         services.AddSingleton<SettingsViewModel>();
+        services.AddTransient<DiagnosticsViewModel>();
         if (FeatureFlags.Mods) services.AddSingleton<ModsViewModel>();
         services.AddTransient<OnboardingViewModel>();
         services.AddTransient<EditAccountViewModel>();
@@ -224,6 +225,7 @@ public partial class App : Application
         services.AddTransient<AccountsPage>();
         services.AddTransient<GamesPage>();
         services.AddTransient<SettingsPage>();
+        services.AddTransient<DiagnosticsPage>();
         services.AddTransient<AboutPage>();
         if (FeatureFlags.Mods) services.AddSingleton<ModsPage>();
     }
