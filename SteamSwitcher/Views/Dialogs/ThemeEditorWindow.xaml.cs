@@ -27,13 +27,18 @@ public partial class ThemeEditorWindow : Window
         _originalBaseTheme = baseTheme;
         _originalCustomTheme = customTheme?.Clone();
         var hasActiveCustomTheme = customTheme is { IsEnabled: true };
+        var activePreset = hasActiveCustomTheme && ThemeEditorViewModel.IsBuiltInPreset(customTheme!.Name)
+            ? customTheme.Name
+            : null;
+        var hasEditableCustomTheme = hasActiveCustomTheme && activePreset is null;
         ViewModel = new ThemeEditorViewModel(
             hasActiveCustomTheme ? customTheme!.Clone() : (baseTheme == AppTheme.Light
                 ? CustomThemeSettings.CreateLight()
                 : CustomThemeSettings.CreateDark()));
-        ViewModel.SelectedPreset = baseTheme == AppTheme.Light ? "SteamNexus Light" : "SteamNexus Dark";
-        ViewModel.IsPresetReadOnly = !hasActiveCustomTheme;
-        if (!hasActiveCustomTheme) ViewModel.LoadSelectedPreset(asCopy: false);
+        ViewModel.SelectedPreset = activePreset
+            ?? (baseTheme == AppTheme.Light ? "SteamNexus Light" : "SteamNexus Dark");
+        ViewModel.IsPresetReadOnly = !hasEditableCustomTheme;
+        if (!hasEditableCustomTheme) ViewModel.LoadSelectedPreset(asCopy: false);
 
         InitializeComponent();
         DataContext = ViewModel;
@@ -210,6 +215,9 @@ public partial class ThemeEditorViewModel : ObservableObject
     public ObservableCollection<ThemeColorEntry> Colors { get; } = [];
     public IReadOnlyList<string> StretchOptions { get; } = ["UniformToFill", "Uniform", "Fill", "None"];
     public IReadOnlyList<string> Presets { get; } = ["SteamNexus Dark", "SteamNexus Light", "AMOLED", "Roxo neon"];
+
+    public static bool IsBuiltInPreset(string? name) => name is
+        "SteamNexus Dark" or "SteamNexus Light" or "AMOLED" or "Roxo neon";
 
     [ObservableProperty] private string _themeName = "Meu tema";
     [ObservableProperty] private string _selectedPreset = "SteamNexus Dark";
