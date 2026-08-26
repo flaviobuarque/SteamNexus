@@ -31,6 +31,9 @@ public static class CustomThemeManager
         ApplyAccent(theme);
 
         var resources = new ResourceDictionary();
+        var onAccent = ContrastRatio("#FFFFFF", theme.Accent) >= ContrastRatio("#0B1220", theme.Accent)
+            ? Colors.White
+            : ParseColor("#0B1220");
         AddBrush(resources, "AppBackgroundBrush", theme.Background);
         AddBrush(resources, "AppChromeBrush", theme.Chrome);
         AddBrush(resources, "AppSurfaceBrush", theme.Surface);
@@ -44,6 +47,7 @@ public static class CustomThemeManager
         AddBrush(resources, "AppAccentBrush", theme.Accent);
         AddBrush(resources, "AppAccentAltBrush", theme.AccentAlt);
         AddBrush(resources, "AppAccentSurfaceBrush", theme.AccentSurface);
+        resources["AppOnAccentTextBrush"] = FrozenBrush(onAccent);
         AddBrush(resources, "AppSuccessBrush", theme.Success);
         AddBrush(resources, "AppWarningBrush", theme.Warning);
         AddBrush(resources, "AppDangerBrush", theme.Danger);

@@ -89,7 +89,7 @@
                     Converter={StaticResource InverseBoolToVisibility}}">
                 <ui:Button
                     Content="Instalar agora"
-                    Appearance="Primary"
+                    Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
                     Margin="0,0,10,0"
                     Command="{Binding LoadDrivesCommand}" />
                 <ui:Button
@@ -196,7 +196,7 @@
                         Converter={StaticResource InverseBoolToVisibility}}">
                     <ui:Button
                         Content="Instalar"
-                        Appearance="Primary"
+                        Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
                         Margin="0,0,10,0"
                         Command="{Binding InstallSteamCommand}"
                         IsEnabled="{Binding SelectedDrive,

@@ -31,7 +31,7 @@
                             <TextBlock Text="Copiar todos" />
                         </StackPanel>
                     </ui:Button>
-                    <ui:Button Command="{Binding RefreshCommand}" Appearance="Primary"
+                    <ui:Button Command="{Binding RefreshCommand}" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
                                ToolTip="Verificar todas as instalações novamente">
                         <StackPanel Orientation="Horizontal">
                             <ic:SymbolIcon Symbol="ArrowClockwise" FontSize="15" Margin="0,0,7,0" />

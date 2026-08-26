@@ -176,7 +176,7 @@
                                        Margin="0,3,16,0" FontSize="12" TextWrapping="Wrap"
                                        Foreground="{DynamicResource AppTextMutedBrush}" />
                         </StackPanel>
-                        <ui:Button Grid.Column="2" Content="Abrir editor" Appearance="Primary"
+                        <ui:Button Grid.Column="2" Content="Abrir editor" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
                                    Padding="14,8" Click="OpenThemeEditor_Click" />
                     </Grid>
                 </Border>
@@ -702,10 +702,10 @@
                                             Converter={StaticResource EmptyStringToVisibility}}" />
                                 </StackPanel>
 
-                                <ui:Button Grid.Column="1" Appearance="Primary" Padding="14,8"
+                                <ui:Button Grid.Column="1" Padding="14,8"
                                     Command="{Binding DownloadUpdateCommand}">
                                     <ui:Button.Style>
-                                        <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                        <Style TargetType="ui:Button" BasedOn="{StaticResource SteamSwitcherPrimaryButtonStyle}">
                                             <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding UpdateService.IsUpdateAvailable}" Value="True">
@@ -723,7 +723,7 @@
                                     </StackPanel>
                                 </ui:Button>
 
-                                <ui:Button Grid.Column="1" Appearance="Primary" Padding="14,8"
+                                <ui:Button Grid.Column="1" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}" Padding="14,8"
                                     Command="{Binding ApplyUpdateAndRestartCommand}"
                                     Visibility="{Binding UpdateService.IsUpdateReady,
                                         Converter={StaticResource BoolToVisibility}}">
@@ -822,7 +822,7 @@
                         </StackPanel>
                     </ui:Button>
                     <ui:Button
-                        Appearance="Primary"
+                        Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
                         Padding="20,8"
                         Cursor="Hand"
                         Command="{Binding SaveCommand}">

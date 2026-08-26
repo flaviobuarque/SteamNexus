@@ -50,7 +50,7 @@
                 </Border>
 
                 <StackPanel Margin="0,22,0,0">
-                    <ui:Button x:Name="InstallButton" Appearance="Primary" Cursor="Hand"
+                    <ui:Button x:Name="InstallButton" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}" Cursor="Hand"
                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                Padding="16,10" Click="InstallButton_Click">
                         <StackPanel Orientation="Horizontal">

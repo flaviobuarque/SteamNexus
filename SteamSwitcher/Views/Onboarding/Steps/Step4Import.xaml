@@ -70,7 +70,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
                     <ui:Button
-        Appearance="Primary"
+        Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
         Command="{Binding ImportFromTcNoCommand}"
         IsEnabled="{Binding ImportedFromTcNo,
             Converter={StaticResource InverseBoolToVisibility}}">

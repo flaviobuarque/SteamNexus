@@ -4,6 +4,7 @@
 
     <CornerRadius x:Key="AppCardCornerRadius">14</CornerRadius>
     <CornerRadius x:Key="AppButtonCornerRadius">8</CornerRadius>
+    <SolidColorBrush x:Key="AppOnAccentTextBrush" Color="#FFFFFF" />
     <BlurEffect x:Key="AppCardEffect" Radius="0" />
 
     <!-- Backgrounds -->

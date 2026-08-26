@@ -163,7 +163,7 @@
                                Foreground="{DynamicResource AppTextMutedBrush}"
                                Text="SteamNexus não possui vínculo, patrocínio ou aprovação da Valve Corporation." />
                 </StackPanel>
-                <ui:Button Grid.Column="1" Content="Ver versões" Appearance="Primary"
+                <ui:Button Grid.Column="1" Content="Ver versões" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
                            Margin="16,0,0,0" Cursor="Hand" Click="OpenReleases_Click" />
             </Grid>
         </Grid>

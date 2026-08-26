@@ -216,7 +216,7 @@
                     Cursor="Hand"
                     Grid.Column="2"
                     Content="Concluir"
-                    Appearance="Primary"
+                    Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
                     Padding="24,8"
                     Command="{Binding CompleteCommand}"
                     Visibility="{Binding IsLastStep, Converter={StaticResource BoolToVisibility}}" />

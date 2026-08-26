@@ -568,7 +568,7 @@
                 Panel.ZIndex="20"
                 Cursor="Hand"
                 CornerRadius="26"
-                Appearance="Primary"
+                Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
                 Command="{Binding AddAccountCommand}"
                 ToolTip="Adicionar conta Steam"
                 ToolTipService.InitialShowDelay="300"
