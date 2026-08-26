@@ -91,4 +91,3 @@ public enum AccountViewMode { Grid, Compact }
 public enum GameSortMode { Alphabetical, MostPlayed, LargestSize }
 public enum GameViewMode { Grid, Compact }
 public enum PostSwitchBehavior { MinimizeToTray, Close, KeepOpen }
-public enum SteamCloseMethod { Graceful, TaskKill }

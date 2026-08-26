@@ -221,7 +221,7 @@ public class SteamAccountService(
         LogSwitchPhase("preflight", operation, account.SteamId64);
 
         // 1. Fecha Steam
-        await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
+        await CloseSteamCombinedAsync(ct);
         LogSwitchPhase("steam-closed", operation, account.SteamId64);
 
         SteamSwitchBackup? backup = null;
@@ -264,7 +264,7 @@ public class SteamAccountService(
             {
                 try
                 {
-                    await CloseSteamAsync(SteamCloseMethod.Graceful, CancellationToken.None);
+                    await CloseSteamCombinedAsync(CancellationToken.None);
                     await RestoreSwitchBackupAsync(backup);
                     logger.LogWarning(
                         "Troca Steam revertida após falha. Target={Target}",
@@ -459,7 +459,7 @@ public class SteamAccountService(
             return;
         }
 
-        await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
+        await CloseSteamCombinedAsync(ct);
 
         var backupPath = vdfPath + ".bak";
         var tempPath = vdfPath + ".tmp";
@@ -606,7 +606,7 @@ public class SteamAccountService(
             .ToHashSet(StringComparer.Ordinal);
         if (targets.Count == 0) return [];
 
-        await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
+        await CloseSteamCombinedAsync(ct);
 
         var backupPath = vdfPath + ".cleanup.bak";
         var tempPath = vdfPath + ".cleanup.tmp";
@@ -726,7 +726,7 @@ public class SteamAccountService(
     private static readonly string[] SteamProcessNames =
         ["steam", "steamwebhelper", "GameOverlayUI"];
 
-    private async Task CloseSteamAsync(SteamCloseMethod method, CancellationToken ct)
+    private async Task CloseSteamCombinedAsync(CancellationToken ct)
     {
         var initialProcesses = GetAllSteamProcesses();
         if (initialProcesses.Count == 0)
@@ -739,8 +739,7 @@ public class SteamAccountService(
             !ProcessBelongsToSelectedInstallation(process));
 
         logger.LogInformation(
-            "Encerrando Steam. Method={Method}, Processes={ProcessCount}, ConflictingInstallations={ConflictingCount}, Details={ProcessDetails}, ClientServiceRunning={ClientServiceRunning}",
-            method,
+            "Encerrando Steam pelo fluxo combinado. Processes={ProcessCount}, ConflictingInstallations={ConflictingCount}, Details={ProcessDetails}, ClientServiceRunning={ClientServiceRunning}",
             initialProcesses.Count,
             conflictingCount,
             DescribeProcesses(initialProcesses),
@@ -748,7 +747,7 @@ public class SteamAccountService(
         DisposeProcesses(initialProcesses);
 
         var steamExe = locator.GetSteamExePath(SteamPath);
-        if (method == SteamCloseMethod.Graceful && File.Exists(steamExe))
+        if (File.Exists(steamExe))
         {
             try
             {
@@ -766,35 +765,37 @@ public class SteamAccountService(
                 logger.LogWarning(ex, "Falha ao solicitar shutdown nativo da Steam");
             }
 
-            if (await WaitForSteamExitAsync(TimeSpan.FromSeconds(10), ct))
+            if (await WaitForSteamExitAsync(TimeSpan.FromSeconds(6), ct))
             {
+                logger.LogInformation("Steam encerrada pelo comando nativo -shutdown");
                 await WaitForVdfReleaseAsync(ct);
                 return;
             }
+
+            logger.LogWarning(
+                "O comando nativo -shutdown não encerrou todos os processos; tentando fechamento de janelas");
         }
 
-        if (method == SteamCloseMethod.Graceful)
+        var gracefulProcesses = GetAllSteamProcesses();
+        foreach (var process in gracefulProcesses)
         {
-            var gracefulProcesses = GetAllSteamProcesses();
-            foreach (var process in gracefulProcesses)
+            try
             {
-                try
-                {
-                    if (!process.HasExited && process.MainWindowHandle != IntPtr.Zero)
-                        process.CloseMainWindow();
-                }
-                catch (Exception ex)
-                {
-                    logger.LogDebug(ex, "Falha ao fechar janela Steam. Pid={Pid}", SafeProcessId(process));
-                }
+                if (!process.HasExited && process.MainWindowHandle != IntPtr.Zero)
+                    process.CloseMainWindow();
             }
-            DisposeProcesses(gracefulProcesses);
+            catch (Exception ex)
+            {
+                logger.LogDebug(ex, "Falha ao fechar janela Steam. Pid={Pid}", SafeProcessId(process));
+            }
+        }
+        DisposeProcesses(gracefulProcesses);
 
-            if (await WaitForSteamExitAsync(TimeSpan.FromSeconds(2), ct))
-            {
-                await WaitForVdfReleaseAsync(ct);
-                return;
-            }
+        if (await WaitForSteamExitAsync(TimeSpan.FromSeconds(2), ct))
+        {
+            logger.LogInformation("Steam encerrada pelo fechamento das janelas");
+            await WaitForVdfReleaseAsync(ct);
+            return;
         }
 
         var remaining = GetAllSteamProcesses();
@@ -825,6 +826,7 @@ public class SteamAccountService(
                 "Feche-os manualmente e tente novamente.");
         }
 
+        logger.LogInformation("Steam encerrada pelo fallback forçado");
         await WaitForVdfReleaseAsync(ct);
     }
 
@@ -939,7 +941,42 @@ public class SteamAccountService(
     private async Task WaitForVdfReleaseAsync(CancellationToken ct)
     {
         var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
-        var deadline = DateTime.UtcNow.AddSeconds(5);
+        var firstAttempt = await TryWaitForVdfReleaseAsync(
+            vdfPath, TimeSpan.FromSeconds(5), ct);
+        if (firstAttempt is null)
+            return;
+
+        if (IsSteamClientServiceRunning())
+        {
+            logger.LogWarning(
+                "O loginusers.vdf continua bloqueado; tentando parar o Steam Client Service como último recurso");
+            if (await TryStopSteamClientServiceAsync(ct))
+            {
+                var retry = await TryWaitForVdfReleaseAsync(
+                    vdfPath, TimeSpan.FromSeconds(3), ct);
+                if (retry is null)
+                {
+                    logger.LogInformation(
+                        "loginusers.vdf liberado após parar o Steam Client Service");
+                    return;
+                }
+
+                firstAttempt = retry;
+            }
+        }
+
+        throw new IOException(
+            $"A Steam foi encerrada, mas o arquivo '{vdfPath}' continua em uso. " +
+            $"Steam Client Service ativo: {IsSteamClientServiceRunning()}.",
+            firstAttempt);
+    }
+
+    private static async Task<Exception?> TryWaitForVdfReleaseAsync(
+        string vdfPath,
+        TimeSpan timeout,
+        CancellationToken ct)
+    {
+        var deadline = DateTime.UtcNow + timeout;
         Exception? lastError = null;
 
         while (DateTime.UtcNow < deadline)
@@ -949,7 +986,7 @@ public class SteamAccountService(
             {
                 using var stream = new FileStream(
                     vdfPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-                return;
+                return null;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -958,10 +995,43 @@ public class SteamAccountService(
             }
         }
 
-        throw new IOException(
-            $"A Steam foi encerrada, mas o arquivo '{vdfPath}' continua em uso. " +
-            $"Steam Client Service ativo: {IsSteamClientServiceRunning()}.",
-            lastError);
+        return lastError ?? new IOException("O arquivo não foi liberado no prazo esperado.");
+    }
+
+    private async Task<bool> TryStopSteamClientServiceAsync(CancellationToken ct)
+    {
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "sc.exe",
+                Arguments = "stop \"Steam Client Service\"",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            });
+            if (process is null) return false;
+
+            await process.WaitForExitAsync(ct);
+            if (process.ExitCode != 0)
+            {
+                logger.LogWarning(
+                    "Não foi possível parar o Steam Client Service. ExitCode={ExitCode}",
+                    process.ExitCode);
+                return false;
+            }
+
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            while (DateTime.UtcNow < deadline && IsSteamClientServiceRunning())
+                await Task.Delay(200, ct);
+            return !IsSteamClientServiceRunning();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Falha ao parar o Steam Client Service");
+            return false;
+        }
     }
 
     private async Task<SteamSwitchBackup> UpdateLoginUsersVdfAsync(
@@ -1300,7 +1370,7 @@ public class SteamAccountService(
     private async Task AddAccountCoreAsync(CancellationToken ct)
     {
         // 1. Fecha Steam
-        await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
+        await CloseSteamCombinedAsync(ct);
 
         // 2. Limpa autologin do registro
         Registry.SetValue(
