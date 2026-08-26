@@ -268,6 +268,7 @@ public class SteamAccountService(
 
         return targetIsAlreadyActive
             && persistedStateMatches
+            && RegistryPointsToSelectedInstallation()
             && IsOnlySelectedSteamMainProcessRunning();
     }
 
@@ -760,6 +761,14 @@ public class SteamAccountService(
                 @"HKEY_CURRENT_USER\Software\Valve\Steam",
                 "RememberPassword",
                 null);
+            var previousSteamPath = Registry.GetValue(
+                @"HKEY_CURRENT_USER\Software\Valve\Steam",
+                "SteamPath",
+                null);
+            var previousSteamExe = Registry.GetValue(
+                @"HKEY_CURRENT_USER\Software\Valve\Steam",
+                "SteamExe",
+                null);
 
             using var input = new MemoryStream(originalVdf, writable: false);
             using var output = new MemoryStream();
@@ -775,7 +784,9 @@ public class SteamAccountService(
                 vdfPath,
                 originalVdf,
                 previousAutoLoginUser,
-                previousRememberPassword);
+                previousRememberPassword,
+                previousSteamPath,
+                previousSteamExe);
         }, ct);
     }
 
@@ -817,6 +828,8 @@ public class SteamAccountService(
             WriteVdfAtomically(backup.VdfPath, backup.OriginalVdf, createBackup: false);
             RestoreRegistryValue("AutoLoginUser", backup.AutoLoginUser);
             RestoreRegistryValue("RememberPassword", backup.RememberPassword);
+            RestoreRegistryValue("SteamPath", backup.SteamPath);
+            RestoreRegistryValue("SteamExe", backup.SteamExe);
             InvalidateSnapshot();
         });
     }
@@ -834,7 +847,9 @@ public class SteamAccountService(
         string VdfPath,
         byte[] OriginalVdf,
         object? AutoLoginUser,
-        object? RememberPassword);
+        object? RememberPassword,
+        object? SteamPath,
+        object? SteamExe);
 
     private void InvalidateSnapshot()
     {
@@ -843,18 +858,17 @@ public class SteamAccountService(
         _cachedVdfWriteTicks = -1;
     }
 
-    private static void UpdateRegistry(SteamAccount account)
+    private void UpdateRegistry(SteamAccount account)
     {
-        Registry.SetValue(
-            @"HKEY_CURRENT_USER\Software\Valve\Steam",
-            "AutoLoginUser",
-            account.AccountName);
-
-        Registry.SetValue(
-            @"HKEY_CURRENT_USER\Software\Valve\Steam",
-            "RememberPassword",
-            1,
-            RegistryValueKind.DWord);
+        using var key = Registry.CurrentUser.CreateSubKey(
+            @"Software\Valve\Steam",
+            writable: true);
+        key.SetValue("AutoLoginUser", account.AccountName);
+        key.SetValue("RememberPassword", 1, RegistryValueKind.DWord);
+        key.SetValue("SteamPath", SteamPath.Replace('\\', '/'));
+        key.SetValue(
+            "SteamExe",
+            locator.GetSteamExePath(SteamPath).Replace('\\', '/'));
     }
 
     private async Task ValidateSwitchStateAsync(
@@ -929,12 +943,49 @@ public class SteamAccountService(
             null);
 
         if (!string.Equals(registryAccount, target.AccountName, StringComparison.OrdinalIgnoreCase)
-            || Convert.ToInt32(rememberPassword ?? 0) != 1)
+            || Convert.ToInt32(rememberPassword ?? 0) != 1
+            || !RegistryPointsToSelectedInstallation())
         {
             throw new InvalidDataException(
-                "O Registro da Steam não confirmou a conta selecionada.");
+                "O Registro da Steam não confirmou a conta ou instalação selecionada.");
         }
     }
+
+    private bool RegistryPointsToSelectedInstallation()
+    {
+        try
+        {
+            var registryRoot = Registry.GetValue(
+                @"HKEY_CURRENT_USER\Software\Valve\Steam",
+                "SteamPath",
+                null)?.ToString();
+            var registryExe = Registry.GetValue(
+                @"HKEY_CURRENT_USER\Software\Valve\Steam",
+                "SteamExe",
+                null)?.ToString();
+
+            if (string.IsNullOrWhiteSpace(registryRoot)
+                || string.IsNullOrWhiteSpace(registryExe))
+            {
+                return false;
+            }
+
+            return PathsEqual(registryRoot, SteamPath)
+                && PathsEqual(registryExe, locator.GetSteamExePath(SteamPath));
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool PathsEqual(string left, string right) =>
+        string.Equals(
+            Path.GetFullPath(left.Replace('/', Path.DirectorySeparatorChar))
+                .TrimEnd(Path.DirectorySeparatorChar),
+            Path.GetFullPath(right.Replace('/', Path.DirectorySeparatorChar))
+                .TrimEnd(Path.DirectorySeparatorChar),
+            StringComparison.OrdinalIgnoreCase);
 
     private async Task StartSteamAsync(AppSettings settings, LoginState? state, CancellationToken ct)
     {
