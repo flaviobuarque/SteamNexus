@@ -151,8 +151,7 @@
                     </ItemsControl> 
                 </ScrollViewer>
 
-                    <!-- Botões -->
-				<Grid Margin="0,8,0,0">
+                <StackPanel Margin="0,8,0,0">
 
                     <!-- Status de login por jogo (opcional) -->
 				<TextBlock
@@ -160,7 +159,7 @@
                     FontSize="10"
                     FontWeight="Bold"
                     Foreground="#6593B0"
-                    Margin="0,12,0,8" />
+                    Margin="0,4,0,8" />
 
 				<ComboBox
                     ItemsSource="{Binding LoginStateOptions}"
@@ -185,7 +184,7 @@
                     </ComboBox.ItemTemplate>
                 </ComboBox>
 
-				</Grid>
+				</StackPanel>
 
                 <Grid Margin="0,16,0,0">
 					<Grid.ColumnDefinitions>
