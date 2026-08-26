@@ -204,6 +204,18 @@ public class SteamAccountService(
             UpdateRegistry(account);
             LogSwitchPhase("registry-updated", operation, account.SteamId64);
 
+            try
+            {
+                await DisableAccountChooserAsync(ct);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Esta preferência é auxiliar. Uma falha ao alterar config.vdf
+                // não deve impedir uma troca cujo VDF de login já está válido.
+                logger.LogWarning(ex, "Não foi possível desativar o seletor de contas da Steam");
+            }
+            LogSwitchPhase("chooser-disabled", operation, account.SteamId64);
+
             await ValidateSwitchStateAsync(
                 account,
                 targetState,
@@ -212,15 +224,8 @@ public class SteamAccountService(
             LogSwitchPhase("state-validated", operation, account.SteamId64);
 
             // 4. Abre Steam
-            await StartSteamAsync(settings, targetState, ct);
+            await StartSteamAsync(settings, ct);
             LogSwitchPhase("steam-started", operation, account.SteamId64);
-
-            await ValidateSwitchStateAsync(
-                account,
-                targetState,
-                validateRegistry: false,
-                ct);
-            LogSwitchPhase("post-start-validated", operation, account.SteamId64);
         }
         catch
         {
@@ -1047,7 +1052,7 @@ public class SteamAccountService(
         }
     }
 
-    private async Task StartSteamAsync(AppSettings settings, LoginState? state, CancellationToken ct)
+    private async Task StartSteamAsync(AppSettings settings, CancellationToken ct)
     {
         var steamExe = locator.GetSteamExePath(SteamPath);
         if (!File.Exists(steamExe)) return;
@@ -1055,12 +1060,12 @@ public class SteamAccountService(
         var args = new List<string>();
 
         if (settings.StartSilent) args.Add("-silent");
-        if (state == LoginState.Offline) args.Add("-offline");
 
         var psi = new System.Diagnostics.ProcessStartInfo
         {
             FileName = steamExe,
             Arguments = string.Join(" ", args),
+            WorkingDirectory = SteamPath,
             UseShellExecute = settings.StartAsAdmin,
             Verb = settings.StartAsAdmin ? "runas" : string.Empty,
         };
@@ -1079,6 +1084,30 @@ public class SteamAccountService(
         {
             // UseShellExecute pode entregar um processo intermediário enquanto a
             // instância real da Steam já está em execução.
+        }
+    }
+
+    private async Task DisableAccountChooserAsync(CancellationToken ct)
+    {
+        var configPath = Path.Combine(SteamPath, "config", "config.vdf");
+        if (!File.Exists(configPath))
+            return;
+
+        var content = await File.ReadAllTextAsync(configPath, ct);
+        var updated = SteamConfigEditor.DisableAccountChooser(content, out var changed);
+        if (!changed)
+            return;
+
+        var tempPath = configPath + ".steam-nexus.tmp";
+        try
+        {
+            await File.WriteAllTextAsync(tempPath, updated, ct);
+            File.Move(tempPath, configPath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
         }
     }
 
