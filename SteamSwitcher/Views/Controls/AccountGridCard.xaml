@@ -329,6 +329,20 @@
             TextTrimming="CharacterEllipsis"
             Margin="0,3,0,0" />
 
+                        <Border Padding="7,2" Margin="0,6,0,0" CornerRadius="6"
+                                HorizontalAlignment="Center"
+                                Background="{DynamicResource AppWarningSurfaceBrush}"
+                                BorderBrush="{DynamicResource AppWarningBrush}" BorderThickness="1"
+                                Visibility="{Binding IsArchived, Converter={StaticResource BoolToVisibility}}"
+                                ToolTip="Esta conta não está no loginusers.vdf e será recuperada ao entrar.">
+                            <StackPanel Orientation="Horizontal">
+                                <ic:SymbolIcon Symbol="Warning" FontSize="10" Margin="0,0,4,0"
+                                               Foreground="{DynamicResource AppWarningBrush}" />
+                                <TextBlock Text="Arquivada" FontSize="9" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppWarningBrush}" />
+                            </StackPanel>
+                        </Border>
+
                         <Border
             Height="1"
             Background="{DynamicResource AccountCardSeparatorBrush}"

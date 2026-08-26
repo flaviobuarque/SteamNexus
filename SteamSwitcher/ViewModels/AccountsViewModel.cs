@@ -601,6 +601,16 @@ public partial class AccountsViewModel(
         if (SwitchingAccount is not null) return;
         if (cardVm.IsActive) return;
 
+        if (cardVm.IsArchived)
+        {
+            snackbarService.Show(
+                "Recuperando conta arquivada",
+                "O loginusers.vdf será reconstruído. A Steam poderá solicitar senha ou Steam Guard.",
+                ControlAppearance.Caution,
+                null,
+                TimeSpan.FromSeconds(6));
+        }
+
         SwitchingAccount = cardVm;
         cardVm.IsSwitching = true;
 

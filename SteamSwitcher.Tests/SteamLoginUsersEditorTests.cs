@@ -149,6 +149,36 @@ public sealed class SteamLoginUsersEditorTests
         restored.RememberPassword.Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData(LoginState.Online, false)]
+    [InlineData(LoginState.Offline, true)]
+    public void Create_BuildsValidVdfForArchivedAccount(
+        LoginState state,
+        bool expectsOffline)
+    {
+        var account = new SteamAccount
+        {
+            SteamId64 = FirstId,
+            AccountName = "restored_login",
+            PersonaName = "Restored",
+            Timestamp = 1234,
+        };
+        using var output = new MemoryStream();
+
+        SteamLoginUsersEditor.Create(output, account, state);
+        output.Position = 0;
+
+        var snapshot = SteamAccountSnapshotParser.Parse(output);
+        var restored = snapshot.Accounts.Should().ContainSingle().Subject;
+        restored.SteamId64.Should().Be(FirstId);
+        restored.AccountName.Should().Be("restored_login");
+        restored.AutoLogin.Should().BeTrue();
+        restored.MostRecent.Should().BeTrue();
+        restored.RememberPassword.Should().BeTrue();
+        restored.WantsOfflineMode.Should().Be(expectsOffline);
+        snapshot.ActiveAccount.Should().BeSameAs(restored);
+    }
+
     [Fact]
     public void Rewrite_RejectsInvalidVdf()
     {

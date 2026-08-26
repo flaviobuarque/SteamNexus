@@ -84,6 +84,28 @@ public sealed class SteamInstallationServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task InstallationWithoutLoginUsers_RemainsValidForRecovery()
+    {
+        var root = Path.Combine(_root, "Recoverable");
+        Directory.CreateDirectory(Path.Combine(root, "config"));
+        File.WriteAllBytes(Path.Combine(root, "Steam.exe"), [0x4D, 0x5A]);
+        var settings = new AppSettings
+        {
+            SteamInstallPath = root,
+            KnownSteamInstallPaths = [root],
+        };
+        var (service, _, _) = CreateService(settings);
+
+        await service.DiscoverAsync();
+
+        service.SelectedInstallation.Should().NotBeNull();
+        service.SelectedInstallation!.IsValid.Should().BeTrue();
+        service.SelectedInstallation.HasLoginUsersFile.Should().BeFalse();
+        service.SelectedInstallation.StatusText.Should().Contain("recuperação disponível");
+        service.CaptureContext().LoginUsersPath.Should().EndWith("loginusers.vdf");
+    }
+
+    [Fact]
     public async Task Discover_DifferentiatesSameFolderNameAndPersistsCustomName()
     {
         var first = CreateSteam(Path.Combine("Primary", "Steam"), "76561198000000005");
@@ -202,6 +224,55 @@ public sealed class SteamInstallationServiceTests : IDisposable
             recovered.InstallationRootPath.Should().Be(second);
             recovered.RememberPassword.Should().BeFalse();
             recovered.IsActive.Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(storePath);
+        }
+    }
+
+    [Fact]
+    public async Task GetAllAccounts_ShowsArchivedAccountsWhenLoginUsersIsMissing()
+    {
+        var root = Path.Combine(_root, "MissingVdf");
+        Directory.CreateDirectory(Path.Combine(root, "config"));
+        File.WriteAllBytes(Path.Combine(root, "Steam.exe"), [0x4D, 0x5A]);
+        var installation = CreateInstallation("recoverable", root) with
+        {
+            HasLoginUsersFile = false,
+        };
+        var installationService = Substitute.For<ISteamInstallationService>();
+        installationService.Installations.Returns([installation]);
+        installationService.SelectedInstallation.Returns(installation);
+        var settingsService = Substitute.For<IAppSettingsService>();
+        settingsService.Current.Returns(new AppSettings());
+        var storePath = Path.Combine(Path.GetTempPath(), $"steam-known-{Guid.NewGuid():N}.json");
+
+        try
+        {
+            var store = new SteamKnownAccountStore(storePath);
+            await store.RememberAsync(
+            [
+                new SteamAccount
+                {
+                    InstallationId = "recoverable",
+                    SteamId64 = "76561198000000015",
+                    AccountName = "archived_login",
+                    PersonaName = "Archived",
+                },
+            ]);
+            var service = new SteamAccountService(
+                Substitute.For<ISteamLocatorService>(),
+                installationService,
+                settingsService,
+                store,
+                NullLogger<SteamAccountService>.Instance);
+
+            var account = (await service.GetAllAccountsAsync()).Should().ContainSingle().Subject;
+
+            account.IsArchived.Should().BeTrue();
+            account.InstallationId.Should().Be("recoverable");
+            account.AccountName.Should().Be("archived_login");
         }
         finally
         {

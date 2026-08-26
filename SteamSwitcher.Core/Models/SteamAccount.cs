@@ -29,6 +29,7 @@ public class SteamAccount
 
     // Organização local do SteamSwitcher
     public bool IsFavorite { get; set; }
+    public bool IsArchived { get; set; }
 
     // Computed
     public string DisplayName => CustomDisplayName ?? PersonaName;

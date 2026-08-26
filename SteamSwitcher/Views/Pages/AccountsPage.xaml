@@ -451,6 +451,9 @@
                                         TextTrimming="CharacterEllipsis" />
                                     <TextBlock Text="{Binding AccountName, StringFormat=@{0}}" FontSize="11"
                                         Foreground="{DynamicResource AppTextMutedBrush}" />
+                                    <TextBlock Text="Conta arquivada · será recuperada ao entrar" FontSize="10"
+                                        Margin="0,2,0,0" Foreground="{DynamicResource AppWarningBrush}"
+                                        Visibility="{Binding IsArchived, Converter={StaticResource BoolToVisibility}}" />
                                     <TextBlock Text="{Binding InstallationName}" FontSize="10" Margin="0,2,0,0"
                                         ToolTip="{Binding InstallationRootPath}"
                                         Foreground="{DynamicResource AppAccentBrush}"

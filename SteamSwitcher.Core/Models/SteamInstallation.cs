@@ -12,9 +12,12 @@ public sealed record SteamInstallation
     public bool IsRegistryDefault { get; init; }
     public bool IsCustom { get; init; }
     public bool IsValid { get; init; }
+    public bool HasLoginUsersFile { get; init; }
     public bool IsSelected { get; init; }
 
-    public string StatusText => IsValid
+    public string StatusText => IsValid && !HasLoginUsersFile
+        ? "loginusers.vdf ausente — recuperação disponível"
+        : IsValid
         ? AccountCount == 1 ? "1 conta encontrada" : $"{AccountCount} contas encontradas"
         : "Instalação indisponível";
 }

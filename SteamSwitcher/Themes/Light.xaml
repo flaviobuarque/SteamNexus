@@ -46,6 +46,7 @@
     <SolidColorBrush x:Key="AppSuccessSurfaceBrush" Color="#DCFCE7"/>
 
     <SolidColorBrush x:Key="AppWarningBrush" Color="#B45309"/>
+    <SolidColorBrush x:Key="AppWarningSurfaceBrush" Color="#FFF4CE"/>
     <SolidColorBrush x:Key="AppOverlayBrush" Color="#B8FFFFFF"/>
     <SolidColorBrush x:Key="AppDialogBackdropBrush" Color="#660F172A"/>
 

@@ -30,6 +30,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     public long Timestamp => Account.Timestamp;
     public string LastLoginFormatted => FormatLastLogin(Account.Timestamp);
     public bool HasAvatar => AvatarImage is not null || !string.IsNullOrEmpty(AvatarPath);
+    public bool IsArchived => Account.IsArchived;
 
     public bool TryBeginAvatarLoad()
         => Interlocked.CompareExchange(ref _avatarLoadStarted, 1, 0) == 0;
@@ -62,6 +63,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
         Account.CustomAvatarPath = updated.CustomAvatarPath;
         Account.LoginStateOverride = updated.LoginStateOverride;
         Account.IsFavorite = updated.IsFavorite;
+        Account.IsArchived = updated.IsArchived;
         Account.IsActive = updated.IsActive;
         IsActive = updated.IsActive;
         IsFavorite = updated.IsFavorite;
@@ -81,6 +83,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
         OnPropertyChanged(nameof(InstallationRootPath));
         OnPropertyChanged(nameof(Timestamp));
         OnPropertyChanged(nameof(LastLoginFormatted));
+        OnPropertyChanged(nameof(IsArchived));
     }
 
     private static string FormatLastLogin(long timestamp)

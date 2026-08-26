@@ -100,7 +100,7 @@ public sealed class SteamInstallationService(
         var selected = _installations.FirstOrDefault(i => PathsEqual(i.RootPath, normalized));
         if (selected is null || !selected.IsValid)
             throw new InvalidOperationException(
-                "O caminho não contém Steam.exe e config\\loginusers.vdf válidos.");
+                "O caminho não contém um Steam.exe válido.");
 
         SelectedInstallation = selected;
         SelectedInstallationChanged?.Invoke(this, EventArgs.Empty);
@@ -157,10 +157,9 @@ public sealed class SteamInstallationService(
             ?? throw new InvalidOperationException("A instalação não foi encontrada.");
         var normalized = NormalizeSteamRoot(path);
         var steamExe = Path.Combine(normalized, "Steam.exe");
-        var loginUsers = Path.Combine(normalized, "config", "loginusers.vdf");
-        if (!File.Exists(steamExe) || !File.Exists(loginUsers))
+        if (!File.Exists(steamExe))
             throw new InvalidOperationException(
-                "O caminho não contém Steam.exe e config\\loginusers.vdf válidos.");
+                "O caminho não contém um Steam.exe válido.");
 
         var settings = settingsService.Current;
         settings.KnownSteamInstallPaths.RemoveAll(candidate =>
@@ -205,8 +204,7 @@ public sealed class SteamInstallationService(
     private static SteamOperationContext CreateOperationContext(SteamInstallation installation)
     {
 
-        if (!File.Exists(installation.SteamExePath)
-            || !File.Exists(installation.LoginUsersPath))
+        if (!File.Exists(installation.SteamExePath))
         {
             throw new InvalidOperationException(
                 "A instalação selecionada foi removida ou está desconectada. Selecione outra instalação.");
@@ -305,7 +303,8 @@ public sealed class SteamInstallationService(
             AccountCount = accountCount,
             IsRegistryDefault = registryDefault,
             IsCustom = custom,
-            IsValid = File.Exists(steamExe) && File.Exists(loginUsers),
+            IsValid = File.Exists(steamExe),
+            HasLoginUsersFile = File.Exists(loginUsers),
         };
     }
 

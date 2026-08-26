@@ -113,6 +113,9 @@ public class SteamAccountService(
         var activeInstallationId = FindRunningInstallationId(installations);
         var tasks = installations.Select(async installation =>
         {
+            if (!File.Exists(installation.LoginUsersPath))
+                return (IReadOnlyList<SteamAccount>)[];
+
             try
             {
                 await using var stream = new FileStream(
@@ -170,6 +173,7 @@ public class SteamAccountService(
                 AccountName = record.AccountName,
                 PersonaName = record.PersonaName,
                 Timestamp = record.Timestamp,
+                IsArchived = true,
             });
             presentKeys.Add(uniqueKey);
         }
@@ -303,7 +307,15 @@ public class SteamAccountService(
 
         var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
         if (!File.Exists(vdfPath))
-            throw new FileNotFoundException("O arquivo loginusers.vdf não foi encontrado.", vdfPath);
+        {
+            if (string.IsNullOrWhiteSpace(target.AccountName))
+                throw new InvalidOperationException(
+                    "O loginusers.vdf está ausente e a conta não possui nome de login para recuperação.");
+            logger.LogWarning(
+                "loginusers.vdf ausente; será reconstruído para a conta selecionada. Target={Target}",
+                MaskSteamId(target.SteamId64));
+            return false;
+        }
 
         if ((File.GetAttributes(vdfPath) & FileAttributes.ReadOnly) != 0)
             throw new IOException("O arquivo loginusers.vdf está marcado como somente leitura.");
@@ -446,7 +458,13 @@ public class SteamAccountService(
 
         var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
         if (!File.Exists(vdfPath))
-            throw new FileNotFoundException("loginusers.vdf não encontrado.", vdfPath);
+        {
+            await knownAccountStore.RemoveAsync([account.UniqueKey], ct);
+            logger.LogInformation(
+                "Conta arquivada removida sem VDF presente. Target={Target}",
+                MaskSteamId(account.SteamId64));
+            return;
+        }
 
         var currentSnapshot = await GetSnapshotAsync(ct);
         if (!currentSnapshot.Accounts.Any(item =>
@@ -581,7 +599,10 @@ public class SteamAccountService(
 
         var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
         if (!File.Exists(vdfPath))
-            throw new FileNotFoundException("loginusers.vdf não encontrado.", vdfPath);
+            return steamIds64
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
 
         var snapshot = await GetSnapshotAsync(ct);
         var protectedIds = new HashSet<string>(StringComparer.Ordinal);
@@ -941,6 +962,7 @@ public class SteamAccountService(
     private async Task WaitForVdfReleaseAsync(CancellationToken ct)
     {
         var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
+        if (!File.Exists(vdfPath)) return;
         var firstAttempt = await TryWaitForVdfReleaseAsync(
             vdfPath, TimeSpan.FromSeconds(5), ct);
         if (firstAttempt is null)
@@ -1042,7 +1064,8 @@ public class SteamAccountService(
         return await Task.Run(() =>
         {
             var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
-            var originalVdf = File.ReadAllBytes(vdfPath);
+            var vdfExisted = File.Exists(vdfPath);
+            var originalVdf = vdfExisted ? File.ReadAllBytes(vdfPath) : [];
             var previousAutoLoginUser = Registry.GetValue(
                 @"HKEY_CURRENT_USER\Software\Valve\Steam",
                 "AutoLoginUser",
@@ -1052,20 +1075,26 @@ public class SteamAccountService(
                 "RememberPassword",
                 null);
 
-            using var input = new MemoryStream(originalVdf, writable: false);
             using var output = new MemoryStream();
-            SteamLoginUsersEditor.Rewrite(
-                input,
-                output,
-                target.SteamId64,
-                state ?? LoginState.Online,
-                target);
+            if (vdfExisted)
+            {
+                using var input = new MemoryStream(originalVdf, writable: false);
+                SteamLoginUsersEditor.Rewrite(
+                    input, output, target.SteamId64,
+                    state ?? LoginState.Online, target);
+            }
+            else
+            {
+                SteamLoginUsersEditor.Create(
+                    output, target, state ?? LoginState.Online);
+            }
 
             WriteVdfAtomically(vdfPath, output.ToArray(), createBackup: true);
             InvalidateSnapshot();
             return new SteamSwitchBackup(
                 vdfPath,
                 originalVdf,
+                vdfExisted,
                 previousAutoLoginUser,
                 previousRememberPassword);
         }, ct);
@@ -1076,6 +1105,7 @@ public class SteamAccountService(
         byte[] contents,
         bool createBackup)
     {
+        Directory.CreateDirectory(Path.GetDirectoryName(vdfPath)!);
         var tempPath = vdfPath + ".tmp";
         var backupPath = createBackup ? vdfPath + "_last" : null;
 
@@ -1093,7 +1123,10 @@ public class SteamAccountService(
                 stream.Flush(flushToDisk: true);
             }
 
-            File.Replace(tempPath, vdfPath, backupPath, ignoreMetadataErrors: true);
+            if (File.Exists(vdfPath))
+                File.Replace(tempPath, vdfPath, backupPath, ignoreMetadataErrors: true);
+            else
+                File.Move(tempPath, vdfPath);
         }
         finally
         {
@@ -1106,7 +1139,10 @@ public class SteamAccountService(
     {
         await Task.Run(() =>
         {
-            WriteVdfAtomically(backup.VdfPath, backup.OriginalVdf, createBackup: false);
+            if (backup.VdfExisted)
+                WriteVdfAtomically(backup.VdfPath, backup.OriginalVdf, createBackup: false);
+            else if (File.Exists(backup.VdfPath))
+                File.Delete(backup.VdfPath);
             RestoreRegistryValue("AutoLoginUser", backup.AutoLoginUser);
             RestoreRegistryValue("RememberPassword", backup.RememberPassword);
             InvalidateSnapshot();
@@ -1125,6 +1161,7 @@ public class SteamAccountService(
     private sealed record SteamSwitchBackup(
         string VdfPath,
         byte[] OriginalVdf,
+        bool VdfExisted,
         object? AutoLoginUser,
         object? RememberPassword);
 
