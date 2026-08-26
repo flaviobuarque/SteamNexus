@@ -16,6 +16,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     [ObservableProperty] private bool _isSwitching;
     [ObservableProperty] private bool _isPendingRemoval;
     [ObservableProperty] private bool _isFavorite = account.IsFavorite;
+    [ObservableProperty] private bool _showInstallationBadge;
     [ObservableProperty] private double _removalProgress = 100;
     [ObservableProperty] private string _removalCountdownText = string.Empty;
 

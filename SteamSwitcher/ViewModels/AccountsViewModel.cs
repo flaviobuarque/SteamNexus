@@ -35,6 +35,8 @@ public partial class AccountsViewModel(
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private int _filteredAccountsCount;
     [ObservableProperty] private bool _showFavoritesOnly;
+    [ObservableProperty] private ObservableCollection<InstallationFilterOption> _installationFilters = [];
+    [ObservableProperty] private InstallationFilterOption? _selectedInstallationFilter;
 
     public AccountSortMode AccountSortMode => settingsService.Current.AccountSortMode;
     public string SortLabel => AccountSortMode == AccountSortMode.RecentUsage
@@ -177,7 +179,8 @@ public partial class AccountsViewModel(
 
     private bool HasActiveFilters =>
         !string.IsNullOrWhiteSpace(SearchText)
-        || ShowFavoritesOnly;
+        || ShowFavoritesOnly
+        || SelectedInstallationFilter?.InstallationId is not null;
 
     public string AccountsCountText => HasActiveFilters
         ? $"{FilteredAccountsCount} de {FormatAccountCount(AccountsCount)}"
@@ -217,6 +220,7 @@ public partial class AccountsViewModel(
             {
                 var rawAccounts = await accountService.GetAllAccountsAsync(ct);
                 var activeAccount = rawAccounts.FirstOrDefault(a => a.IsActive);
+                RefreshInstallationFilters();
 
                 System.Diagnostics.Debug.WriteLine(
                     $"[AccountsViewModel.InitializeAsync] active={(activeAccount is null ? "NULL" : activeAccount.AccountName)}, rawCount={rawAccounts.Count}");
@@ -271,6 +275,9 @@ public partial class AccountsViewModel(
     {
         if (item is not AccountCardViewModel a) return false;
         if (ShowFavoritesOnly && !a.IsFavorite) return false;
+        if (SelectedInstallationFilter?.InstallationId is { } installationId
+            && a.InstallationId != installationId)
+            return false;
         if (string.IsNullOrWhiteSpace(SearchText)) return true;
         return a.DisplayName.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
             || a.AccountName.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
@@ -286,6 +293,8 @@ public partial class AccountsViewModel(
     }
 
     partial void OnShowFavoritesOnlyChanged(bool value) => RefreshAccountFilters();
+    partial void OnSelectedInstallationFilterChanged(InstallationFilterOption? value)
+        => RefreshAccountFilters();
 
     [RelayCommand]
     private void ToggleFavoritesFilter() => ShowFavoritesOnly = !ShowFavoritesOnly;
@@ -295,6 +304,7 @@ public partial class AccountsViewModel(
     {
         SearchText = string.Empty;
         ShowFavoritesOnly = false;
+        SelectedInstallationFilter = InstallationFilters.FirstOrDefault();
         RefreshAccountFilters();
     }
 
@@ -337,6 +347,22 @@ public partial class AccountsViewModel(
 
     private static string FormatAccountCount(int count)
         => count == 1 ? "1 conta" : $"{count} contas";
+
+    private void RefreshInstallationFilters()
+    {
+        var previousId = SelectedInstallationFilter?.InstallationId;
+        var options = new List<InstallationFilterOption>
+        {
+            new(null, "Todas as instalações", string.Empty),
+        };
+        options.AddRange(installationService.Installations
+            .Where(i => i.IsValid)
+            .Select(i => new InstallationFilterOption(i.Id, i.DisplayName, i.RootPath)));
+        InstallationFilters = new ObservableCollection<InstallationFilterOption>(options);
+        SelectedInstallationFilter = InstallationFilters.FirstOrDefault(i =>
+                i.InstallationId == previousId)
+            ?? InstallationFilters[0];
+    }
 
     public void RefreshStatusBar()
     {
@@ -505,18 +531,23 @@ public partial class AccountsViewModel(
             c => c.UniqueKey,
             StringComparer.Ordinal);
         var reconciled = new List<AccountCardViewModel>(incoming.Count);
+        var showInstallationBadge = installationService.Installations.Count(i => i.IsValid) > 1;
 
         foreach (var account in incoming)
         {
             if (existingById.TryGetValue(account.UniqueKey, out var existing))
             {
                 existing.ApplySnapshot(account);
+                existing.ShowInstallationBadge = showInstallationBadge;
                 existing.PrepareAvatarReloadIfMissing();
                 reconciled.Add(existing);
             }
             else
             {
-                reconciled.Add(new AccountCardViewModel(account));
+                reconciled.Add(new AccountCardViewModel(account)
+                {
+                    ShowInstallationBadge = showInstallationBadge,
+                });
             }
         }
 
@@ -788,3 +819,8 @@ public partial class AccountsViewModel(
             dispatcher.Invoke(action);
     }
 }
+
+public sealed record InstallationFilterOption(
+    string? InstallationId,
+    string DisplayName,
+    string RootPath);

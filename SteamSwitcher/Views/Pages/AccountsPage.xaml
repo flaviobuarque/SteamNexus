@@ -67,6 +67,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <ui:TextBox
@@ -79,7 +80,21 @@
                     </ui:TextBox.Icon>
                 </ui:TextBox>
 
-                <ui:Button Grid.Column="1" Width="36" Height="34" Padding="0"
+                <ComboBox Grid.Column="1"
+                          Width="190" Height="34" Margin="0,0,10,0"
+                          ItemsSource="{Binding InstallationFilters}"
+                          SelectedItem="{Binding SelectedInstallationFilter, Mode=TwoWay}"
+                          ToolTip="Filtrar contas por instalação">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DisplayName}"
+                                       ToolTip="{Binding RootPath}"
+                                       TextTrimming="CharacterEllipsis" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <ui:Button Grid.Column="2" Width="36" Height="34" Padding="0"
                     Margin="0,0,10,0" ToolTip="Mostrar somente favoritas"
                     Command="{Binding ToggleFavoritesFilterCommand}">
                     <ui:Button.Style>
@@ -98,7 +113,7 @@
                 </ui:Button>
 
                 <Border
-                    Grid.Column="2"
+                    Grid.Column="3"
                     Margin="0,0,10,0"
                     Padding="2"
                     CornerRadius="8"
@@ -145,7 +160,7 @@
 
                 <ui:Button
                     x:Name="SortButton"
-                    Grid.Column="3"
+                    Grid.Column="4"
                     Margin="0,0,10,0"
                     Padding="12,7"
                     Cursor="Hand"
@@ -436,6 +451,10 @@
                                         TextTrimming="CharacterEllipsis" />
                                     <TextBlock Text="{Binding AccountName, StringFormat=@{0}}" FontSize="11"
                                         Foreground="{DynamicResource AppTextMutedBrush}" />
+                                    <TextBlock Text="{Binding InstallationName}" FontSize="10" Margin="0,2,0,0"
+                                        ToolTip="{Binding InstallationRootPath}"
+                                        Foreground="{DynamicResource AppAccentBrush}"
+                                        Visibility="{Binding ShowInstallationBadge, Converter={StaticResource BoolToVisibility}}" />
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
