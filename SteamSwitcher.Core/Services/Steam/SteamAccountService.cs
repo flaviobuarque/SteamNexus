@@ -29,7 +29,8 @@ public class SteamAccountService(
 
     public async Task<SteamAccountsSnapshot> GetSnapshotAsync(CancellationToken ct = default)
     {
-        var installationId = installationService.SelectedInstallation?.Id;
+        var installationId = _operationContext.Value?.InstallationId
+            ?? installationService.SelectedInstallation?.Id;
         if (!string.Equals(_cachedInstallationId, installationId, StringComparison.Ordinal))
         {
             InvalidateSnapshot();
@@ -447,6 +448,17 @@ public class SteamAccountService(
         if (!File.Exists(vdfPath))
             throw new FileNotFoundException("loginusers.vdf não encontrado.", vdfPath);
 
+        var currentSnapshot = await GetSnapshotAsync(ct);
+        if (!currentSnapshot.Accounts.Any(item =>
+                string.Equals(item.SteamId64, account.SteamId64, StringComparison.Ordinal)))
+        {
+            await knownAccountStore.RemoveAsync([account.UniqueKey], ct);
+            logger.LogInformation(
+                "Conta arquivada removida do armazenamento local. Target={Target}",
+                MaskSteamId(account.SteamId64));
+            return;
+        }
+
         await CloseSteamAsync(SteamCloseMethod.Graceful, ct);
 
         var backupPath = vdfPath + ".bak";
@@ -631,7 +643,10 @@ public class SteamAccountService(
                 if (end >= openBrace) ranges.Add((steamId64, start, end));
             }
 
-            if (ranges.Count == 0) return [];
+            var archivedOnlyIds = targets
+                .Where(id => snapshot.Accounts.All(account => account.SteamId64 != id))
+                .ToList();
+            if (ranges.Count == 0) return archivedOnlyIds;
 
             File.Copy(vdfPath, backupPath, overwrite: true);
             foreach (var range in ranges.OrderByDescending(range => range.Start))
@@ -647,7 +662,10 @@ public class SteamAccountService(
                 if (File.Exists(tempPath)) File.Delete(tempPath);
             }
 
-            return ranges.Select(range => range.SteamId64).ToList();
+            return ranges.Select(range => range.SteamId64)
+                .Concat(archivedOnlyIds)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
         }, ct);
 
         if (removedIds.Count > 0)
