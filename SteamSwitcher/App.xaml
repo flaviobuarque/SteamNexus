@@ -71,6 +71,42 @@
                 </Setter>
             </Style>
 
+            <Style x:Key="SteamSwitcherToggleSwitchStyle" TargetType="ui:ToggleSwitch">
+                <Setter Property="Width" Value="42" />
+                <Setter Property="Height" Value="24" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ui:ToggleSwitch">
+                            <Border x:Name="ToggleTrack" Width="42" Height="24" CornerRadius="12"
+                                    Background="{DynamicResource AppSurfaceHoverBrush}"
+                                    BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                                <Ellipse x:Name="ToggleThumb" Width="16" Height="16" Margin="3"
+                                         HorizontalAlignment="Left"
+                                         Fill="{DynamicResource AppTextPrimaryBrush}" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="ToggleTrack" Property="Background"
+                                            Value="{DynamicResource AppAccentBrush}" />
+                                    <Setter TargetName="ToggleTrack" Property="BorderBrush"
+                                            Value="{DynamicResource AppAccentAltBrush}" />
+                                    <Setter TargetName="ToggleThumb" Property="HorizontalAlignment" Value="Right" />
+                                    <Setter TargetName="ToggleThumb" Property="Fill"
+                                            Value="{DynamicResource AppOnAccentTextBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="ToggleTrack" Property="Opacity" Value="0.88" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="ToggleTrack" Property="Opacity" Value="0.45" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <Style x:Key="ModernSnackbarStyle" TargetType="ui:Snackbar">
                 <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource AppBorderStrongBrush}" />

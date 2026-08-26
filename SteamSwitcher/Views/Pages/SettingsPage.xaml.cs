@@ -222,9 +222,16 @@ public partial class SettingsPage : System.Windows.Controls.Page,
     {
         foreach (var section in GetSettingsSections())
         {
-            section.Button.Appearance = ReferenceEquals(section.Button, activeButton)
-                ? Wpf.Ui.Controls.ControlAppearance.Primary
-                : Wpf.Ui.Controls.ControlAppearance.Secondary;
+            var isActive = ReferenceEquals(section.Button, activeButton);
+            section.Button.SetResourceReference(
+                System.Windows.Controls.Control.BackgroundProperty,
+                isActive ? "AppAccentBrush" : "AppSurfaceAltBrush");
+            section.Button.SetResourceReference(
+                System.Windows.Controls.Control.ForegroundProperty,
+                isActive ? "AppOnAccentTextBrush" : "AppTextPrimaryBrush");
+            section.Button.SetResourceReference(
+                System.Windows.Controls.Control.BorderBrushProperty,
+                isActive ? "AppAccentAltBrush" : "AppBorderBrush");
         }
     }
 

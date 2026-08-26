@@ -27,14 +27,37 @@
             <Setter Property="CornerRadius" Value="0,0,10,10" />
             <Setter Property="Margin" Value="0" />
         </Style>
-        <Style x:Key="SettingsNavButtonStyle" TargetType="ui:Button"
-            BasedOn="{StaticResource {x:Type ui:Button}}">
-            <Setter Property="Appearance" Value="Secondary" />
+        <Style x:Key="SettingsNavButtonStyle" TargetType="ui:Button">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceAltBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="HorizontalContentAlignment" Value="Left" />
             <Setter Property="Padding" Value="12,9" />
             <Setter Property="Margin" Value="0,0,0,6" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ui:Button">
+                        <Border x:Name="NavBorder" Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="NavBorder" Property="Opacity" Value="0.86" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="NavBorder" Property="Opacity" Value="0.72" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Page.Resources>
 
@@ -244,6 +267,7 @@
             VerticalAlignment="Center" />
 
                             <ui:ToggleSwitch
+            Style="{StaticResource SteamSwitcherToggleSwitchStyle}"
             Grid.Row="0"
             Grid.Column="1"
             IsChecked="{Binding IsGlobalHotkeyEnabled}"
@@ -492,7 +516,7 @@
                                     Foreground="{DynamicResource AppTextMutedBrush}"
                                     Margin="0,3,0,0" />
                             </StackPanel>
-                            <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding StartSilent}" VerticalAlignment="Center" Cursor="Hand"/>
+                            <ui:ToggleSwitch Grid.Column="1" Style="{StaticResource SteamSwitcherToggleSwitchStyle}" IsChecked="{Binding StartSilent}" VerticalAlignment="Center" Cursor="Hand"/>
                         </Grid>
                     </Border>
 
@@ -506,7 +530,7 @@
                                 <TextBlock Text="Iniciar como administrador" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
                                 <TextBlock Text="Use apenas se o Steam exigir elevação." FontSize="12" Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,3,0,0" />
                             </StackPanel>
-                            <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding StartAsAdmin}" VerticalAlignment="Center" Cursor="Hand"/>
+                            <ui:ToggleSwitch Grid.Column="1" Style="{StaticResource SteamSwitcherToggleSwitchStyle}" IsChecked="{Binding StartAsAdmin}" VerticalAlignment="Center" Cursor="Hand"/>
                         </Grid>
                     </Border>
 
@@ -520,7 +544,7 @@
                                 <TextBlock Text="Iniciar com Windows" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
                                 <TextBlock Text="Abre minimizado no tray ao ligar o PC." FontSize="12" Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,3,0,0" />
                             </StackPanel>
-                            <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding StartWithWindows}" VerticalAlignment="Center" Cursor="Hand"/>
+                            <ui:ToggleSwitch Grid.Column="1" Style="{StaticResource SteamSwitcherToggleSwitchStyle}" IsChecked="{Binding StartWithWindows}" VerticalAlignment="Center" Cursor="Hand"/>
                         </Grid>
                     </Border>
                 </StackPanel>
@@ -655,7 +679,7 @@
                                            FontSize="12" Foreground="{DynamicResource AppTextMutedBrush}"
                                            Margin="0,3,20,0" TextWrapping="Wrap" />
                             </StackPanel>
-                            <ui:ToggleSwitch Grid.Column="1"
+                            <ui:ToggleSwitch Grid.Column="1" Style="{StaticResource SteamSwitcherToggleSwitchStyle}"
                                              IsChecked="{Binding CheckForUpdatesAutomatically}"
                                              VerticalAlignment="Center" Cursor="Hand" />
                         </Grid>
