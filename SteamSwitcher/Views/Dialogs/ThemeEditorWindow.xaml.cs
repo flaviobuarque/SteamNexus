@@ -40,6 +40,12 @@ public partial class ThemeEditorWindow : Window
         ViewModel.IsPresetReadOnly = !hasEditableCustomTheme;
         if (!hasEditableCustomTheme) ViewModel.LoadSelectedPreset(asCopy: false);
 
+        // Alguns templates do WPF UI resolvem as cores ao serem construídos.
+        // Aplique a prévia antes de carregar o XAML para não preservar o accent anterior.
+        var initialPreview = ViewModel.BuildTheme();
+        CustomThemeManager.Validate(initialPreview);
+        App.ApplyTheme(initialPreview.BaseTheme, initialPreview);
+
         InitializeComponent();
         DataContext = ViewModel;
         _previewTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(180) };
@@ -352,8 +358,11 @@ public partial class ThemeEditorViewModel : ObservableObject
             theme.SurfaceHover = "#3A1E59";
             theme.Border = "#633C88";
             theme.Focus = theme.Accent = "#A855F7";
-            theme.AccentAlt = "#E879F9";
+            theme.AccentAlt = "#D946EF";
             theme.AccentSurface = "#3B1760";
+            theme.TextPrimary = "#F8F1FF";
+            theme.TextSecondary = "#D8C4EA";
+            theme.TextMuted = "#A98ABD";
         }
         Load(theme);
         IsPresetReadOnly = !asCopy;
