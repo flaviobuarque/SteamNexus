@@ -36,6 +36,8 @@ public partial class MainViewModel(
     [ObservableProperty] private string _activeAccountAvatarPath = string.Empty;
     [ObservableProperty] private bool _isSwitchingAccount;
 
+    private string? _activeSteamId64;
+
     public string TrayAccountStatusText => IsSwitchingAccount ? "Trocando conta..." : "Conta ativa";
     public int AccountGridDensityPercent => NormalizeAccountGridDensity(
         settingsService.Current.AccountGridDensityPercent);
@@ -239,10 +241,11 @@ public partial class MainViewModel(
     /// Usado tanto em InitializeAsync quanto apos troca iniciada pelo app,
     /// evitando re-ler do registry quando ja sabemos a resposta.
     /// </summary>
-    public void ApplyActiveAccount(SteamAccount? active)
+    public void ApplyActiveAccount(SteamAccount? active, string? avatarPath = null)
     {
         if (active is null)
         {
+            _activeSteamId64 = null;
             HasActiveAccount = false;
             ActiveAccountName = string.Empty;
             StatusAccountName = string.Empty;
@@ -256,12 +259,22 @@ public partial class MainViewModel(
             return;
         }
 
+        var sameAccount = string.Equals(
+            _activeSteamId64,
+            active.SteamId64,
+            StringComparison.Ordinal);
+
+        _activeSteamId64 = active.SteamId64;
         HasActiveAccount = true;
         ActiveAccountName = active.DisplayName;
         StatusAccountName = active.DisplayName;
         TrayTooltip = $"Steam Switcher - {active.DisplayName}";
         TrayActiveAccountText = $"\u25CF {active.DisplayName}";
-        ActiveAccountAvatarPath = string.Empty;
+        ActiveAccountAvatarPath = ResolveTrayAvatarPath(
+            active,
+            avatarPath,
+            sameAccount,
+            ActiveAccountAvatarPath);
 
         var appliedState = active.LoginStateOverride
             ?? settingsService.Current.DefaultLoginStateOverride;
@@ -271,6 +284,24 @@ public partial class MainViewModel(
 
         foreach (var a in TrayAccounts)
             a.IsActive = a.SteamId64 == active.SteamId64;
+    }
+
+    private static string ResolveTrayAvatarPath(
+        SteamAccount active,
+        string? avatarPath,
+        bool sameAccount,
+        string currentAvatarPath)
+    {
+        if (!string.IsNullOrEmpty(avatarPath))
+            return avatarPath;
+
+        if (!string.IsNullOrEmpty(active.CustomAvatarPath))
+            return active.CustomAvatarPath;
+
+        if (sameAccount && !string.IsNullOrEmpty(currentAvatarPath))
+            return currentAvatarPath;
+
+        return string.Empty;
     }
 
     [RelayCommand]
