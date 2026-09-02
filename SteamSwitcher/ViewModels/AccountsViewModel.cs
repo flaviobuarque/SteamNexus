@@ -654,8 +654,7 @@ public partial class AccountsViewModel(
             watchdogService.EndSwitch();
 
             mainViewModel.NotifyAccountSwitchFinished();
-            mainViewModel.NotifyActiveAccountAvatarLoaded(cardVm.AvatarPath);
-            mainViewModel.ApplyActiveAccount(cardVm.Account);
+            mainViewModel.ApplyActiveAccount(cardVm.Account, cardVm.AvatarPath);
 
             snackbarService.Show(
                 "Conta alternada",
