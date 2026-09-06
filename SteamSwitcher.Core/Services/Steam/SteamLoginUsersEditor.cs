@@ -62,7 +62,10 @@ public static class SteamLoginUsersEditor
 
             SetString(user, "MostRecent", isTarget ? "1" : "0");
             SetString(user, "AutoLogin", isTarget ? "1" : "0");
-            SetString(user, "RememberPassword", isTarget ? "1" : "0");
+            // A Steam guarda esta preferencia por conta. A troca só define qual
+            // conta entra automaticamente; nunca deve desconectar as demais.
+            // Para uma conta de destino recém-restaurada, ApplySessionFlags
+            // continua criando o valor padrão "1".
 
             SetString(user, "WantsOfflineMode", isTarget && wantsOffline ? "1" : "0");
             SetString(user, "SkipOfflineModeWarning", isTarget && wantsOffline ? "1" : "0");

@@ -106,7 +106,7 @@ public sealed class SteamLoginUsersEditorTests
             .Should().Be(1);
         Value(first, "AutoLogin").Should().Be("0");
         Value(first, "MostRecent").Should().Be("0");
-        Value(first, "RememberPassword").Should().Be("0");
+        Value(first, "RememberPassword").Should().Be("1");
     }
 
     [Fact]
