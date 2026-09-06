@@ -646,8 +646,7 @@ public partial class GamesViewModel(
         _ = LoadFilterAvatarsAsync(installationAccounts);
         var dialog = new SteamSwitcher.Views.Dialogs.PickAccountDialog(
             cardVm.Game.Name,
-            installationAccounts,
-            cardVm.Game.LoginStateOverride)
+            installationAccounts)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };
@@ -657,16 +656,12 @@ public partial class GamesViewModel(
 
         cardVm.Game.OwnerAccount = dialog.SelectedAccount;
         cardVm.Game.OwnerSteamId64 = dialog.SelectedAccount.SteamId64;
-        cardVm.Game.LoginStateOverride = dialog.SelectedLoginState;
         _savedOwners[cardVm.Game.UniqueKey] = dialog.SelectedAccount.UniqueKey;
         cardVm.OnOwnerChanged();
 
         await PersistGameOwnerAsync(
             cardVm.Game.UniqueKey,
             dialog.SelectedAccount.UniqueKey);
-
-        await gameService.SetGameLoginStateAsync(
-            cardVm.Game.UniqueKey, dialog.SelectedLoginState);
 
         snackbarService.Show(
             "Conta do jogo alterada",
@@ -676,6 +671,27 @@ public partial class GamesViewModel(
             TimeSpan.FromSeconds(4));
 
         ApplyFilters();
+    }
+
+    [RelayCommand]
+    private async Task ChangeGameLoginStateAsync(GameCardViewModel cardVm)
+    {
+        var dialog = new SteamSwitcher.Views.Dialogs.GameLoginStateDialog(
+            cardVm.Game.Name, cardVm.Game.LoginStateOverride)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        if (dialog.ShowDialog() != true)
+            return;
+
+        cardVm.Game.LoginStateOverride = dialog.SelectedLoginState;
+        await gameService.SetGameLoginStateAsync(cardVm.Game.UniqueKey, dialog.SelectedLoginState);
+        snackbarService.Show(
+            "Status ao entrar atualizado",
+            dialog.SelectedLoginState?.ToString() ?? "Usando o status padrão da conta.",
+            ControlAppearance.Success,
+            null,
+            TimeSpan.FromSeconds(3));
     }
 
     private async Task<string?> FetchSteamGridDbCoverAsync(
@@ -1143,7 +1159,7 @@ public partial class GamesViewModel(
             }
             _ = LoadFilterAvatarsAsync(installationAccounts);
             var dialog = new SteamSwitcher.Views.Dialogs.PickAccountDialog(
-                cardVm.Game.Name, installationAccounts, cardVm.Game.LoginStateOverride)
+                cardVm.Game.Name, installationAccounts)
             {
                 Owner = System.Windows.Application.Current.MainWindow
             };
@@ -1156,17 +1172,12 @@ public partial class GamesViewModel(
             // Apenas associa — não lança o jogo
             cardVm.Game.OwnerAccount = dialog.SelectedAccount;
             cardVm.Game.OwnerSteamId64 = dialog.SelectedAccount.SteamId64;
-            cardVm.Game.LoginStateOverride = dialog.SelectedLoginState;
             _savedOwners[cardVm.Game.UniqueKey] = dialog.SelectedAccount.UniqueKey;
             cardVm.OnOwnerChanged();
 
-            await Task.WhenAll(
-                PersistGameOwnerAsync(
-                    cardVm.Game.UniqueKey,
-                    dialog.SelectedAccount.UniqueKey),
-                gameService.SetGameLoginStateAsync(
-                    cardVm.Game.UniqueKey,
-                    dialog.SelectedLoginState));
+            await PersistGameOwnerAsync(
+                cardVm.Game.UniqueKey,
+                dialog.SelectedAccount.UniqueKey);
 
             snackbarService.Show(
                 "Conta associada",

@@ -151,41 +151,6 @@
                     </ItemsControl> 
                 </ScrollViewer>
 
-                <StackPanel Margin="0,8,0,0">
-
-                    <!-- Status de login por jogo (opcional) -->
-				<TextBlock
-                    Text="STATUS AO ENTRAR (por jogo, opcional)"
-                    FontSize="10"
-                    FontWeight="Bold"
-                    Foreground="{DynamicResource AppTextMutedBrush}"
-                    Margin="0,4,0,8" />
-
-				<ComboBox
-                    ItemsSource="{Binding LoginStateOptions}"
-                    SelectedItem="{Binding SelectedLoginStateItem}"
-                    HorizontalAlignment="Stretch"
-                    Margin="0,0,0,12">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Margin="2,4">
-                                <ic:SymbolIcon
-                                    Symbol="{Binding Icon}"
-                                    FontSize="14"
-                                    Margin="0,0,8,0"
-                                    VerticalAlignment="Center"
-                                    Foreground="{Binding Color}" />
-                                <TextBlock
-                                    Text="{Binding Label}"
-                                    VerticalAlignment="Center"
-                                    Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-
-				</StackPanel>
-
                 <Grid Margin="0,16,0,0">
 					<Grid.ColumnDefinitions>
 						<ColumnDefinition Width="*" />

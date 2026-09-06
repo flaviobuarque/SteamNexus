@@ -561,6 +561,15 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem
+                                            Header="Status ao entrar..."
+                                            Command="{Binding PlacementTarget.Tag.ChangeGameLoginStateCommand,
+                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                            CommandParameter="{Binding}">
+                                            <MenuItem.Icon>
+                                                <ic:SymbolIcon Symbol="PresenceAvailable" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem
                                             Header="Adicionar capa..."
                                             Command="{Binding PlacementTarget.Tag.AddCoverCommand,
                                                 RelativeSource={RelativeSource AncestorType=ContextMenu}}"
@@ -912,6 +921,10 @@
                                     <Separator />
                                     <MenuItem Header="Alterar conta do jogo"
                                         Command="{Binding PlacementTarget.Tag.ChangeGameAccountCommand,
+                                            RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                    <MenuItem Header="Status ao entrar..."
+                                        Command="{Binding PlacementTarget.Tag.ChangeGameLoginStateCommand,
                                             RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                         CommandParameter="{Binding}" />
                                     <MenuItem Header="Adicionar capa..."
