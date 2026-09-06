@@ -224,12 +224,6 @@ public partial class MainViewModel(
     {
         var active = await accountService.GetActiveAccountAsync(ct);
 
-        // Fallback: se o registry/VDF nao retornou nada, pega a conta marcada
-        // como MostRecent/IsActive em TrayAccounts (lida do VDF em InitializeAsync).
-        // Isto cobre steam recem-fechado, racing com startup do Steam, etc.
-        if (active is null)
-            active = TrayAccounts.FirstOrDefault(a => a.MostRecent || a.IsActive);
-
         System.Diagnostics.Debug.WriteLine(
             $"[MainViewModel.RefreshActiveAccountAsync] active={(active is null ? "NULL" : active.AccountName)}");
 

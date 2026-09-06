@@ -23,6 +23,7 @@ public partial class App : Application
 {
     private IHost? _host;
     private readonly CancellationTokenSource _updateMonitorCancellation = new();
+    private readonly CancellationTokenSource _steamStateMonitorCancellation = new();
     private string _lastNotifiedUpdateVersion = string.Empty;
 
     [STAThread]
@@ -144,6 +145,7 @@ public partial class App : Application
 
         // Não bloqueia a abertura e continua verificando enquanto o app estiver aberto.
         _ = MonitorUpdatesAsync(_updateMonitorCancellation.Token);
+        _ = MonitorSteamStateAsync(_steamStateMonitorCancellation.Token);
 
         // Arg --minimized (startup com Windows)
         if (e.Args.Contains("--minimized"))
@@ -212,9 +214,37 @@ public partial class App : Application
         }
     }
 
+    private async Task MonitorSteamStateAsync(CancellationToken ct)
+    {
+        if (_host is null)
+            return;
+
+        var mainViewModel = _host.Services.GetRequiredService<MainViewModel>();
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2), ct);
+                await Dispatcher.InvokeAsync(
+                        () => mainViewModel.RefreshActiveAccountAsync(ct))
+                    .Task
+                    .Unwrap();
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Encerramento normal do aplicativo.
+        }
+        catch
+        {
+            // A atualização de status nunca deve interromper o aplicativo.
+        }
+    }
+
     protected override async void OnExit(ExitEventArgs e)
     {
         _updateMonitorCancellation.Cancel();
+        _steamStateMonitorCancellation.Cancel();
 
         if (_host is not null)
         {
@@ -229,6 +259,7 @@ public partial class App : Application
         }
 
         _updateMonitorCancellation.Dispose();
+        _steamStateMonitorCancellation.Dispose();
 
         base.OnExit(e);
     }
