@@ -6,8 +6,13 @@ namespace SteamSwitcher.Core.Services;
 public class SystemService : ISystemService
 {
     private const string AppName = "SteamSwitcher";
+    private const string ActivationEventName = "Local\\SteamSwitcher_Activate";
     private const string RunKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
     private static System.Threading.Mutex? _mutex;
+    private EventWaitHandle? _activationEvent;
+    private RegisteredWaitHandle? _activationRegistration;
+
+    public event EventHandler? ExistingInstanceActivated;
 
     public void SetStartWithWindows(bool enable)
     {
@@ -41,35 +46,44 @@ public class SystemService : ISystemService
 
         if (!createdNew)
         {
-            // Já existe outra instância — envia sinal pra ela
-            BringExistingInstanceToFront();
+            // A janela pode estar no tray e não é confiável usar FindWindow.
+            // Sinalizamos a instância dona para ela se restaurar no próprio UI thread.
+            SignalExistingInstance();
             brought = true;
             return false;
         }
 
+        _activationEvent = new EventWaitHandle(
+            false,
+            EventResetMode.AutoReset,
+            ActivationEventName);
+        _activationRegistration = ThreadPool.RegisterWaitForSingleObject(
+            _activationEvent,
+            (_, _) => ExistingInstanceActivated?.Invoke(this, EventArgs.Empty),
+            null,
+            Timeout.Infinite,
+            executeOnlyOnce: false);
+
         return true;
     }
 
-    public void BringExistingInstanceToFront()
+    private static void SignalExistingInstance()
     {
-        // Busca a janela da instância já aberta pelo título
-        var hwnd = NativeMethods.FindWindow(null, AppName);
-        if (hwnd != nint.Zero)
+        // Há uma janela mínima entre a criação do mutex e do evento na primeira
+        // inicialização. Repetimos brevemente para que a segunda execução nunca
+        // abra uma janela vazia nesse intervalo.
+        for (var attempt = 0; attempt < 10; attempt++)
         {
-            NativeMethods.ShowWindow(hwnd, 9); // SW_RESTORE
-            NativeMethods.SetForegroundWindow(hwnd);
+            try
+            {
+                using var activation = EventWaitHandle.OpenExisting(ActivationEventName);
+                activation.Set();
+                return;
+            }
+            catch (WaitHandleCannotBeOpenedException) when (attempt < 9)
+            {
+                Thread.Sleep(50);
+            }
         }
     }
-}
-
-internal static class NativeMethods
-{
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
-    internal static extern nint FindWindow(string? lpClassName, string? lpWindowName);
-
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
-    internal static extern bool ShowWindow(nint hWnd, int nCmdShow);
-
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
-    internal static extern bool SetForegroundWindow(nint hWnd);
 }

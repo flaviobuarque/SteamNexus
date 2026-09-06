@@ -63,6 +63,15 @@ public partial class App : Application
             return;
         }
 
+        systemService.ExistingInstanceActivated += (_, _) =>
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                var mainViewModel = _host?.Services.GetService<MainViewModel>();
+                mainViewModel?.ShowWindowFromTray();
+            });
+        };
+
         // Carrega settings
         var settingsService = _host.Services.GetRequiredService<IAppSettingsService>();
         await settingsService.LoadAsync();
