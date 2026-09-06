@@ -178,6 +178,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
         var dialog = new UpdatePromptDialog(
             updateService.AvailableVersion,
+            updateService.ReleaseNotes,
             updateService.IsUpdateReady)
         {
             Owner = this

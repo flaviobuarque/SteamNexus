@@ -38,10 +38,21 @@
                     </StackPanel>
                 </Grid>
 
-                <TextBlock x:Name="DescriptionText" Margin="0,20,0,18" TextWrapping="Wrap"
+                <TextBlock x:Name="DescriptionText" Margin="0,20,0,12" TextWrapping="Wrap"
                            LineHeight="20" Foreground="{DynamicResource AppTextSecondaryBrush}" />
 
-                <Border Padding="14,11" CornerRadius="10"
+                <TextBlock Text="O QUE HÁ DE NOVO" FontSize="11" FontWeight="Bold"
+                           Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,0,0,7" />
+                <Border MaxHeight="160" Padding="12" CornerRadius="10"
+                        Background="{DynamicResource AppSurfaceBrush}"
+                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <TextBlock x:Name="ReleaseNotesText" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                    </ScrollViewer>
+                </Border>
+
+                <Border Margin="0,12,0,0" Padding="14,11" CornerRadius="10"
                         Background="{DynamicResource AppSurfaceBrush}"
                         BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
                     <TextBlock Text="O SteamNexus continuará disponível enquanto o pacote é baixado."

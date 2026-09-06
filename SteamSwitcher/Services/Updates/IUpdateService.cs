@@ -9,6 +9,7 @@ public interface IUpdateService : INotifyPropertyChanged
     string StatusText { get; }
     string ErrorText { get; }
     string DownloadSpeedText { get; }
+    string ReleaseNotes { get; }
     string UpdateActionText { get; }
     int DownloadProgress { get; }
     bool IsConfigured { get; }

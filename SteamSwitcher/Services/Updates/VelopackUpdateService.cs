@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.Json;
 using Velopack;
 using Velopack.Sources;
 
@@ -11,6 +12,7 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
     private readonly UpdateManager? _manager;
     private readonly SemaphoreSlim _operationGate = new(1, 1);
     private UpdateInfo? _pendingUpdate;
+    private static readonly HttpClient ReleaseNotesClient = new();
 
     [ObservableProperty] private string _availableVersion = string.Empty;
     [ObservableProperty] private string _statusText;
@@ -21,6 +23,7 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
     [ObservableProperty] private bool _isDownloading;
     [ObservableProperty] private bool _isUpdateAvailable;
     [ObservableProperty] private bool _isUpdateReady;
+    [ObservableProperty] private string _releaseNotes = "As novidades desta versão ainda não foram publicadas.";
 
     public VelopackUpdateService()
     {
@@ -103,6 +106,7 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
             }
 
             AvailableVersion = _pendingUpdate.TargetFullRelease.Version.ToString();
+            ReleaseNotes = await GetReleaseNotesAsync(AvailableVersion, ct);
             IsUpdateAvailable = true;
             IsUpdateReady = false;
             DownloadProgress = 0;
@@ -228,4 +232,35 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
             .Version?
             .ToString(3)
         ?? "0.0.0";
+
+    private async Task<string> GetReleaseNotesAsync(string version, CancellationToken ct)
+    {
+        if (!Uri.TryCreate(ReadAssemblyMetadata("SteamNexusUpdateUrl"), UriKind.Absolute, out var repository))
+            return "As novidades desta versão ainda não foram publicadas.";
+
+        var parts = repository.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (!repository.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) || parts.Length < 2)
+            return "As novidades desta versão ainda não foram publicadas.";
+
+        try
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"https://api.github.com/repos/{parts[0]}/{parts[1]}/releases/tags/v{version}");
+            request.Headers.UserAgent.ParseAdd("SteamNexus-Updater");
+            using var response = await ReleaseNotesClient.SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode)
+                return "As novidades desta versão ainda não foram publicadas.";
+
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(ct));
+            return document.RootElement.TryGetProperty("body", out var body)
+                && !string.IsNullOrWhiteSpace(body.GetString())
+                ? body.GetString()!.Trim()
+                : "As novidades desta versão ainda não foram publicadas.";
+        }
+        catch (Exception) when (!ct.IsCancellationRequested)
+        {
+            return "Não foi possível carregar as novidades agora.";
+        }
+    }
 }
