@@ -195,7 +195,7 @@
                                       SelectionChanged="ThemeSelection_Changed"/>
                         </Grid>
                     </Border>
-                    <Border Style="{StaticResource TileLastStyle}">
+                    <Border Style="{StaticResource TileMiddleStyle}">
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <Border Width="42" Height="42" CornerRadius="10" Margin="0,0,13,0" Background="{DynamicResource AppAccentSurfaceBrush}">
@@ -208,6 +208,25 @@
                             </StackPanel>
                             <ui:Button Grid.Column="2" Content="Criar ou editar" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
                                        Padding="14,8" Click="OpenThemeEditor_Click"/>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource TileLastStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <Border Width="42" Height="42" CornerRadius="10" Margin="0,0,13,0" Background="{DynamicResource AppWarningSurfaceBrush}">
+                                <ic:SymbolIcon Symbol="Beaker" FontSize="20" Foreground="{DynamicResource AppWarningBrush}"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Aparência avançada" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                                    <Border Margin="8,0,0,0" Padding="6,2" CornerRadius="5" Background="{DynamicResource AppWarningSurfaceBrush}">
+                                        <TextBlock Text="BETA" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppWarningBrush}"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Em breve: mais opções visuais para personalizar sua experiência."
+                                           Margin="0,3,16,0" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource AppTextMutedBrush}"/>
+                            </StackPanel>
+                            <ui:Button Grid.Column="2" Content="Em breve" Appearance="Secondary" IsEnabled="False" Padding="14,8" />
                         </Grid>
                     </Border>
                 </StackPanel>
