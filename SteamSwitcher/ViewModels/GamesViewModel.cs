@@ -1332,8 +1332,6 @@ public partial class GamesViewModel(
                 if (!cardVm.IsRunning || cardVm.RuntimeUncertain)
                     throw new InvalidOperationException("A abertura foi solicitada, mas a execução não foi confirmada. Verifique a Steam: pode haver atualização, Steam Guard ou um launcher aguardando sua ação.");
                 GameOperationMessage = string.Empty;
-                foreach (var copy in _allGames.Where(card => string.Equals(card.Game.InstallFullPath, cardVm.Game.InstallFullPath, StringComparison.OrdinalIgnoreCase)))
-                    copy.RuntimeAccountName = account.DisplayName;
                 return true;
             }
             GameOperationMessage = "Preparando contagem regressiva…";

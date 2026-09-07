@@ -55,6 +55,18 @@ public partial class GamesViewModel
         {
             var snapshots = await runtimeService.InspectAsync(_allGames.Select(card => card.Game).ToArray(), _runtimeCancellation.Token);
             _runtimeSnapshots = snapshots;
+            SteamAccount? activeAccount = null;
+            if (snapshots.Values.Any(state => state.IsRunning))
+            {
+                try
+                {
+                    activeAccount = await accountService.GetActiveAccountAsync(_runtimeCancellation.Token);
+                }
+                // Steam can rewrite its session file while being polled. Keep the
+                // last known account and still refresh the game processes.
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
             var orderChanged = false;
             var gameStarted = false;
             foreach (var card in _allGames)
@@ -78,6 +90,14 @@ public partial class GamesViewModel
                 card.IsRunning = state.IsRunning;
                 card.RuntimeUncertain = state.IsUncertain;
                 if (!state.IsRunning) card.RuntimeAccountName = "Conta não identificada";
+                else if (activeAccount is not null && card.Game.InstallationId == activeAccount.InstallationId)
+                {
+                    var displayAccount = _allAccounts.FirstOrDefault(account => account.UniqueKey == activeAccount.UniqueKey)
+                        ?? activeAccount;
+                    card.RuntimeAccountName = string.IsNullOrWhiteSpace(displayAccount.DisplayName)
+                        ? activeAccount.AccountName
+                        : displayAccount.DisplayName;
+                }
             }
             var running = _allGames.Where(card => card.IsRunning)
                 .DistinctBy(card => card.Game.InstallFullPath, StringComparer.OrdinalIgnoreCase).ToArray();

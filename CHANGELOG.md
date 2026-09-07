@@ -20,6 +20,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Conta do jogo em execução identificada pela sessão ativa da mesma instalação Steam, inclusive para jogos já abertos; leituras temporariamente indisponíveis preservam a última conta identificada.
 - Removido o título duplicado Em execução do tray; o status permanece somente abaixo do nome do jogo.
 - Ao abrir outro jogo com um já ativo, o diálogo exige confirmação explícita em Sim ou Não, sem contagem regressiva nem ação automática.
 - Removido o texto de progresso acima da biblioteca; a abertura do jogo exibe o andamento somente no diálogo, sem espaço duplicado na lista.
