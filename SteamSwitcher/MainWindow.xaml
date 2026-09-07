@@ -7,7 +7,8 @@
     xmlns:local="clr-namespace:SteamSwitcher.Views.Pages"
     xmlns:controls="clr-namespace:SteamSwitcher.Views.Controls"
     xmlns:tray="clr-namespace:Wpf.Ui.Tray.Controls;assembly=Wpf.Ui.Tray"
-    Title="SteamSwitcher"
+    Title="SteamNexus"
+    Icon="pack://application:,,,/Assets/icon.ico"
     Width="950"
     Height="620"
     MinWidth="950"
@@ -52,14 +53,12 @@
             Grid.Row="0"
             Title="">
             <ui:TitleBar.Header>
-                <Image
-            Source="pack://application:,,,/Assets/logo.png"
-            Height="22"
-            Width="105"
-            VerticalAlignment="Center"
-            HorizontalAlignment="Left"
-            RenderOptions.BitmapScalingMode="HighQuality"
-            Stretch="Uniform" />
+                <Rectangle Height="22" Width="105" VerticalAlignment="Center" HorizontalAlignment="Left"
+                           Fill="{DynamicResource AppTextPrimaryBrush}">
+                    <Rectangle.OpacityMask>
+                        <ImageBrush ImageSource="pack://application:,,,/Assets/logo.png" Stretch="Uniform" />
+                    </Rectangle.OpacityMask>
+                </Rectangle>
             </ui:TitleBar.Header>
         </ui:TitleBar>
 
