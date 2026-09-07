@@ -58,7 +58,7 @@ public partial class AccountsViewModel(
     };
     public Size AccountGridItemSize => new(
         Math.Ceiling(188 * AccountCardScale),
-        Math.Ceiling(294 * AccountCardScale));
+        Math.Ceiling(264 * AccountCardScale));
     public WpfToolkit.Controls.SpacingMode AccountGridSpacingMode =>
         WpfToolkit.Controls.SpacingMode.None;
 

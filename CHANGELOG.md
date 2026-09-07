@@ -21,6 +21,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Última usada e data unificadas na mesma linha, com destaque na cor do tema; cards mais compactos e com altura uniforme, sem espaço reservado para o selo.
 - Cards de contas com mais espaço entre o @ e o status e acima e abaixo da divisória, com altura da grade ajustada.
 - Maior espaçamento entre a data de uso da conta e o selo Última Usada.
 - Menus dos jogos seguem o tema do aplicativo, preservando ícones e contraste; durante a execução, somente as ações ficam desabilitadas e o aviso permanece legível.

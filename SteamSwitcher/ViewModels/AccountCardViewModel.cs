@@ -26,7 +26,9 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     [ObservableProperty] private string _avatarPath = string.Empty;
     [ObservableProperty] private ImageSource? _avatarImage;
     [ObservableProperty] private bool _isActive = account.IsActive;
-    [ObservableProperty] private bool _isLastUsed;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LastUsageText))]
+    private bool _isLastUsed;
     [ObservableProperty] private bool _isSwitching;
     [ObservableProperty] private bool _isPendingRemoval;
     [ObservableProperty] private bool _isFavorite = account.IsFavorite;
@@ -43,6 +45,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     public string InstallationRootPath => Account.InstallationRootPath;
     public long Timestamp => Account.Timestamp;
     public string LastLoginFormatted => FormatLastLogin(Account.Timestamp);
+    public string LastUsageText => IsLastUsed ? $"Última usada · {LastLoginFormatted}" : LastLoginFormatted;
     public bool HasAvatar => AvatarImage is not null || !string.IsNullOrEmpty(AvatarPath);
     public bool IsArchived => Account.IsArchived;
 
@@ -97,6 +100,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
         OnPropertyChanged(nameof(InstallationRootPath));
         OnPropertyChanged(nameof(Timestamp));
         OnPropertyChanged(nameof(LastLoginFormatted));
+        OnPropertyChanged(nameof(LastUsageText));
         OnPropertyChanged(nameof(IsArchived));
         RefreshLoginPreference(_globalLoginPreference);
     }
