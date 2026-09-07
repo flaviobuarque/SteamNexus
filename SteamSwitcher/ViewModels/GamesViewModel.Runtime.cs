@@ -12,6 +12,7 @@ namespace SteamSwitcher.ViewModels;
 public partial class GamesViewModel
 {
     private readonly CancellationTokenSource _runtimeCancellation = new();
+    private bool _runtimeMonitorStarted;
     private readonly SemaphoreSlim _runtimeRefreshGate = new(1, 1);
     private IReadOnlyDictionary<string, GameRuntimeSnapshot> _runtimeSnapshots = new Dictionary<string, GameRuntimeSnapshot>();
     private sealed class UninstallRequest(SteamGame game)
@@ -216,7 +217,10 @@ public partial class GamesViewModel
     {
         _runtimeCancellation.Cancel();
         foreach (var watcher in _libraryWatchers) watcher.Dispose();
-        _libraryRefreshDebounceCts?.Cancel();
+        _libraryRefreshDebounce.Dispose();
+        _visibleCoverLoad.Dispose();
+        _gameSearchDebounce.Dispose();
+        _accountSearchDebounce.Dispose();
     }
 
     [RelayCommand]

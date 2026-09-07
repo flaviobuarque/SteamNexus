@@ -15,6 +15,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Corrigido descarte concorrente de CancellationTokenSource no monitor de jogos, buscas e carregamento de capas; o monitor não é duplicado ao recarregar a instalação.
 - A conta já ativa é reutilizada ao abrir jogos; se a abertura exigir Online e a sessão estiver Offline, a Steam é reiniciada em Online, sem alterar o padrão global.
 - A abertura pela tela de jogos aguarda a confirmação da sessão e da execução, em vez de assumir que uma espera fixa significa que o jogo iniciou.
 - Validação da instalação da Steam antes de encerrar um jogo para desinstalação; processos ambíguos ou protegidos exigem fechamento manual.

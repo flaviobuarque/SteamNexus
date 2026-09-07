@@ -29,17 +29,17 @@ public partial class GamesViewModel(
     private const int GamesPerPage = 60;
     private IReadOnlyList<SteamAccount> _allAccounts = [];
     private readonly SemaphoreSlim _coverLoadGate = new(6, 6);
-    private CancellationTokenSource? _visibleCoverLoadCts;
+    private readonly LatestAsyncOperation _visibleCoverLoad = new();
     private readonly ConcurrentDictionary<string, Lazy<Task>> _activeCoverLoads =
         new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _initializeGate = new(1, 1);
     private bool _initialized;
-    private CancellationTokenSource? _gameSearchDebounceCts;
-    private CancellationTokenSource? _accountSearchDebounceCts;
+    private readonly LatestAsyncOperation _gameSearchDebounce = new();
+    private readonly LatestAsyncOperation _accountSearchDebounce = new();
     private int _launchOperationActive;
     private readonly SemaphoreSlim _libraryRefreshGate = new(1, 1);
     private readonly List<FileSystemWatcher> _libraryWatchers = [];
-    private CancellationTokenSource? _libraryRefreshDebounceCts;
+    private readonly LatestAsyncOperation _libraryRefreshDebounce = new();
     private Dictionary<string, string> _savedOwners = new(StringComparer.Ordinal);
     private HashSet<string> _favoriteGameIds = new(StringComparer.Ordinal);
     private static readonly HttpClient FilterAvatarHttp = new()
@@ -107,11 +107,7 @@ public partial class GamesViewModel(
 
     partial void OnSearchTextChanged(string value)
     {
-        var nextCts = new CancellationTokenSource();
-        var previousCts = Interlocked.Exchange(ref _gameSearchDebounceCts, nextCts);
-        previousCts?.Cancel();
-        previousCts?.Dispose();
-        _ = ApplyGameSearchDebouncedAsync(nextCts.Token);
+        _gameSearchDebounce.Start(ApplyGameSearchDebouncedAsync);
     }
     partial void OnSelectedFilterAccountChanged(AccountCardViewModel? value) => ApplyFilters();
     partial void OnIsAccountFilterOpenChanged(bool value)
@@ -157,7 +153,11 @@ public partial class GamesViewModel(
 
             await InitializeCoreAsync(ct);
             _initialized = true;
-            _ = MonitorGamesAsync(_runtimeCancellation.Token);
+            if (!_runtimeMonitorStarted)
+            {
+                _runtimeMonitorStarted = true;
+                _ = MonitorGamesAsync(_runtimeCancellation.Token);
+            }
         }
         finally
         {
@@ -260,11 +260,7 @@ public partial class GamesViewModel(
 
     partial void OnFilterAccountSearchTextChanged(string value)
     {
-        var nextCts = new CancellationTokenSource();
-        var previousCts = Interlocked.Exchange(ref _accountSearchDebounceCts, nextCts);
-        previousCts?.Cancel();
-        previousCts?.Dispose();
-        _ = ApplyAccountSearchDebouncedAsync(nextCts.Token);
+        _accountSearchDebounce.Start(ApplyAccountSearchDebouncedAsync);
     }
 
     private async Task ApplyGameSearchDebouncedAsync(CancellationToken ct)
@@ -405,9 +401,9 @@ public partial class GamesViewModel(
         if (!WeakReferenceMessenger.Default.IsRegistered<SteamInstallationChanged>(this))
             WeakReferenceMessenger.Default.Register<SteamInstallationChanged>(this, async (_, _) =>
             {
-                _visibleCoverLoadCts?.Cancel();
-                _gameSearchDebounceCts?.Cancel();
-                _accountSearchDebounceCts?.Cancel();
+                _visibleCoverLoad.Cancel();
+                _gameSearchDebounce.Cancel();
+                _accountSearchDebounce.Cancel();
                 _initialized = false;
                 await System.Windows.Application.Current.Dispatcher
                     .InvokeAsync(() => InitializeAsync())
@@ -852,13 +848,7 @@ public partial class GamesViewModel(
 
     private void OnLibraryManifestChanged(object sender, FileSystemEventArgs e)
     {
-        var nextCts = new CancellationTokenSource();
-        var previousCts = Interlocked.Exchange(
-            ref _libraryRefreshDebounceCts,
-            nextCts);
-        previousCts?.Cancel();
-        previousCts?.Dispose();
-        _ = RefreshLibraryDebouncedAsync(nextCts.Token);
+        _libraryRefreshDebounce.Start(RefreshLibraryDebouncedAsync);
     }
 
     private async Task RefreshLibraryDebouncedAsync(CancellationToken ct)
@@ -1084,12 +1074,7 @@ public partial class GamesViewModel(
             .Where(card => card.CoverImage is null && !card.CoverMissing)
             .ToList();
 
-        var nextCts = new CancellationTokenSource();
-        var previousCts = Interlocked.Exchange(ref _visibleCoverLoadCts, nextCts);
-        previousCts?.Cancel();
-        previousCts?.Dispose();
-
-        _ = LoadVisibleCoversAsync(pending, nextCts.Token);
+        _visibleCoverLoad.Start(ct => LoadVisibleCoversAsync(pending, ct));
     }
 
     private async Task LoadVisibleCoversAsync(
