@@ -5,51 +5,72 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
     Background="{DynamicResource AppBackgroundBrush}">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="30,26,30,36" MaxWidth="940" HorizontalAlignment="Center">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+    <Grid Margin="30,22,30,18" MaxWidth="940" HorizontalAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="16" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="Diagnóstico da Steam" FontSize="25" FontWeight="Bold"
-                               Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                    <TextBlock Text="Veja o que precisa de atenção em cada instalação."
-                               TextWrapping="Wrap" Margin="0,7,16,0" Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                    <TextBlock Text="{Binding OverviewText}" Margin="0,10,0,0" FontSize="11"
-                               Foreground="{DynamicResource AppTextMutedBrush}" />
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <ui:Button Command="{Binding CopyReportCommand}" Appearance="Secondary"
-                               ToolTip="Copiar relatórios de todas as instalações" Margin="0,0,8,0">
-                        <StackPanel Orientation="Horizontal">
-                            <ic:SymbolIcon Symbol="Copy" FontSize="15" Margin="0,0,7,0" />
-                            <TextBlock Text="Copiar todos" />
-                        </StackPanel>
-                    </ui:Button>
-                    <ui:Button Command="{Binding RefreshCommand}" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
-                               ToolTip="Verificar todas as instalações novamente">
-                        <StackPanel Orientation="Horizontal">
-                            <ic:SymbolIcon Symbol="ArrowClockwise" FontSize="15" Margin="0,0,7,0" />
-                            <TextBlock Text="Verificar todas" />
-                        </StackPanel>
-                    </ui:Button>
-                </StackPanel>
-            </Grid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-            <ItemsControl Grid.Row="1" Margin="0,20,0,0" ItemsSource="{Binding Installations}">
+            <StackPanel>
+                <TextBlock Text="Diagnóstico da Steam" FontSize="25" FontWeight="Bold"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                <TextBlock Text="Resumo das instalações e do que precisa de atenção."
+                           Margin="0,4,16,0" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <Border Padding="9,4" Margin="0,0,7,0" CornerRadius="7"
+                            Background="{DynamicResource AppAccentSurfaceBrush}">
+                        <TextBlock Text="{Binding InstallationSummaryText}" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppAccentBrush}" />
+                    </Border>
+                    <Border Padding="9,4" Margin="0,0,7,0" CornerRadius="7"
+                            Background="{DynamicResource AppDangerSurfaceBrush}">
+                        <TextBlock Text="{Binding ErrorSummaryText}" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppDangerBrush}" />
+                    </Border>
+                    <Border Padding="9,4" Margin="0,0,7,0" CornerRadius="7"
+                            Background="{DynamicResource AppWarningSurfaceBrush}">
+                        <TextBlock Text="{Binding WarningSummaryText}" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppWarningBrush}" />
+                    </Border>
+                    <TextBlock Text="{Binding LastCheckText}" Margin="5,0,0,0" FontSize="11"
+                               VerticalAlignment="Center" Foreground="{DynamicResource AppTextMutedBrush}" />
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <ui:Button Command="{Binding CopyReportCommand}" Appearance="Secondary"
+                           ToolTip="Copiar relatórios de todas as instalações" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <ic:SymbolIcon Symbol="Copy" FontSize="15" Margin="0,0,7,0" />
+                        <TextBlock Text="Copiar" />
+                    </StackPanel>
+                </ui:Button>
+                <ui:Button Command="{Binding RefreshCommand}" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
+                           ToolTip="Verificar todas as instalações novamente">
+                    <StackPanel Orientation="Horizontal">
+                        <ic:SymbolIcon Symbol="ArrowClockwise" FontSize="15" Margin="0,0,7,0" />
+                        <TextBlock Text="Verificar" />
+                    </StackPanel>
+                </ui:Button>
+            </StackPanel>
+        </Grid>
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      CanContentScroll="True">
+            <ItemsControl ItemsSource="{Binding Installations}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,0,0,10">
+                        <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,0,0,9">
                             <Expander.Template>
                                 <ControlTemplate TargetType="Expander">
-                                    <Border CornerRadius="14" Background="{DynamicResource AppSurfaceBrush}"
+                                    <Border CornerRadius="13" Background="{DynamicResource AppSurfaceBrush}"
                                             BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
                                         <StackPanel>
                                             <Grid>
@@ -57,130 +78,140 @@
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
+
                                                 <ToggleButton IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
-                                                              Background="Transparent" BorderThickness="0" Padding="18,14"
+                                                              Background="Transparent" BorderThickness="0" Padding="14,10"
                                                               HorizontalContentAlignment="Stretch" Cursor="Hand">
                                                     <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <ic:SymbolIcon Symbol="HardDrive" FontSize="19" Margin="0,2,12,0"
-                                                                   VerticalAlignment="Top" IsHitTestVisible="False"
-                                                                   Foreground="{DynamicResource AppAccentBrush}" />
-                                                    <StackPanel Grid.Column="1" IsHitTestVisible="False">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Text="{Binding Report.InstallationName}" FontSize="16" FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                                            <Border Margin="8,0,0,0" Padding="6,1" CornerRadius="5"
-                                                                    Background="{DynamicResource AppAccentSurfaceBrush}"
-                                                                    Visibility="{Binding Report.IsSelected, Converter={StaticResource BoolToVisibility}}">
-                                                                <TextBlock Text="Selecionada" FontSize="9" Foreground="{DynamicResource AppAccentBrush}" />
-                                                            </Border>
-                                                            <Border Margin="6,0,0,0" Padding="6,1" CornerRadius="5"
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Width="34" Height="34" CornerRadius="9"
+                                                                Background="{DynamicResource AppAccentSurfaceBrush}"
+                                                                VerticalAlignment="Top">
+                                                            <ic:SymbolIcon Symbol="HardDrive" FontSize="17"
+                                                                           Foreground="{DynamicResource AppAccentBrush}" />
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" Margin="11,0,12,0" IsHitTestVisible="False">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding Report.InstallationName}" FontSize="15"
+                                                                           FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                                                <Border Margin="7,0,0,0" Padding="6,1" CornerRadius="5"
+                                                                        Background="{DynamicResource AppAccentSurfaceBrush}"
+                                                                        Visibility="{Binding Report.IsSelected, Converter={StaticResource BoolToVisibility}}">
+                                                                    <TextBlock Text="Selecionada" FontSize="9"
+                                                                               Foreground="{DynamicResource AppAccentBrush}" />
+                                                                </Border>
+                                                                <Border Margin="6,0,0,0" Padding="6,1" CornerRadius="5"
+                                                                        Background="{DynamicResource AppSuccessSurfaceBrush}"
+                                                                        Visibility="{Binding Report.IsRunning, Converter={StaticResource BoolToVisibility}}">
+                                                                    <TextBlock Text="Em execução" FontSize="9"
+                                                                               Foreground="{DynamicResource AppSuccessBrush}" />
+                                                                </Border>
+                                                            </StackPanel>
+                                                            <Grid Margin="0,4,0,0">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="{Binding Report.InstallationPath}" FontSize="11"
+                                                                           ToolTip="{Binding Report.InstallationPath}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                                                <TextBlock Grid.Column="1" Text="{Binding CheckedAtText}" FontSize="11" Margin="8,0,0,0"
+                                                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                                                            </Grid>
+                                                        </StackPanel>
+
+                                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" IsHitTestVisible="False">
+                                                            <Border Padding="8,3" CornerRadius="6"
                                                                     Background="{DynamicResource AppSuccessSurfaceBrush}"
-                                                                    Visibility="{Binding Report.IsRunning, Converter={StaticResource BoolToVisibility}}">
-                                                                <TextBlock Text="Em execução" FontSize="9" Foreground="{DynamicResource AppSuccessBrush}" />
+                                                                    Visibility="{Binding Report.IsHealthy, Converter={StaticResource BoolToVisibility}}">
+                                                                <TextBlock Text="Tudo certo" FontSize="10" FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource AppSuccessBrush}" />
+                                                            </Border>
+                                                            <Border Padding="8,3" CornerRadius="6"
+                                                                    Background="{DynamicResource AppWarningSurfaceBrush}"
+                                                                    Visibility="{Binding Report.HasWarnings, Converter={StaticResource BoolToVisibility}}">
+                                                                <TextBlock Text="{Binding Report.WarningBadgeText}" FontSize="10" FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource AppWarningBrush}" />
+                                                            </Border>
+                                                            <Border Padding="8,3" CornerRadius="6"
+                                                                    Background="{DynamicResource AppDangerSurfaceBrush}"
+                                                                    Visibility="{Binding Report.HasErrors, Converter={StaticResource BoolToVisibility}}">
+                                                                <TextBlock Text="{Binding Report.ErrorBadgeText}" FontSize="10" FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource AppDangerBrush}" />
                                                             </Border>
                                                         </StackPanel>
-                                                        <TextBlock Text="{Binding Report.InstallationPath}" Margin="0,4,0,0"
-                                                                   Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                                                        <TextBlock Text="{Binding CheckedAtText}" FontSize="11" Margin="0,8,0,0"
-                                                                   Foreground="{DynamicResource AppTextMutedBrush}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel Grid.Column="2" Margin="16,0,10,0" VerticalAlignment="Center"
-                                                                IsHitTestVisible="False">
-                                                        <Border Padding="8,3" CornerRadius="6" Background="{DynamicResource AppSuccessSurfaceBrush}"
-                                                                Visibility="{Binding Report.IsHealthy, Converter={StaticResource BoolToVisibility}}">
-                                                            <TextBlock Text="Saudável" FontSize="10" FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource AppSuccessBrush}" />
-                                                        </Border>
-                                                        <Border Padding="8,3" Margin="0,2" CornerRadius="6" Background="{DynamicResource AppWarningSurfaceBrush}"
-                                                                Visibility="{Binding Report.HasWarnings, Converter={StaticResource BoolToVisibility}}">
-                                                            <TextBlock Text="{Binding Report.WarningBadgeText}" FontSize="10" FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource AppWarningBrush}" />
-                                                        </Border>
-                                                        <Border Padding="8,3" Margin="0,2" CornerRadius="6" Background="{DynamicResource AppDangerSurfaceBrush}"
-                                                                Visibility="{Binding Report.HasErrors, Converter={StaticResource BoolToVisibility}}">
-                                                            <TextBlock Text="{Binding Report.ErrorBadgeText}" FontSize="10" FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource AppDangerBrush}" />
-                                                        </Border>
-                                                    </StackPanel>
                                                     </Grid>
                                                 </ToggleButton>
 
-                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,16,0"
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,12,0"
                                                             VerticalAlignment="Center">
-                                                        <ui:Button Width="34" Height="34" Padding="0" Appearance="Secondary"
-                                                                   ToolTip="Copiar relatório desta instalação"
-                                                                   Command="{Binding DataContext.CopyInstallationReportCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                   CommandParameter="{Binding}">
-                                                            <ic:SymbolIcon Symbol="Copy" FontSize="15" />
-                                                        </ui:Button>
-                                                        <ui:Button Width="34" Height="34" Padding="0" Margin="6,0,0,0" Appearance="Secondary"
-                                                                   ToolTip="Verificar somente esta instalação"
-                                                                   Command="{Binding DataContext.RefreshInstallationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                   CommandParameter="{Binding}">
-                                                            <ic:SymbolIcon Symbol="ArrowClockwise" FontSize="15" />
-                                                        </ui:Button>
-                                                        <ui:Button Width="34" Height="34" Padding="0" Margin="6,0,0,0" Appearance="Secondary"
-                                                                   ToolTip="Corrigir autologin do Registro"
-                                                                   Visibility="{Binding Report.CanRepairRegistry, Converter={StaticResource BoolToVisibility}}"
-                                                                   Command="{Binding DataContext.RepairRegistryCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                   CommandParameter="{Binding}">
-                                                            <ic:SymbolIcon Symbol="Wrench" FontSize="15" />
-                                                        </ui:Button>
-                                                        <ui:Button Width="34" Height="34" Padding="0" Margin="6,0,0,0" Appearance="Secondary"
-                                                                   ToolTip="Desativar seletor de contas"
-                                                                   Visibility="{Binding Report.CanDisableChooser, Converter={StaticResource BoolToVisibility}}"
-                                                                   Command="{Binding DataContext.DisableChooserCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                   CommandParameter="{Binding}">
-                                                            <ic:SymbolIcon Symbol="Person" FontSize="15" />
-                                                        </ui:Button>
-                                                        <ToggleButton Width="34" Height="34" Margin="8,0,0,0" Padding="0"
-                                                                      Background="Transparent" BorderThickness="0" Cursor="Hand"
-                                                                      ToolTip="Expandir ou recolher detalhes"
-                                                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
-                                                            <ic:SymbolIcon x:Name="ExpansionChevron" Symbol="ChevronDown" FontSize="16"
-                                                                           RenderTransformOrigin="0.5,0.5"
-                                                                           Foreground="{DynamicResource AppTextMutedBrush}">
-                                                                <ic:SymbolIcon.RenderTransform>
-                                                                    <RotateTransform x:Name="ChevronRotation" Angle="0" />
-                                                                </ic:SymbolIcon.RenderTransform>
-                                                            </ic:SymbolIcon>
-                                                            <ToggleButton.Triggers>
-                                                                <EventTrigger RoutedEvent="ToggleButton.Checked">
-                                                                    <BeginStoryboard>
-                                                                        <Storyboard>
-                                                                            <DoubleAnimation Storyboard.TargetName="ChevronRotation"
-                                                                                             Storyboard.TargetProperty="Angle"
-                                                                                             To="180" Duration="0:0:0.18">
-                                                                                <DoubleAnimation.EasingFunction>
-                                                                                    <CubicEase EasingMode="EaseOut" />
-                                                                                </DoubleAnimation.EasingFunction>
-                                                                            </DoubleAnimation>
-                                                                        </Storyboard>
-                                                                    </BeginStoryboard>
-                                                                </EventTrigger>
-                                                                <EventTrigger RoutedEvent="ToggleButton.Unchecked">
-                                                                    <BeginStoryboard>
-                                                                        <Storyboard>
-                                                                            <DoubleAnimation Storyboard.TargetName="ChevronRotation"
-                                                                                             Storyboard.TargetProperty="Angle"
-                                                                                             To="0" Duration="0:0:0.18">
-                                                                                <DoubleAnimation.EasingFunction>
-                                                                                    <CubicEase EasingMode="EaseOut" />
-                                                                                </DoubleAnimation.EasingFunction>
-                                                                            </DoubleAnimation>
-                                                                        </Storyboard>
-                                                                    </BeginStoryboard>
-                                                                </EventTrigger>
-                                                            </ToggleButton.Triggers>
-                                                        </ToggleButton>
+                                                    <ui:Button Width="32" Height="32" Padding="0" Appearance="Secondary"
+                                                               ToolTip="Copiar relatório desta instalação"
+                                                               Command="{Binding DataContext.CopyInstallationReportCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                               CommandParameter="{Binding}">
+                                                        <ic:SymbolIcon Symbol="Copy" FontSize="14" />
+                                                    </ui:Button>
+                                                    <ui:Button Width="32" Height="32" Padding="0" Margin="5,0,0,0" Appearance="Secondary"
+                                                               ToolTip="Verificar somente esta instalação"
+                                                               Command="{Binding DataContext.RefreshInstallationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                               CommandParameter="{Binding}">
+                                                        <ic:SymbolIcon Symbol="ArrowClockwise" FontSize="14" />
+                                                    </ui:Button>
+                                                    <ui:Button Width="32" Height="32" Padding="0" Margin="5,0,0,0" Appearance="Secondary"
+                                                               ToolTip="Corrigir autologin do Registro"
+                                                               Visibility="{Binding Report.CanRepairRegistry, Converter={StaticResource BoolToVisibility}}"
+                                                               Command="{Binding DataContext.RepairRegistryCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                               CommandParameter="{Binding}">
+                                                        <ic:SymbolIcon Symbol="Wrench" FontSize="14" />
+                                                    </ui:Button>
+                                                    <ui:Button Width="32" Height="32" Padding="0" Margin="5,0,0,0" Appearance="Secondary"
+                                                               ToolTip="Desativar seletor de contas"
+                                                               Visibility="{Binding Report.CanDisableChooser, Converter={StaticResource BoolToVisibility}}"
+                                                               Command="{Binding DataContext.DisableChooserCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                               CommandParameter="{Binding}">
+                                                        <ic:SymbolIcon Symbol="Person" FontSize="14" />
+                                                    </ui:Button>
+                                                    <ToggleButton Width="32" Height="32" Margin="6,0,0,0" Padding="0"
+                                                                  Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                                  ToolTip="Expandir ou recolher detalhes"
+                                                                  IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                                        <ic:SymbolIcon x:Name="ExpansionChevron" Symbol="ChevronDown" FontSize="15"
+                                                                       RenderTransformOrigin="0.5,0.5"
+                                                                       Foreground="{DynamicResource AppTextMutedBrush}">
+                                                            <ic:SymbolIcon.RenderTransform>
+                                                                <RotateTransform x:Name="ChevronRotation" Angle="0" />
+                                                            </ic:SymbolIcon.RenderTransform>
+                                                        </ic:SymbolIcon>
+                                                        <ToggleButton.Triggers>
+                                                            <EventTrigger RoutedEvent="ToggleButton.Checked">
+                                                                <BeginStoryboard>
+                                                                    <Storyboard>
+                                                                        <DoubleAnimation Storyboard.TargetName="ChevronRotation"
+                                                                                         Storyboard.TargetProperty="Angle" To="180"
+                                                                                         Duration="0:0:0.18" />
+                                                                    </Storyboard>
+                                                                </BeginStoryboard>
+                                                            </EventTrigger>
+                                                            <EventTrigger RoutedEvent="ToggleButton.Unchecked">
+                                                                <BeginStoryboard>
+                                                                    <Storyboard>
+                                                                        <DoubleAnimation Storyboard.TargetName="ChevronRotation"
+                                                                                         Storyboard.TargetProperty="Angle" To="0"
+                                                                                         Duration="0:0:0.18" />
+                                                                    </Storyboard>
+                                                                </BeginStoryboard>
+                                                            </EventTrigger>
+                                                        </ToggleButton.Triggers>
+                                                    </ToggleButton>
                                                 </StackPanel>
                                             </Grid>
+
                                             <ContentPresenter x:Name="ExpandSite" ContentSource="Content" Visibility="Collapsed" />
                                         </StackPanel>
                                     </Border>
@@ -192,16 +223,25 @@
                                 </ControlTemplate>
                             </Expander.Template>
 
-                            <StackPanel Margin="16,0,16,16">
-                                <Border Height="1" Background="{DynamicResource AppBorderBrush}" Margin="0,0,0,12" />
-                                <ItemsControl ItemsSource="{Binding DisplayItems}">
+                            <Grid Margin="11,0,11,11">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Border Height="1" Background="{DynamicResource AppBorderBrush}" Margin="3,0,3,6" />
+                                <ItemsControl Grid.Row="1" ItemsSource="{Binding DisplayItems}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="2" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Margin="0,0,0,6" Padding="12,10" CornerRadius="8" BorderThickness="1">
+                                            <Border Margin="3" Padding="10,8" MinHeight="58" CornerRadius="8" BorderThickness="1">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
                                                         <Setter Property="Background" Value="Transparent" />
-                                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsWarning}" Value="True">
                                                                 <Setter Property="Background" Value="{DynamicResource AppWarningSurfaceBrush}" />
@@ -216,49 +256,50 @@
                                                 </Border.Style>
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="46" />
+                                                        <ColumnDefinition Width="34" />
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
-                                                    <Border Width="34" Height="34" CornerRadius="17"
+                                                    <Border Width="27" Height="27" CornerRadius="14"
                                                             Background="{DynamicResource AppSuccessSurfaceBrush}"
                                                             Visibility="{Binding IsSuccess, Converter={StaticResource BoolToVisibility}}">
-                                                        <ic:SymbolIcon Symbol="Checkmark" FontSize="16"
+                                                        <ic:SymbolIcon Symbol="Checkmark" FontSize="13"
                                                                        Foreground="{DynamicResource AppSuccessBrush}" />
                                                     </Border>
-                                                    <Border Width="34" Height="34" CornerRadius="17"
+                                                    <Border Width="27" Height="27" CornerRadius="14"
                                                             Background="{DynamicResource AppWarningSurfaceBrush}"
                                                             Visibility="{Binding IsWarning, Converter={StaticResource BoolToVisibility}}">
-                                                        <ic:SymbolIcon Symbol="Warning" FontSize="16"
+                                                        <ic:SymbolIcon Symbol="Warning" FontSize="13"
                                                                        Foreground="{DynamicResource AppWarningBrush}" />
                                                     </Border>
-                                                    <Border Width="34" Height="34" CornerRadius="17"
+                                                    <Border Width="27" Height="27" CornerRadius="14"
                                                             Background="{DynamicResource AppDangerSurfaceBrush}"
                                                             Visibility="{Binding IsError, Converter={StaticResource BoolToVisibility}}">
-                                                        <ic:SymbolIcon Symbol="Dismiss" FontSize="16"
+                                                        <ic:SymbolIcon Symbol="Dismiss" FontSize="13"
                                                                        Foreground="{DynamicResource AppDangerBrush}" />
                                                     </Border>
                                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold"
+                                                        <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold"
                                                                    Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                                        <TextBlock Text="{Binding Detail}" Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap"
+                                                        <TextBlock Text="{Binding Detail}" Margin="0,2,0,0" FontSize="10.5"
+                                                                   TextWrapping="Wrap" MaxHeight="30"
                                                                    Foreground="{DynamicResource AppTextSecondaryBrush}" />
                                                     </StackPanel>
-                                                        <ui:Button Grid.Column="2" Content="Corrigir" Margin="16,0,0,0" VerticalAlignment="Center"
-                                                            Appearance="Secondary"
-                                                            Visibility="{Binding CanRepairRememberPassword, Converter={StaticResource BoolToVisibility}}"
-                                                            Command="{Binding DataContext.RepairRememberPasswordCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                            CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Expander}}" />
+                                                    <ui:Button Grid.Column="2" Content="Corrigir" Margin="8,0,0,0"
+                                                               Padding="9,4" VerticalAlignment="Center" Appearance="Secondary"
+                                                               Visibility="{Binding CanRepairRememberPassword, Converter={StaticResource BoolToVisibility}}"
+                                                               Command="{Binding DataContext.RepairRememberPasswordCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                               CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Expander}}" />
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                            </StackPanel>
+                            </Grid>
                         </Expander>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-        </Grid>
-    </ScrollViewer>
+        </ScrollViewer>
+    </Grid>
 </Page>

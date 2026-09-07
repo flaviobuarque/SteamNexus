@@ -255,9 +255,6 @@ public sealed class SteamDiagnosticsService(
         var pathsForInstallation = runningPaths
             .Where(path => IsUnder(path, installation.RootPath)).ToList();
         var isRunning = pathsForInstallation.Count > 0;
-        items.Add(isRunning
-            ? Success("Processos", $"Esta instalação está em execução: {pathsForInstallation[0]}")
-            : Warning("Processos", "Esta instalação não está em execução."));
 
         var active = snapshot.ActiveAccount;
         if (snapshot.Accounts.Count > 0)

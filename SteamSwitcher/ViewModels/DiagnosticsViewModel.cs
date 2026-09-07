@@ -20,6 +20,15 @@ public partial class DiagnosticsViewModel(
     private SteamDiagnosticReport? _report;
     public string OverviewText => _report is null ? "Verifique as instalações para começar." :
         $"{Installations.Count} instalação(ões) · {Installations.Sum(item => item.Report.ErrorCount)} problema(s) · {Installations.Sum(item => item.Report.WarningCount)} aviso(s)";
+    public string InstallationSummaryText => FormatCount(Installations.Count, "instalação", "instalações");
+    public string ErrorSummaryText => FormatCount(
+        Installations.Sum(item => item.Report.ErrorCount),
+        "problema",
+        "problemas");
+    public string WarningSummaryText => FormatCount(
+        Installations.Sum(item => item.Report.WarningCount),
+        "aviso",
+        "avisos");
 
     public async Task InitializeAsync() => await RefreshAsync();
 
@@ -69,7 +78,7 @@ public partial class DiagnosticsViewModel(
                     expandedIds.Contains(report.InstallationId) || report.HasErrors || report.HasWarnings,
                     $"Verificado às {_report.CheckedAt:HH:mm:ss}")));
             LastCheckText = $"Verificado às {_report.CheckedAt:HH:mm:ss}";
-            OnPropertyChanged(nameof(OverviewText));
+            NotifySummaryChanged();
             mainViewModel.UpdateStatusBar(
                 _report.HasBlockingIssues ? "Diagnóstico encontrou problemas" : "Diagnóstico concluído",
                 $"{Installations.Count} instalação(ões)");
@@ -111,7 +120,7 @@ public partial class DiagnosticsViewModel(
                     report, item.IsExpanded, $"Verificado às {DateTime.Now:HH:mm:ss}");
 
             mainViewModel.UpdateStatusBar("Instalação verificada", report.InstallationName);
-            OnPropertyChanged(nameof(OverviewText));
+            NotifySummaryChanged();
         }
         catch (Exception ex)
         {
@@ -180,6 +189,17 @@ public partial class DiagnosticsViewModel(
         snackbarService.Show("Diagnóstico copiado", $"Relatório de {installation.InstallationName} copiado.",
             ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
     }
+
+    private void NotifySummaryChanged()
+    {
+        OnPropertyChanged(nameof(OverviewText));
+        OnPropertyChanged(nameof(InstallationSummaryText));
+        OnPropertyChanged(nameof(ErrorSummaryText));
+        OnPropertyChanged(nameof(WarningSummaryText));
+    }
+
+    private static string FormatCount(int count, string singular, string plural) =>
+        $"{count} {(count == 1 ? singular : plural)}";
 }
 
 public partial class DiagnosticInstallationItem(

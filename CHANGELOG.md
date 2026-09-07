@@ -4,6 +4,14 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.22] - 2026-09-07
+
+### Diagnóstico
+
+- Resumo compacto com contadores e verificações em duas colunas, mantendo título e ações visíveis.
+- Largura e alinhamento consistentes ao expandir ou recolher instalações.
+- Steam fechada não gera mais aviso de processos.
+
 ### Novidades
 
 - Diagnóstico de contas com RememberPassword=0 por instalação, com lista limitada e rolagem para corrigir selecionadas ou todas. Ação manual fecha a Steam após contagem cancelável, preserva os demais campos e cria backup antes da gravação.
