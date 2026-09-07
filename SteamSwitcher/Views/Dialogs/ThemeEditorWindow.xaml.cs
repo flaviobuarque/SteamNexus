@@ -167,10 +167,11 @@ public partial class ThemeEditorWindow : Window
 
     private void Reset_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.Load(ViewModel.BaseTheme == AppTheme.Light
+        var defaults = new ThemeEditorViewModel(ViewModel.BaseTheme == AppTheme.Light
             ? CustomThemeSettings.CreateLight()
             : CustomThemeSettings.CreateDark());
-        ViewModel.IsPresetReadOnly = false;
+        foreach (var color in ViewModel.Colors)
+            color.Value = defaults.Colors.First(entry => entry.Key == color.Key).Value;
         PreviewTheme();
     }
 

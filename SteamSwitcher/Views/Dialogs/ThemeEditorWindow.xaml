@@ -7,6 +7,37 @@
     Title="Editor de tema — SteamNexus" Width="1050" Height="720" MinWidth="920" MinHeight="620"
     WindowStartupLocation="CenterOwner" Background="{DynamicResource AppBackgroundBrush}">
     <Window.Resources>
+        <Style x:Key="EditorTabStyle" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Grid Background="Transparent">
+                            <Border x:Name="TabBackground" CornerRadius="8,8,0,0" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter ContentSource="Header" RecognizesAccessKey="True"/>
+                            </Border>
+                            <Border x:Name="Indicator" Height="2" VerticalAlignment="Bottom" Background="Transparent"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBackground" Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBackground" Property="Background" Value="{DynamicResource AppAccentSurfaceBrush}"/>
+                                <Setter TargetName="Indicator" Property="Background" Value="{DynamicResource AppAccentBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Indicator" Property="Background" Value="{DynamicResource AppTextPrimaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="ThemeEditorAccentButtonStyle" TargetType="ui:Button">
             <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
             <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
@@ -109,30 +140,28 @@
                 <ColumnDefinition Width="0.85*" />
             </Grid.ColumnDefinitions>
 
-            <TabControl Background="Transparent" BorderBrush="{DynamicResource AppBorderBrush}">
-                <TabItem Header="Aparência">
+            <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Nome do tema" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        <TextBox Text="{Binding ThemeName, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,12,0"
+                                 IsEnabled="{Binding IsCustomTheme}" AutomationProperties.Name="Nome do tema" />
+                    </StackPanel>
+                    <Border Grid.Column="1" Padding="8,5" CornerRadius="6" VerticalAlignment="Bottom" Margin="0,0,0,6"
+                            Background="{DynamicResource AppAccentSurfaceBrush}">
+                        <TextBlock Text="{Binding BaseThemeLabel}" FontSize="11" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                    </Border>
+                </Grid>
+            <TabControl x:Name="EditorTabs" Grid.Row="1" Background="Transparent" BorderBrush="{DynamicResource AppBorderBrush}">
+                <TabItem x:Name="AppearanceTab" Style="{StaticResource EditorTabStyle}">
+                    <TabItem.Header><StackPanel Orientation="Horizontal">
+                        <ic:SymbolIcon Symbol="Color" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Aparência"/>
+                    </StackPanel></TabItem.Header>
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="16">
-                            <Border Margin="0,0,0,18" Padding="14" CornerRadius="10"
-                                    Background="{DynamicResource AppSurfaceAltBrush}"
-                                    Visibility="{Binding IsPresetReadOnly, Converter={StaticResource InverseBoolToVisibility}}">
-                                <StackPanel>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                        <TextBlock Text="Editando tema personalizado" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                        <Border Grid.Column="1" Padding="8,3" CornerRadius="6"
-                                                Background="{DynamicResource AppAccentSurfaceBrush}">
-                                            <TextBlock Text="{Binding BaseThemeLabel}" FontSize="11" FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource AppAccentBrush}" />
-                                        </Border>
-                                    </Grid>
-                                    <TextBlock Text="Nome" Margin="0,12,0,0" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                    <TextBox Text="{Binding ThemeName, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,10" />
-                                    
-                                </StackPanel>
-                            </Border>
                             <ItemsControl ItemsSource="{Binding Colors}" IsEnabled="{Binding IsCustomTheme}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -161,7 +190,11 @@
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="Fundo" IsEnabled="{Binding IsCustomTheme}">
+                <TabItem x:Name="BackgroundTab" Style="{StaticResource EditorTabStyle}" IsEnabled="{Binding IsCustomTheme}">
+                    <TabItem.Header><StackPanel Orientation="Horizontal">
+                        <ic:SymbolIcon Symbol="Image" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Fundo"/>
+                    </StackPanel></TabItem.Header>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="18">
                         <TextBlock Text="Imagem de fundo" FontWeight="SemiBold"
@@ -175,7 +208,7 @@
                         </Border>
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,18">
                             <ui:Button Content="Escolher imagem" Click="ChooseBackground_Click" Margin="0,0,8,0" />
-                            <ui:Button Content="Remover" Appearance="Secondary" Click="RemoveBackground_Click" />
+                            <ui:Button Content="Remover imagem" Appearance="Secondary" Click="RemoveBackground_Click" />
                         </StackPanel>
 
                         <TextBlock Text="Opacidade da imagem" FontWeight="SemiBold"
@@ -217,6 +250,7 @@
 
 
             </TabControl>
+            </Grid>
 
             <Border Grid.Column="2" Padding="20" CornerRadius="14"
                     Background="{DynamicResource AppSurfaceAltBrush}"
@@ -300,8 +334,8 @@
         <Grid Grid.Row="2" Margin="0,18,0,0">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal">
-                <ui:Button Content="Restaurar cores" Appearance="Secondary" Click="Reset_Click"
-                           Visibility="{Binding IsPresetReadOnly, Converter={StaticResource InverseBoolToVisibility}}" />
+                <ui:Button Content="Restaurar aparência" Appearance="Secondary" Click="Reset_Click"
+                           Visibility="{Binding IsSelected, ElementName=AppearanceTab, Converter={StaticResource BoolToVisibility}}" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <ui:Button Content="Cancelar" Appearance="Secondary" Width="110" Click="Cancel_Click" Margin="0,0,10,0" />
