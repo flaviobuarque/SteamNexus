@@ -479,10 +479,21 @@
         </Border>
 
         <StackPanel Grid.Row="1" Margin="20,10,20,0">
-            <DockPanel Margin="0,0,0,8">
-                <ToggleButton Content="Em execução" DockPanel.Dock="Left"
-                    IsChecked="{Binding OnlyRunning, Mode=TwoWay}" Style="{StaticResource AccountFilterToggleStyle}"
-                    ToolTip="Mostrar somente jogos em execução" />
+            <StackPanel.Style>
+                <Style TargetType="StackPanel">
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding HasRunningGames}" Value="False" />
+                                <Condition Binding="{Binding HasPendingUninstall}" Value="False" />
+                                <Condition Binding="{Binding GameOperationMessage}" Value="" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </MultiDataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </StackPanel.Style>
+            <DockPanel Margin="0,0,0,8" Visibility="{Binding HasPendingUninstall, Converter={StaticResource BoolToVisibility}}">
                 <ui:Button Content="Já cancelei na Steam" Margin="12,0,0,0" HorizontalAlignment="Right"
                     Command="{Binding AcknowledgeUninstallCancellationCommand}"
                     Visibility="{Binding HasPendingUninstall, Converter={StaticResource BoolToVisibility}}" />

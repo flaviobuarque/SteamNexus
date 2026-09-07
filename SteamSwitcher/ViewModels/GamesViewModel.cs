@@ -975,7 +975,7 @@ public partial class GamesViewModel(
     {
         foreach (var card in _allGames) card.RefreshLoginPreference(settingsService.Current.DefaultLoginStateOverride);
         _filteredGames = Helpers.GameLibraryProjection.FilterAndSort(
-            OnlyRunning ? _allGames.Where(card => card.IsRunning).ToArray() : _allGames,
+            _allGames,
             SelectedFilterAccount?.UniqueKey,
             SearchText,
             GameSortMode);
@@ -993,7 +993,6 @@ public partial class GamesViewModel(
     [RelayCommand]
     private void ClearGameFilters()
     {
-        OnlyRunning = false;
         SearchText = string.Empty;
         SelectedFilterAccount = FilterAccounts.FirstOrDefault();
         ApplyFilters();

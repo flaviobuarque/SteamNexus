@@ -27,9 +27,7 @@ public partial class GamesViewModel
     public ObservableCollection<GameCardViewModel> RunningGames { get; } = [];
     public bool HasRunningGames => RunningGames.Count > 0;
     public bool HasPendingUninstall => _uninstallRequests.Count > 0;
-    [ObservableProperty] private bool _onlyRunning;
     [ObservableProperty] private string _gameOperationMessage = string.Empty;
-    partial void OnOnlyRunningChanged(bool value) => ApplyFilters();
 
     private async Task MonitorGamesAsync(CancellationToken ct)
     {
@@ -57,11 +55,9 @@ public partial class GamesViewModel
         {
             var snapshots = await runtimeService.InspectAsync(_allGames.Select(card => card.Game).ToArray(), _runtimeCancellation.Token);
             _runtimeSnapshots = snapshots;
-            var changed = false;
             foreach (var card in _allGames)
             {
                 if (!snapshots.TryGetValue(card.Game.UniqueKey, out var state)) continue;
-                changed |= card.IsRunning != state.IsRunning;
                 card.IsRunning = state.IsRunning;
                 card.RuntimeUncertain = state.IsUncertain;
                 if (!state.IsRunning) card.RuntimeAccountName = "Conta não identificada";
@@ -71,7 +67,6 @@ public partial class GamesViewModel
             foreach (var old in RunningGames.Except(running).ToArray()) RunningGames.Remove(old);
             foreach (var card in running.Except(RunningGames)) RunningGames.Add(card);
             OnPropertyChanged(nameof(HasRunningGames));
-            if (changed && OnlyRunning) ApplyFilters(resetPage: false);
             foreach (var request in _uninstallRequests.ToArray())
             {
                 var library = Path.Combine(request.Value.Game.LibraryPath, "steamapps");

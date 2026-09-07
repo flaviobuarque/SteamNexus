@@ -4,6 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+    xmlns:models="clr-namespace:SteamSwitcher.Core.Models;assembly=SteamSwitcher.Core"
     xmlns:converters="clr-namespace:SteamSwitcher.Converters">
     <Application.Resources>
         <ResourceDictionary>
@@ -52,9 +54,20 @@
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="Badge" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <ic:SymbolIcon x:Name="LoginStateIcon" Symbol="Settings" FontSize="12"
+                                        Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center"
+                                        Foreground="{TemplateBinding Foreground}" />
+                                    <ContentPresenter VerticalAlignment="Center" />
+                                </StackPanel>
                             </Border>
                             <ControlTemplate.Triggers>
+                                <DataTrigger Binding="{Binding LoginPreferenceValue}" Value="{x:Static models:LoginState.Online}">
+                                    <Setter TargetName="LoginStateIcon" Property="Symbol" Value="Globe" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding LoginPreferenceValue}" Value="{x:Static models:LoginState.Offline}">
+                                    <Setter TargetName="LoginStateIcon" Property="Symbol" Value="GlobeOff" />
+                                </DataTrigger>
                                 <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Badge" Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" /></Trigger>
                                 <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Badge" Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" /></Trigger>
                                 <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Badge" Property="Opacity" Value="0.5" /></Trigger>
