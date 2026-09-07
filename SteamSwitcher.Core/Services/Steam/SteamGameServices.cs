@@ -153,9 +153,11 @@ public class SteamGameService(
             // An offline preference must not restart an already-online session.
             var needsOnlineSession = state != LoginState.Offline
                 && activeAccount?.WantsOfflineMode == true;
-            if (!accountAlreadyActive || needsOnlineSession)
+            if (!accountAlreadyActive || needsOnlineSession || !account.RememberPassword)
             {
                 // Troca de conta primeiro (passando o estado resolvido).
+                if (accountAlreadyActive && !needsOnlineSession)
+                    state = activeAccount!.WantsOfflineMode ? LoginState.Offline : LoginState.Online;
                 await accountService.SwitchAccountAsync(account, state, ct);
 
                 // Observe the requested session instead of assuming a fixed delay is enough.

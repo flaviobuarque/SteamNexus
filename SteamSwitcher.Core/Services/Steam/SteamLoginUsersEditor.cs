@@ -59,6 +59,7 @@ public static class SteamLoginUsersEditor
                 targetSteamId64,
                 StringComparison.Ordinal);
             foundTarget |= isTarget;
+            if (isTarget) SetString(user, "RememberPassword", "1");
 
             SetString(user, "MostRecent", isTarget ? "1" : "0");
             SetString(user, "AutoLogin", isTarget ? "1" : "0");
@@ -101,6 +102,7 @@ public static class SteamLoginUsersEditor
 
     private static void ApplySessionFlags(KVObject user, LoginState state)
     {
+        SetString(user, "RememberPassword", "1");
         SetString(user, "MostRecent", "1");
         SetString(user, "AutoLogin", "1");
         var offline = state == LoginState.Offline ? "1" : "0";

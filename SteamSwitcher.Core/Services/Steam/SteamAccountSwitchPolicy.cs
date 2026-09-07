@@ -16,10 +16,8 @@ public static class SteamAccountSwitchPolicy
     // Always pass a freshly read VDF account, not a cached card or archived entry.
     public static void RequireRememberedAccount([NotNull] SteamAccount? account)
     {
-        if (account is null || !account.RememberPassword)
+        if (account is null)
             throw new InvalidOperationException(
-                "Esta conta não está disponível para troca: é necessário RememberPassword=1 no loginusers.vdf. " +
-                "Entre novamente nessa conta pela Steam com a opção de lembrar o login ativada. " +
-                "Se já usou a correção no diagnóstico, verifique se a Steam manteve essa opção ativada.");
+                "A conta não está disponível no loginusers.vdf. Entre nela pela Steam antes de continuar.");
     }
 }

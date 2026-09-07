@@ -356,6 +356,7 @@ public class SteamAccountService(
             == (targetState == LoginState.Offline);
 
         return targetIsAlreadyActive
+            && persisted.RememberPassword
             && SteamSessionResolver.Resolve(snapshot, ReadActiveUser())?.SteamId64 == target.SteamId64
             && persistedStateMatches
             && IsOnlySelectedSteamMainProcessRunning();
