@@ -212,22 +212,46 @@
                                 <TextBlock Text="BETA — A personalização de temas está em fase de testes."
                                            Margin="0,6,16,0" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource AppWarningBrush}"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="2">
- <WrapPanel HorizontalAlignment="Right">
- <ui:Button Content="Criar tema" Click="CreateTheme_Click" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
-            Background="{DynamicResource AppAccentBrush}" Foreground="{DynamicResource AppOnAccentTextBrush}"
-            BorderBrush="{DynamicResource AppAccentAltBrush}" Margin="0,0,6,6"/>
- <ui:Button Content="Importar" Click="ImportTheme_Click" Margin="0,0,0,6"/>
- </WrapPanel>
- <WrapPanel HorizontalAlignment="Right" Visibility="{Binding HasAppliedCustomTheme, Converter={StaticResource BoolToVisibility}}">
- <ui:Button Content="Editar" Click="OpenThemeEditor_Click" Margin="0,0,6,6"/>
- <ui:Button Content="⋯" ToolTip="Ações do tema personalizado" Click="ThemeActions_Click">
- <ui:Button.ContextMenu><ContextMenu Style="{StaticResource AppCardContextMenuStyle}">
- <ContextMenu.Resources><Style TargetType="MenuItem" BasedOn="{StaticResource AppCardMenuItemStyle}"/></ContextMenu.Resources>
- <MenuItem Header="Duplicar" Click="DuplicateTheme_Click"/><MenuItem Header="Renomear" Click="RenameTheme_Click"/>
- <MenuItem Header="Compartilhar" Click="ShareTheme_Click"/><MenuItem Header="Excluir" Click="DeleteTheme_Click"/>
- </ContextMenu></ui:Button.ContextMenu></ui:Button>
- </WrapPanel></StackPanel>
+                            <!-- Keep four fixed slots; add future actions to the overflow menu. -->
+                            <Grid Grid.Column="2" Width="186" Height="42" VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="48"/><ColumnDefinition Width="48"/>
+                                    <ColumnDefinition Width="48"/><ColumnDefinition Width="42"/>
+                                </Grid.ColumnDefinitions>
+                                <ui:Button Width="42" Height="42" Padding="0" HorizontalAlignment="Left"
+                                           Click="CreateTheme_Click" ToolTip="Criar tema" AutomationProperties.Name="Criar tema"
+                                           Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
+                                           Background="{DynamicResource AppAccentBrush}" Foreground="{DynamicResource AppOnAccentTextBrush}"
+                                           BorderBrush="{DynamicResource AppAccentAltBrush}">
+                                    <Grid Width="24" Height="24">
+                                        <ic:SymbolIcon Symbol="Color" FontSize="18" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                        <ic:SymbolIcon Symbol="Add" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                    </Grid>
+                                </ui:Button>
+                                <ui:Button Grid.Column="1" Width="42" Height="42" Padding="0" HorizontalAlignment="Left"
+                                           Click="ImportTheme_Click" ToolTip="Importar tema" AutomationProperties.Name="Importar tema">
+                                    <ic:SymbolIcon Symbol="ArrowDownload" FontSize="18"/>
+                                </ui:Button>
+                                <ui:Button Grid.Column="2" Width="42" Height="42" Padding="0" HorizontalAlignment="Left"
+                                           Click="OpenThemeEditor_Click" ToolTip="Editar tema" AutomationProperties.Name="Editar tema"
+                                           Visibility="{Binding HasAppliedCustomTheme, Converter={StaticResource BoolToVisibility}}">
+                                    <ic:SymbolIcon Symbol="Edit" FontSize="18"/>
+                                </ui:Button>
+                                <ui:Button Grid.Column="3" Width="42" Height="42" Padding="0"
+                                           ToolTip="Mais ações do tema" AutomationProperties.Name="Mais ações do tema" Click="ThemeActions_Click"
+                                           Visibility="{Binding HasAppliedCustomTheme, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Text="⋯" FontSize="22" VerticalAlignment="Center"/>
+                                    <ui:Button.ContextMenu>
+                                        <ContextMenu Style="{StaticResource AppCardContextMenuStyle}">
+                                            <ContextMenu.Resources><Style TargetType="MenuItem" BasedOn="{StaticResource AppCardMenuItemStyle}"/></ContextMenu.Resources>
+                                            <MenuItem Header="Duplicar" Click="DuplicateTheme_Click"/>
+                                            <MenuItem Header="Renomear" Click="RenameTheme_Click"/>
+                                            <MenuItem Header="Compartilhar" Click="ShareTheme_Click"/>
+                                            <MenuItem Header="Excluir" Click="DeleteTheme_Click"/>
+                                        </ContextMenu>
+                                    </ui:Button.ContextMenu>
+                                </ui:Button>
+                            </Grid>
                         </Grid>
                     </Border>
                 </StackPanel>
