@@ -24,6 +24,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private readonly INavigationViewPageProvider _pageProvider;
     private readonly IContentDialogService _contentDialogService;
     private readonly IAppSettingsService _settingsService;
+    private readonly GamesViewModel _gamesViewModel;
+    private readonly CancellationTokenSource _trayGamesCancellation = new();
 
     private const int WmHotkey = 0x0312;
     private const int GlobalHotkeyId = 0x5353;
@@ -42,16 +44,20 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         ISnackbarService snackbarService,
         INavigationViewPageProvider pageProvider,
         IContentDialogService contentDialogService,
-        IAppSettingsService settingsService)
+        IAppSettingsService settingsService,
+        GamesViewModel gamesViewModel)
     {
         _viewModel = viewModel;
         _snackbarService = snackbarService;
         _pageProvider = pageProvider;
         _contentDialogService = contentDialogService;
         _settingsService = settingsService;
+        _gamesViewModel = gamesViewModel;
 
         InitializeComponent();
         DataContext = _viewModel;
+        TrayRunningGamesItem.DataContext = _gamesViewModel;
+        TrayRunningGamesSeparator.DataContext = _gamesViewModel;
         ApplyFeatureVisibility();
 
         Loaded += OnLoaded;
@@ -62,6 +68,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
         Closed += (_, _) =>
         {
+            _trayGamesCancellation.Cancel();
             UnregisterGlobalHotkey();
 
             if (_windowSource is not null)
@@ -94,6 +101,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
         if (TrayIcon.Menu is ContextMenu trayMenu)
             trayMenu.DataContext = _viewModel;
+        _ = InitializeTrayGamesAsync(_trayGamesCancellation.Token);
 
         var handle = new WindowInteropHelper(this).Handle;
         _windowSource = HwndSource.FromHwnd(handle);
@@ -112,6 +120,25 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         if (MainFrame.Content is SettingsPage settingsPage)
             return settingsPage.ViewModel.ConfirmNavigateAway();
         return true;
+    }
+
+    private async Task InitializeTrayGamesAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                await _gamesViewModel.InitializeAsync(ct);
+                return;
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Tray] Falha ao iniciar monitoramento de jogos: {ex.Message}");
+                try { await Task.Delay(TimeSpan.FromSeconds(5), ct); }
+                catch (OperationCanceledException) { return; }
+            }
+        }
     }
 
     private void NavigateTo(Type pageType, string activeKey)

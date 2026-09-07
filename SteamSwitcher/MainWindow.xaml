@@ -464,6 +464,31 @@
 
                     <Separator />
 
+                    <MenuItem x:Name="TrayRunningGamesItem" IsEnabled="False"
+                        Visibility="{Binding HasRunningGames, Converter={StaticResource BoolToVisibility}}">
+                        <MenuItem.Header>
+                            <StackPanel Margin="2,4,8,4" MaxWidth="280">
+                                <TextBlock Text="Em execução" FontSize="10" Margin="0,0,0,4"
+                                    Foreground="{DynamicResource AppTextMutedBrush}" />
+                                <ItemsControl ItemsSource="{Binding RunningGames}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,2">
+                                                <TextBlock Text="{Binding Game.Name}" FontWeight="SemiBold"
+                                                    TextTrimming="CharacterEllipsis" MaxWidth="280"
+                                                    Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                                <TextBlock Text="{Binding RuntimeStatus}" FontSize="10"
+                                                    Foreground="{DynamicResource AppSuccessBrush}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <Separator x:Name="TrayRunningGamesSeparator"
+                        Visibility="{Binding HasRunningGames, Converter={StaticResource BoolToVisibility}}" />
+
                     <!-- Abrir / Ocultar -->
                     <MenuItem
                 Header="{Binding ToggleWindowText}"

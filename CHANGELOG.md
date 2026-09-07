@@ -6,7 +6,8 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Novidades
 
-- Tela de jogos com monitoramento de execução, faixa de jogos abertos, filtro e ações Ver jogo e Parar, sem alterações no tray.
+- Tela de jogos com monitoramento de execução, faixa de jogos abertos, filtro e ações Ver jogo e Parar.
+- Jogos em execução exibidos no tray somente enquanto estão abertos, preservando as opções existentes e sem exigir uma visita à tela de jogos.
 - Estados de início, execução e encerramento nos cards e na lista compacta; menu de opções com desinstalação pela Steam.
 - Diálogo de troca de jogo com capas, conta de destino, progresso e confirmação antes de encerrar o jogo atual. Encerramento forçado exige uma confirmação adicional.
 - Desinstalação acompanhada pela biblioteca local, com aviso sobre arquivos compartilhados entre contas e opção de cancelar o acompanhamento após cancelar na Steam.

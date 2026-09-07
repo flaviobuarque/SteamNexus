@@ -1126,6 +1126,7 @@ public partial class GamesViewModel(
 
     public void RefreshStatusBar()
     {
+        if (mainViewModel.ActivePage != "Games") return;
         var total = _filteredGames.Count;
         mainViewModel.UpdateStatusBar($"{total} jogos", showLoginToggle: true);
     }
