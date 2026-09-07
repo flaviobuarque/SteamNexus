@@ -78,7 +78,9 @@
     <SolidColorBrush x:Key="MenuItemHighlightedForeground"      Color="#EAF7FF" />
 
     <!-- ScrollBar thumb -->
-    <SolidColorBrush x:Key="AppScrollThumbBrush"                Color="#2A5A7A" />
+    <SolidColorBrush x:Key="AppScrollThumbBrush" Color="#408EE3" Opacity="0.65" />
+    <SolidColorBrush x:Key="AppScrollThumbHoverBrush" Color="#408EE3" Opacity="0.85" />
+    <SolidColorBrush x:Key="AppScrollThumbPressedBrush" Color="#408EE3" />
 
     <SolidColorBrush x:Key="AccountCardHeaderBrush"
                  Color="#143252"/>

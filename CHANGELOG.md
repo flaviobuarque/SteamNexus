@@ -21,6 +21,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Scrollbar da lista de jogos alinhada à borda direita, com espaçamento aplicado somente ao conteúdo. Temas oficiais e personalizados usam sua cor de destaque na scrollbar, incluindo hover e arraste.
 - Lista de jogos com margens externas explícitas no topo e nas laterais; miniaturas exibem o pôster completo, sem recorte lateral.
 - Listas com status e instalação na mesma linha, último uso identificado nas contas e ações alinhadas; unidades da Steam e do jogo diferenciadas.
 - Botão de adicionar conta flutuante sem faixa inferior fixa; espaço de proteção reservado somente no final da rolagem.

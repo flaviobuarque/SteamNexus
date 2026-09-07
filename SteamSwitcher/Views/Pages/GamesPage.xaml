@@ -974,7 +974,6 @@
                 </ItemsControl>
 
             <ListBox
-                Margin="20,16,20,16"
                 Padding="0"
                 ItemsSource="{Binding Games}"
                 Background="Transparent"
@@ -988,6 +987,15 @@
                 VirtualizingPanel.VirtualizationMode="Recycling"
                 VirtualizingPanel.ScrollUnit="Pixel"
                 Visibility="{Binding IsGameCompactContentVisible, Converter={StaticResource BoolToVisibility}}">
+                <ListBox.Template>
+                    <ControlTemplate TargetType="ListBox">
+                        <ScrollViewer x:Name="PART_ScrollViewer" CanContentScroll="True"
+                            VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                            PanningMode="VerticalOnly" Focusable="False">
+                            <ItemsPresenter Margin="20,16,12,16" />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ListBox.Template>
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel />

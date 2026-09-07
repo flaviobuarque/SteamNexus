@@ -436,10 +436,18 @@
                                         <Thumb>
                                             <Thumb.Template>
                                                 <ControlTemplate TargetType="Thumb">
-                                                    <Border
+                                                    <Border x:Name="ScrollThumb"
                                                         Background="{DynamicResource AppScrollThumbBrush}"
                                                         CornerRadius="3"
                                                         Margin="2,2" />
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="ScrollThumb" Property="Background" Value="{DynamicResource AppScrollThumbHoverBrush}" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsDragging" Value="True">
+                                                            <Setter TargetName="ScrollThumb" Property="Background" Value="{DynamicResource AppScrollThumbPressedBrush}" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
                                                 </ControlTemplate>
                                             </Thumb.Template>
                                         </Thumb>

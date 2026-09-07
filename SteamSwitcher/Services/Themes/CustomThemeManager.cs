@@ -50,6 +50,9 @@ public static class CustomThemeManager
         AddBrush(resources, "AppAccentBrush", theme.Accent);
         AddBrush(resources, "AppAccentAltBrush", theme.AccentAlt);
         AddBrush(resources, "AppAccentSurfaceBrush", theme.AccentSurface);
+        AddBrush(resources, "AppScrollThumbBrush", theme.Accent, 0.65);
+        AddBrush(resources, "AppScrollThumbHoverBrush", theme.Accent, 0.85);
+        AddBrush(resources, "AppScrollThumbPressedBrush", theme.Accent);
         resources["AppOnAccentTextBrush"] = FrozenBrush(onAccent);
         AddBrush(resources, "AppSuccessBrush", theme.Success);
         AddBrush(resources, "AppWarningBrush", theme.Warning);
