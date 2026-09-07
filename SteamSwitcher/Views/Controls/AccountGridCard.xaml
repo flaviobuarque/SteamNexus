@@ -7,6 +7,8 @@
     xmlns:converters="clr-namespace:SteamSwitcher.Converters"
     xmlns:local="clr-namespace:SteamSwitcher.Views.Controls"
     ClipToBounds="False"
+    UseLayoutRounding="True" SnapsToDevicePixels="True"
+    TextOptions.TextFormattingMode="Display"
     Width="180">
 
     <UserControl.Resources>
@@ -19,7 +21,6 @@
             <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
-            <Setter Property="Effect" Value="{DynamicResource AppCardEffect}" />
             <Setter Property="Cursor" Value="Hand" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
@@ -42,7 +43,10 @@
     <Border
     Padding="4"
     Background="Transparent">
-
+        <Grid>
+        <Border Background="{DynamicResource AppSurfaceBrush}"
+            CornerRadius="{DynamicResource AppCardCornerRadius}"
+            Effect="{DynamicResource AppCardEffect}" IsHitTestVisible="False" />
         <Border
             x:Name="CardBorder"
             Style="{StaticResource CardBorderStyle}"
@@ -388,5 +392,6 @@
                 </StackPanel>
             </Grid>
         </Border>
+        </Grid>
     </Border>
 </UserControl>

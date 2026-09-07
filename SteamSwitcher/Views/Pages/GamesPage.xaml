@@ -584,13 +584,18 @@
                                         ScaleX="{Binding DataContext.GameCardScale, Source={x:Reference GamesItemsControl}}"
                                         ScaleY="{Binding DataContext.GameCardScale, Source={x:Reference GamesItemsControl}}" />
                                 </Grid.LayoutTransform>
+                            <Border Width="160" Height="340" Margin="0,0,10,10"
+                                CornerRadius="{DynamicResource AppCardCornerRadius}"
+                                Background="{DynamicResource AppSurfaceBrush}"
+                                Effect="{DynamicResource AppCardEffect}" IsHitTestVisible="False" />
                             <Border
                                 x:Name="CardRoot"
+                                UseLayoutRounding="True" SnapsToDevicePixels="True"
+                                TextOptions.TextFormattingMode="Display"
                                 Width="160"
                                 Height="340"
                                 Margin="0,0,10,10"
                                 CornerRadius="{DynamicResource AppCardCornerRadius}"
-                                Effect="{DynamicResource AppCardEffect}"
                                 BorderThickness="1"
                                 Background="{DynamicResource AppSurfaceBrush}"
                                 BorderBrush="{DynamicResource AppBorderBrush}"

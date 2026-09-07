@@ -21,6 +21,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Efeitos dos cards de contas e jogos isolados numa camada de fundo, preservando a renderização do texto e das imagens; sombras desligadas não aplicam mais BlurEffect de raio zero.
 - Tray com template próprio seguindo o tema, cabeçalhos informativos sem esmaecimento de item desabilitado e alinhamento de texto aos pixels.
 - Corrigida a compilação do teste do rodapé após a inclusão dos serviços de jogos no MainViewModel.
 - Troca e edição de contas bloqueadas durante jogos em execução. Menus de contas e jogos padronizados; durante a execução exibem apenas favoritos, copiar SteamID nas contas e aviso para parar o jogo.

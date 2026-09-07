@@ -61,7 +61,7 @@ public static class CustomThemeManager
         resources["AppThemeShadowsEnabled"] = theme.ShadowsEnabled;
         resources["AppCardEffect"] = theme.ShadowsEnabled
             ? new DropShadowEffect { BlurRadius = 18, ShadowDepth = 4, Opacity = 0.22, Color = Colors.Black }
-            : new BlurEffect { Radius = 0 };
+            : null;
 
         if (!string.IsNullOrWhiteSpace(theme.BackgroundImagePath)
             && File.Exists(theme.BackgroundImagePath))
