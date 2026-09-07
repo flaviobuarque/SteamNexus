@@ -20,6 +20,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Removido o texto de progresso acima da biblioteca; a abertura do jogo exibe o andamento somente no diálogo, sem espaço duplicado na lista.
 - Removida a faixa superior de jogos em execução. O jogo ativo recebe destaque verde no card, preservado no hover e na lista compacta.
 - Alteração da conta associada e desinstalação bloqueadas enquanto o jogo estiver em execução, com orientação para pará-lo primeiro e nova verificação antes de aplicar a ação.
 - Opção Jogados recentemente padronizada com o menu de ordenação: ícone à esquerda e seleção à direita, com alinhamento uniforme.
