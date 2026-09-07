@@ -201,6 +201,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         => NavigateTo(typeof(AboutPage), "About");
 
     private async void UpdateIndicator_Click(object sender, RoutedEventArgs e)
+        => await ShowUpdatePromptAsync();
+
+    public async Task ShowUpdatePromptAsync(bool hasUnsavedSettings = false)
     {
         var updateService = _viewModel.UpdateService;
         if (!updateService.IsUpdateAvailable || updateService.IsDownloading)
@@ -219,6 +222,14 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
         if (dialog.Choice == UpdatePromptDialog.UpdateChoice.Later)
             return;
+
+        if (dialog.Choice == UpdatePromptDialog.UpdateChoice.DownloadAndInstall && hasUnsavedSettings)
+        {
+            _snackbarService.Show("Salve as configurações primeiro",
+                "Há alterações pendentes antes de reiniciar para atualizar.",
+                Wpf.Ui.Controls.ControlAppearance.Caution, null, TimeSpan.FromSeconds(4));
+            return;
+        }
 
         if (updateService.IsUpdateReady)
         {

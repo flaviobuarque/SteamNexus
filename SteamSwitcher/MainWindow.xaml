@@ -471,9 +471,9 @@
                                 </Border>
 
                                 <!-- Nome e label -->
-                                <StackPanel VerticalAlignment="Center">
+                                <StackPanel VerticalAlignment="Center" MaxWidth="250">
                                     <TextBlock
-                                        Text="{Binding ActiveAccountName}"
+                                        Text="{Binding TrayAccountTitle}" TextWrapping="Wrap"
                                         FontWeight="SemiBold"
                                         FontSize="13"
                                         Foreground="{DynamicResource AppTextPrimaryBrush}" />
@@ -486,6 +486,7 @@
                                             Converter={StaticResource BoolToVisibility}}" />
                                         <TextBlock
                                         Text="{Binding TrayAccountStatusText}"
+                                        TextWrapping="Wrap" MaxWidth="250" Margin="0,3,0,0"
                                         FontSize="10"
                                         Foreground="{DynamicResource AppTextMutedBrush}" />
                                     </StackPanel>

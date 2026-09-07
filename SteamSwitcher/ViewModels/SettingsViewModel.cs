@@ -511,16 +511,8 @@ public partial class SettingsViewModel(
     [RelayCommand]
     private async Task DownloadUpdateAsync()
     {
-        await UpdateService.DownloadUpdateAsync();
-        if (!string.IsNullOrEmpty(UpdateService.ErrorText))
-        {
-            snackbarService.Show(
-                "Falha ao baixar atualização",
-                UpdateService.ErrorText,
-                ControlAppearance.Danger,
-                null,
-                TimeSpan.FromSeconds(5));
-        }
+        if (Application.Current.MainWindow is Views.MainWindow window)
+            await window.ShowUpdatePromptAsync(HasUnsavedChanges);
     }
 
     [RelayCommand]

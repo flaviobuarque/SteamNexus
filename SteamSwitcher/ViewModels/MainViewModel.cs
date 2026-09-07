@@ -56,6 +56,7 @@ public partial class MainViewModel(
     }
     [ObservableProperty] private string _activeAccountName = string.Empty;
     [ObservableProperty] private bool _hasActiveAccount;
+    [ObservableProperty] private bool _isSteamRunning;
     [ObservableProperty] private bool _steamNotFound;
     [ObservableProperty] private string _trayTooltip = "Steam Switcher";
     [ObservableProperty] private string _trayActiveAccountText = "Nenhuma conta ativa";
@@ -80,7 +81,22 @@ public partial class MainViewModel(
 
     public SteamAccount? ResolveObservedAccount(SteamAccount? observed) => _switchPresentation.Resolve(observed);
 
-    public string TrayAccountStatusText => IsSwitchingAccount ? "Trocando conta..." : "Conta ativa";
+    public string TrayAccountTitle => HasActiveAccount ? ActiveAccountName
+        : IsSteamRunning ? "Steam em execução" : "Steam não está em execução";
+    public string TrayAccountStatusText => IsSwitchingAccount ? "Trocando conta..."
+        : HasActiveAccount ? $"Conta ativa · {StatusLoginState}"
+        : IsSteamRunning ? "Nenhuma conta conectada" : "Abra a Steam para iniciar uma sessão.";
+
+    partial void OnIsSteamRunningChanged(bool value) => NotifyTrayPresentationChanged();
+    partial void OnHasActiveAccountChanged(bool value) => NotifyTrayPresentationChanged();
+    partial void OnActiveAccountNameChanged(string value) => OnPropertyChanged(nameof(TrayAccountTitle));
+    partial void OnStatusLoginStateChanged(string value) => OnPropertyChanged(nameof(TrayAccountStatusText));
+
+    private void NotifyTrayPresentationChanged()
+    {
+        OnPropertyChanged(nameof(TrayAccountTitle));
+        OnPropertyChanged(nameof(TrayAccountStatusText));
+    }
     public int AccountGridDensityPercent => NormalizeAccountGridDensity(
         settingsService.Current.AccountGridDensityPercent);
     public string AccountGridDensityText => $"{AccountGridDensityPercent}%";
@@ -304,6 +320,7 @@ public partial class MainViewModel(
     public void ApplyActiveAccount(SteamAccount? active, string? avatarPath = null)
     {
         _displayedAccount = active;
+        IsSteamRunning = active is not null || IsSteamProcessRunning();
         if (active is null)
         {
             _activeSteamId64 = null;
@@ -312,8 +329,8 @@ public partial class MainViewModel(
             StatusAccountName = string.Empty;
             ActiveAccountAvatarPath = string.Empty;
             StatusLoginState = string.Empty;
-            TrayTooltip = "Steam Switcher";
-            TrayActiveAccountText = "Nenhuma conta ativa";
+            TrayTooltip = $"SteamNexus — {TrayAccountTitle}";
+            TrayActiveAccountText = TrayAccountTitle;
 
             foreach (var a in TrayAccounts)
                 a.IsActive = false;
@@ -361,6 +378,16 @@ public partial class MainViewModel(
             return currentAvatarPath;
 
         return string.Empty;
+    }
+
+    private static bool IsSteamProcessRunning()
+    {
+        var processes = System.Diagnostics.Process.GetProcessesByName("steam");
+        try { return processes.Length > 0; }
+        finally
+        {
+            foreach (var process in processes) process.Dispose();
+        }
     }
 
     [RelayCommand]

@@ -42,9 +42,9 @@
             </Style>
 
             <Style x:Key="LoginPreferenceBadgeStyle" TargetType="Button">
-                <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
-                <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+                <Setter Property="Background" Value="#27313F" />
+                <Setter Property="Foreground" Value="#E2E8F0" />
+                <Setter Property="BorderBrush" Value="#64748B" />
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="Padding" Value="8,3" />
                 <Setter Property="FontSize" Value="10" />
@@ -68,13 +68,25 @@
                                 <DataTrigger Binding="{Binding LoginPreferenceValue}" Value="{x:Static models:LoginState.Offline}">
                                     <Setter TargetName="LoginStateIcon" Property="Symbol" Value="GlobeOff" />
                                 </DataTrigger>
-                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Badge" Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" /></Trigger>
+                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Badge" Property="Opacity" Value="0.85" /></Trigger>
                                 <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Badge" Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" /></Trigger>
                                 <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Badge" Property="Opacity" Value="0.5" /></Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding LoginPreferenceValue}" Value="{x:Static models:LoginState.Online}">
+                        <Setter Property="Background" Value="#123C2B" />
+                        <Setter Property="Foreground" Value="#86EFAC" />
+                        <Setter Property="BorderBrush" Value="#22C55E" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding LoginPreferenceValue}" Value="{x:Static models:LoginState.Offline}">
+                        <Setter Property="Background" Value="#492B13" />
+                        <Setter Property="Foreground" Value="#FED7AA" />
+                        <Setter Property="BorderBrush" Value="#FB923C" />
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="LoginPreferenceContextMenuStyle" TargetType="ContextMenu">

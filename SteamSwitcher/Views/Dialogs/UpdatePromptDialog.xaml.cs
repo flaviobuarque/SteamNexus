@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Documents;
 using System.Text.RegularExpressions;
+using SteamSwitcher.Services.Updates;
 
 namespace SteamSwitcher.Views.Dialogs;
 
@@ -19,7 +20,7 @@ public partial class UpdatePromptDialog : Window
     {
         InitializeComponent();
         VersionText.Text = $"Versão instalada: {currentVersion}   •   Nova versão: {version}";
-        foreach (var line in releaseNotes.Replace("\r", "").Split('\n'))
+        foreach (var line in ReleaseNotesFormatter.Format(releaseNotes).Split('\n'))
         {
             var heading = line.StartsWith('#');
             var text = Regex.Replace(line.TrimStart('#').Trim(), @"\[([^\]]+)\]\([^)]+\)", "$1")

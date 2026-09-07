@@ -11,6 +11,24 @@ namespace SteamSwitcher.Tests;
 
 public sealed class FooterLoginStateTests
 {
+    [Fact]
+    public void TrayDistinguishesClosedSteamFromRunningWithoutAnAccount()
+    {
+        var vm = new MainViewModel(Substitute.For<ISteamAccountService>(),
+            Substitute.For<ISteamLocatorService>(), Substitute.For<ISnackbarService>(),
+            Substitute.For<IAppSettingsService>(), Substitute.For<IUpdateService>(),
+            Substitute.For<ISteamGameService>(), Substitute.For<IGameRuntimeService>());
+        vm.TrayAccountTitle.Should().Be("Steam não está em execução");
+        vm.TrayAccountStatusText.Should().NotContain("Conta ativa");
+        vm.IsSteamRunning = true;
+        vm.TrayAccountTitle.Should().Be("Steam em execução");
+        vm.TrayAccountStatusText.Should().Be("Nenhuma conta conectada");
+        vm.ApplyActiveAccount(new SteamAccount { SteamId64 = "1", AccountName = "test", WantsOfflineMode = true });
+        vm.TrayAccountStatusText.Should().Be("Conta ativa · Offline");
+        vm.IsSwitchingAccount = true;
+        vm.TrayAccountStatusText.Should().Be("Trocando conta...");
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData(LoginState.Online)]

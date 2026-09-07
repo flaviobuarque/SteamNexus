@@ -43,12 +43,14 @@
 
                 <TextBlock Text="O QUE HÁ DE NOVO" FontSize="11" FontWeight="Bold"
                            Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,0,0,7" />
-                <Border MaxHeight="160" Padding="12" CornerRadius="10"
+                <Border MaxHeight="220" Padding="14" CornerRadius="10"
                         Background="{DynamicResource AppSurfaceBrush}"
                         BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
                     <FlowDocumentScrollViewer x:Name="ReleaseNotesViewer" IsToolBarVisible="False"
                         VerticalScrollBarVisibility="Auto" Foreground="{DynamicResource AppTextPrimaryBrush}">
-                        <FlowDocument PagePadding="0" FontSize="13" />
+                        <FlowDocument PagePadding="0" FontFamily="Segoe UI" FontSize="13"
+                                      TextAlignment="Left" LineHeight="20"
+                                      Foreground="{DynamicResource AppTextPrimaryBrush}" />
                     </FlowDocumentScrollViewer>
                 </Border>
 

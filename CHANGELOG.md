@@ -4,6 +4,16 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.23] - 2026-09-07
+
+### Melhorias
+
+- A tela de atualização apresenta as novidades em uma lista legível, com títulos e textos alinhados à esquerda.
+- O botão Baixar atualização das configurações abre a mesma tela do rodapé, permitindo instalar agora, apenas baixar ou adiar.
+- Links técnicos e instruções de instalação não ocupam mais o espaço destinado às novidades.
+- Os selos de contas e jogos têm cores distintas: Padrão em cinza, Online em verde e Offline em laranja.
+- O menu da bandeja informa quando a Steam está fechada ou aberta sem conta conectada. Com uma conta conectada, mostra seu nome e estado Online/Offline.
+
 ## [1.0.22] - 2026-09-07
 
 ### Diagnóstico

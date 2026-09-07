@@ -47,6 +47,16 @@ jobs:
 
           "version=$version" >> $env:GITHUB_OUTPUT
 
+      - name: Validar novidades da versão
+        shell: pwsh
+        run: |
+          $changelog = Get-Content -Raw CHANGELOG.md
+          $versionPattern = [regex]::Escape("${{ steps.version.outputs.version }}")
+          $entry = [regex]::Match($changelog, "(?ms)^## \[$versionPattern\][^\r\n]*\r?\n(.*?)(?=^## |\z)")
+          if (!$entry.Success -or $entry.Groups[1].Value -notmatch '(?m)^-\s+\S+') {
+            throw "Adicione ao CHANGELOG.md uma seção da versão com as mudanças descritas para o usuário antes de publicar."
+          }
+
       - name: Restaurar dependências
         run: dotnet restore SteamSwitcher.sln
 
