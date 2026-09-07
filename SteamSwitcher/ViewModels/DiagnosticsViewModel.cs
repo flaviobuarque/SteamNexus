@@ -22,6 +22,35 @@ public partial class DiagnosticsViewModel(
     public async Task InitializeAsync() => await RefreshAsync();
 
     [RelayCommand]
+    private async Task RepairRememberPasswordAsync(DiagnosticInstallationItem item)
+    {
+        try
+        {
+            var report = await diagnosticsService.CheckInstallationAsync(item.Report.InstallationId);
+            if (!report.CanRepairRememberPassword)
+            {
+                await RefreshAsync();
+                return;
+            }
+            var dialog = new Views.Dialogs.RepairRememberPasswordDialog(diagnosticsService, report)
+            {
+                Owner = Application.Current.MainWindow,
+            };
+            if (dialog.ShowDialog() == true)
+            {
+                snackbarService.Show("Preferência corrigida", $"{dialog.RepairedCount} conta(s) atualizada(s). Backup salvo ao lado de loginusers.vdf.",
+                    ControlAppearance.Success, null, TimeSpan.FromSeconds(5));
+                await RefreshAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbarService.Show("Não foi possível corrigir", ex.Message,
+                ControlAppearance.Danger, null, TimeSpan.FromSeconds(5));
+        }
+    }
+
+    [RelayCommand]
     private async Task RefreshAsync()
     {
         if (IsChecking) return;

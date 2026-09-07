@@ -6,6 +6,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Novidades
 
+- Diagnóstico de contas com RememberPassword=0 por instalação, com lista limitada e rolagem para corrigir selecionadas ou todas. Ação manual exige Steam fechada, preserva os demais campos e cria backup antes da gravação.
 - Selo Última Usada abaixo da data da conta, na grade e lista, exibido somente quando não há uma conta ativa; utiliza a última sessão observada ou a data registrada pela Steam.
 - Tray exibe o ícone do executável do jogo, sem usar o pôster, com ícone genérico quando indisponível.
 - Ordenação Jogados recentemente baseada em LastPlayed da Steam e no início dos processos observados; jogos em execução aparecem primeiro em todas as ordenações.

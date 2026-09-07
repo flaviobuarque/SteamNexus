@@ -6,6 +6,7 @@ public interface ISteamDiagnosticsService
     Task<SteamInstallationDiagnosticReport> CheckInstallationAsync(string installationId, CancellationToken ct = default);
     Task DisableAccountChooserAsync(string installationId, CancellationToken ct = default);
     Task RepairRegistryAsync(string installationId, CancellationToken ct = default);
+    Task<int> RepairRememberPasswordAsync(string installationId, IReadOnlyCollection<string> steamIds, CancellationToken ct = default);
 }
 
 public sealed class SteamDiagnosticReport
@@ -34,6 +35,9 @@ public sealed class SteamInstallationDiagnosticReport
     public string WarningBadgeText => WarningCount == 1 ? "1 aviso" : $"{WarningCount} avisos";
     public bool CanDisableChooser { get; init; }
     public bool CanRepairRegistry { get; init; }
+    public IReadOnlyList<RememberPasswordAccount> AccountsWithoutRememberPassword { get; init; } = [];
+    public bool CanRepairRememberPassword => AccountsWithoutRememberPassword.Count > 0;
+    public string RememberPasswordSummary => $"{AccountsWithoutRememberPassword.Count} conta(s) com RememberPassword=0";
     public IReadOnlyList<SteamDiagnosticItem> Items { get; init; } = [];
 }
 
@@ -43,8 +47,11 @@ public sealed record SteamDiagnosticItem(
     DiagnosticSeverity Severity)
 {
     public bool IsSuccess => Severity == DiagnosticSeverity.Success;
+    public bool CanRepairRememberPassword { get; init; }
     public bool IsWarning => Severity == DiagnosticSeverity.Warning;
     public bool IsError => Severity == DiagnosticSeverity.Error;
 }
 
 public enum DiagnosticSeverity { Success, Warning, Error }
+
+public sealed record RememberPasswordAccount(string SteamId64, string AccountName, string DisplayName);

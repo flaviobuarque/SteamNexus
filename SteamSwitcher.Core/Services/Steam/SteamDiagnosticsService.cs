@@ -1,12 +1,83 @@
 using Microsoft.Win32;
 using SteamSwitcher.Core.Models;
 using System.Diagnostics;
+using System.Text;
+using System.Text.RegularExpressions;
+using ValveKeyValue;
 
 namespace SteamSwitcher.Core.Services;
 
 public sealed class SteamDiagnosticsService(
     ISteamInstallationService installationService) : ISteamDiagnosticsService
 {
+    private readonly SemaphoreSlim _rememberRepairGate = new(1, 1);
+
+    private static IReadOnlyList<RememberPasswordAccount> FindUnremembered(byte[] bytes)
+    {
+        using var stream = new MemoryStream(bytes);
+        var users = KVSerializer.Create(KVSerializationFormat.KeyValues1Text).Deserialize(stream);
+        return users.Where(user => user["RememberPassword"]?.ToString() == "0")
+            .Select(user => new RememberPasswordAccount(user.Name,
+                user["AccountName"]?.ToString() ?? string.Empty,
+                user["PersonaName"]?.ToString() ?? user["AccountName"]?.ToString() ?? user.Name)).ToArray();
+    }
+
+    public async Task<int> RepairRememberPasswordAsync(string installationId,
+        IReadOnlyCollection<string> steamIds, CancellationToken ct = default)
+    {
+        await _rememberRepairGate.WaitAsync(ct);
+        string? temp = null;
+        try
+        {
+            var installation = RequireInstallation(installationId);
+            EnsureSteamClosed();
+            var path = installation.LoginUsersPath;
+            var original = await File.ReadAllBytesAsync(path, ct);
+            var eligible = FindUnremembered(original).Select(account => account.SteamId64).ToHashSet(StringComparer.Ordinal);
+            var selected = steamIds.Where(eligible.Contains).ToHashSet(StringComparer.Ordinal);
+            if (selected.Count == 0) return 0;
+            var encoding = new UTF8Encoding(false, true);
+            var content = encoding.GetString(original);
+            var changed = new HashSet<string>(StringComparer.Ordinal);
+            var updated = Regex.Replace(content, "\"(?<id>[0-9]+)\"\\s*\\{(?<body>[^{}]*)\\}", match =>
+            {
+                var id = match.Groups["id"].Value;
+                if (!selected.Contains(id)) return match.Value;
+                var result = Regex.Replace(match.Value, "(\"RememberPassword\"\\s*\")0(\")", "${1}1${2}");
+                if (result != match.Value) changed.Add(id);
+                return result;
+            });
+            if (!changed.SetEquals(selected))
+                throw new InvalidOperationException("Formato do arquivo não suportado. Nenhuma alteração foi aplicada.");
+            var bytes = encoding.GetBytes(updated);
+            if (FindUnremembered(bytes).Any(account => selected.Contains(account.SteamId64)))
+                throw new InvalidOperationException("Não foi possível validar a correção.");
+            temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            await File.WriteAllBytesAsync(temp, bytes, ct);
+            EnsureSteamClosed();
+            if (!(await File.ReadAllBytesAsync(path, ct)).AsSpan().SequenceEqual(original))
+                throw new InvalidOperationException("O arquivo mudou durante a correção. Atualize o diagnóstico e tente novamente.");
+            ct.ThrowIfCancellationRequested();
+            File.Replace(temp, path, path + ".rememberpassword-" + Guid.NewGuid().ToString("N") + ".bak");
+            return changed.Count;
+        }
+        finally
+        {
+            if (temp is not null && File.Exists(temp)) File.Delete(temp);
+            _rememberRepairGate.Release();
+        }
+    }
+
+    private static void EnsureSteamClosed()
+    {
+        var processes = Process.GetProcessesByName("steam");
+        try
+        {
+            if (processes.Length > 0)
+                throw new InvalidOperationException("Feche a Steam antes de corrigir. Nenhum jogo ou conta será encerrado automaticamente.");
+        }
+        finally { foreach (var process in processes) process.Dispose(); }
+    }
     public async Task<SteamDiagnosticReport> CheckAsync(CancellationToken ct = default)
     {
         var runningPaths = GetRunningSteamPaths();
@@ -77,6 +148,7 @@ public sealed class SteamDiagnosticsService(
             : Error("Executável", $"Não encontrado: {installation.SteamExePath}"));
 
         SteamAccountsSnapshot snapshot = SteamAccountsSnapshot.Empty;
+        IReadOnlyList<RememberPasswordAccount> unremembered = [];
         if (File.Exists(installation.LoginUsersPath))
         {
             try
@@ -85,7 +157,14 @@ public sealed class SteamDiagnosticsService(
                     installation.LoginUsersPath, FileMode.Open, FileAccess.Read,
                     FileShare.ReadWrite | FileShare.Delete, 4096, true);
                 snapshot = SteamAccountSnapshotParser.Parse(stream);
+                stream.Position = 0;
+                using var copy = new MemoryStream();
+                await stream.CopyToAsync(copy, ct);
+                unremembered = FindUnremembered(copy.ToArray());
                 items.Add(Success("loginusers.vdf", $"Arquivo válido com {snapshot.Accounts.Count} conta(s)."));
+                items.Add(unremembered.Count > 0
+                    ? Warning("Lembrar senha", $"{unremembered.Count} conta(s) com RememberPassword=0. Correção manual disponível.") with { CanRepairRememberPassword = true }
+                    : Success("Lembrar senha", "Nenhuma conta com RememberPassword=0."));
             }
             catch (Exception ex)
             {
@@ -156,6 +235,7 @@ public sealed class SteamDiagnosticsService(
             IsSelected = installation.IsSelected,
             IsRunning = isRunning,
             CanDisableChooser = chooserEnabled,
+            AccountsWithoutRememberPassword = unremembered,
             CanRepairRegistry = shouldCheckGlobalRegistry && active is not null && !registryMatches,
             Items = items,
         };
