@@ -21,7 +21,8 @@ public partial class GamesViewModel(
     IImageCacheService imageCacheService,
     ISnackbarService snackbarService,
     IAppSettingsService settingsService,
-    MainViewModel mainViewModel) : ObservableObject
+    MainViewModel mainViewModel,
+    IGameRuntimeService runtimeService) : ObservableObject, IDisposable
 {
     private IReadOnlyList<GameCardViewModel> _allGames = [];
     private IReadOnlyList<GameCardViewModel> _filteredGames = [];
@@ -156,6 +157,7 @@ public partial class GamesViewModel(
 
             await InitializeCoreAsync(ct);
             _initialized = true;
+            _ = MonitorGamesAsync(_runtimeCancellation.Token);
         }
         finally
         {
@@ -924,6 +926,9 @@ public partial class GamesViewModel(
             }
         }
 
+        // An unavailable drive is not an uninstall confirmation.
+        updated.AddRange(_allGames.Where(old => !updated.Any(card => card.Game.UniqueKey == old.Game.UniqueKey)
+            && !Directory.Exists(Path.Combine(old.Game.LibraryPath, "steamapps"))));
         _allGames = updated;
         ApplyFilters(resetPage: false);
         StartLibraryWatchers();
@@ -939,7 +944,7 @@ public partial class GamesViewModel(
     private void ApplyFilters(bool resetPage = true)
     {
         _filteredGames = Helpers.GameLibraryProjection.FilterAndSort(
-            _allGames,
+            OnlyRunning ? _allGames.Where(card => card.IsRunning).ToArray() : _allGames,
             SelectedFilterAccount?.UniqueKey,
             SearchText,
             GameSortMode);
@@ -957,6 +962,7 @@ public partial class GamesViewModel(
     [RelayCommand]
     private void ClearGameFilters()
     {
+        OnlyRunning = false;
         SearchText = string.Empty;
         SelectedFilterAccount = FilterAccounts.FirstOrDefault();
         ApplyFilters();
@@ -1127,6 +1133,12 @@ public partial class GamesViewModel(
     [RelayCommand]
     private async Task LaunchGameAsync(GameCardViewModel cardVm)
     {
+        if (cardVm.IsRunning)
+        {
+            await StopGameAsync(cardVm);
+            return;
+        }
+        if (IsGameLaunchInProgress || cardVm.IsBusy) return;
         var account = cardVm.Game.OwnerAccount;
 
         // Conta desconhecida — pede pro usuário escolher
@@ -1189,7 +1201,7 @@ public partial class GamesViewModel(
             return;
         }
 
-        if (Interlocked.CompareExchange(ref _launchOperationActive, 1, 0) != 0)
+        if (!TryBeginGameOperation())
         {
             snackbarService.Show(
                 "Lançamento em andamento",
@@ -1211,7 +1223,63 @@ public partial class GamesViewModel(
 
         try
         {
-            await gameService.LaunchGameAsync(cardVm.Game, account);
+            SteamAccountSwitchPolicy.RequireRememberedAccount(account);
+            var freshAccount = (await accountService.GetAllAccountsAsync(_runtimeCancellation.Token))
+                .FirstOrDefault(candidate => candidate.UniqueKey == account.UniqueKey);
+            SteamAccountSwitchPolicy.RequireRememberedAccount(freshAccount);
+            if (!Directory.Exists(cardVm.Game.InstallFullPath))
+                throw new InvalidOperationException("A pasta do jogo não está disponível. Verifique o disco da biblioteca.");
+            await RefreshRuntimeAsync();
+            if (cardVm.IsRunning)
+            {
+                runtimeService.BringToFront(_runtimeSnapshots[cardVm.Game.UniqueKey]);
+                return;
+            }
+            var otherGames = RunningGames.Where(card => card.Game.UniqueKey != cardVm.Game.UniqueKey)
+                .DistinctBy(card => card.Game.InstallFullPath, StringComparer.OrdinalIgnoreCase).ToArray();
+            if (_allGames.Any(card => card.RuntimeUncertain))
+                throw new InvalidOperationException("Há um jogo cujo processo não pôde ser identificado. Feche-o manualmente antes de continuar.");
+            async Task<bool> PrepareAndLaunchAsync()
+            {
+                if (otherGames.Length > 0)
+                {
+                    foreach (var running in otherGames)
+                        if (!await StopGameCoreAsync(running)) return false;
+                    if (!ConfirmGameAction("Antes de continuar", "Os jogos foram encerrados. Verifique na Steam se a sincronização dos saves terminou antes de continuar. O SteamNexus não consegue confirmar a conclusão do Steam Cloud.", "Continuar"))
+                    {
+                        GameOperationMessage = "Abertura cancelada. Os jogos anteriores já foram encerrados.";
+                        return false;
+                    }
+                }
+                await RefreshRuntimeAsync();
+                if (RunningGames.Count > 0 || _allGames.Any(card => card.RuntimeUncertain))
+                    throw new InvalidOperationException("Um jogo está em execução. A abertura foi interrompida para evitar uma troca de conta insegura.");
+                GameOperationMessage = $"Preparando {cardVm.Game.Name} na conta {account.DisplayName}…";
+                await gameService.LaunchGameAsync(cardVm.Game, account, _runtimeCancellation.Token);
+
+                GameOperationMessage = $"Aguardando {cardVm.Game.Name} iniciar…";
+                var deadline = DateTime.UtcNow.AddSeconds(60);
+                do
+                {
+                    await RefreshRuntimeAsync();
+                    if (cardVm.IsRunning && !cardVm.RuntimeUncertain) break;
+                    await Task.Delay(1500, _runtimeCancellation.Token);
+                } while (DateTime.UtcNow < deadline);
+                if (!cardVm.IsRunning || cardVm.RuntimeUncertain)
+                    throw new InvalidOperationException("A abertura foi solicitada, mas a execução não foi confirmada. Verifique a Steam: pode haver atualização, Steam Guard ou um launcher aguardando sua ação.");
+                GameOperationMessage = $"{cardVm.Game.Name} está em execução.";
+                cardVm.RuntimeAccountName = account.DisplayName;
+                return true;
+            }
+            GameOperationMessage = otherGames.Length > 0 ? "Confirme para encerrar os jogos e continuar." : "Preparando abertura…";
+            var launchDialog = new SteamSwitcher.Views.Dialogs.GameActionDialog(this, otherGames, cardVm, account.DisplayName, PrepareAndLaunchAsync)
+            {
+                Owner = Application.Current.MainWindow
+            };
+            _gameActionOwner = launchDialog;
+            try { launchDialog.ShowDialog(); }
+            finally { _gameActionOwner = null; }
+            if (!launchDialog.Completed) return;
 
             var behavior = settingsService.Current.AfterGameLaunch;
             if (behavior == PostSwitchBehavior.MinimizeToTray)
@@ -1221,6 +1289,7 @@ public partial class GamesViewModel(
         }
         catch (Exception ex)
         {
+            GameOperationMessage = ex.Message;
             snackbarService.Show(
                 "Erro",
                 ex.Message,

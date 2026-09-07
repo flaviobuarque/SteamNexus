@@ -10,7 +10,26 @@ public partial class GameCardViewModel : ObservableObject
 
     [ObservableProperty] private string _coverPath = string.Empty;
     [ObservableProperty] private ImageSource? _coverImage;
-    [ObservableProperty] private bool _isLaunching;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsBusy), nameof(RuntimeStatus), nameof(PrimaryActionText))]
+    private bool _isLaunching;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RuntimeStatus), nameof(PrimaryActionText))]
+    private bool _isRunning;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsBusy), nameof(RuntimeStatus), nameof(PrimaryActionText))]
+    private bool _isStopping;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsBusy), nameof(RuntimeStatus), nameof(PrimaryActionText))]
+    private bool _isUninstalling;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RuntimeStatus))]
+    private bool _runtimeUncertain;
+    [ObservableProperty] private string _runtimeAccountName = "Conta não identificada";
+    public bool IsBusy => IsLaunching || IsStopping || IsUninstalling;
+    public string RuntimeStatus => IsStopping ? "Encerrando…" : IsUninstalling ? "Aguardando desinstalação…"
+        : IsLaunching ? "Iniciando…" : RuntimeUncertain ? "Execução não confirmada" : IsRunning ? "● Em execução" : string.Empty;
+    public string PrimaryActionText => IsBusy ? RuntimeStatus : IsRunning ? "Parar" : HasOwner ? "Jogar" : "Associar conta";
     [ObservableProperty] private bool _coverMissing;
     [ObservableProperty] private bool _isCoverLoading;
     [ObservableProperty] private bool _isFavorite;
@@ -39,6 +58,7 @@ public partial class GameCardViewModel : ObservableObject
         OnPropertyChanged(nameof(Game));
         OnPropertyChanged(nameof(OwnerAccountName));
         OnPropertyChanged(nameof(HasOwner));
+        OnPropertyChanged(nameof(PrimaryActionText));
         OnPropertyChanged(nameof(SizeAndDrive));
         OnPropertyChanged(nameof(InstallDrive));
         OnPropertyChanged(nameof(InstallSize));
@@ -49,6 +69,7 @@ public partial class GameCardViewModel : ObservableObject
 
     public void OnOwnerChanged()
     {
+        OnPropertyChanged(nameof(PrimaryActionText));
         OnPropertyChanged(nameof(HasOwner));
         OnPropertyChanged(nameof(OwnerAccountName));
     }

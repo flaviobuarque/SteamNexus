@@ -79,6 +79,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -477,8 +478,60 @@
             </Grid>
         </Border>
 
+        <StackPanel Grid.Row="1" Margin="20,10,20,0">
+            <DockPanel Margin="0,0,0,8">
+                <ToggleButton Content="Em execução" DockPanel.Dock="Left"
+                    IsChecked="{Binding OnlyRunning, Mode=TwoWay}" Style="{StaticResource AccountFilterToggleStyle}"
+                    ToolTip="Mostrar somente jogos em execução" />
+                <ui:Button Content="Já cancelei na Steam" Margin="12,0,0,0" HorizontalAlignment="Right"
+                    Command="{Binding AcknowledgeUninstallCancellationCommand}"
+                    Visibility="{Binding HasPendingUninstall, Converter={StaticResource BoolToVisibility}}" />
+            </DockPanel>
+            <Border Padding="12" CornerRadius="10" Margin="0,0,0,8"
+                Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                Visibility="{Binding HasRunningGames, Converter={StaticResource BoolToVisibility}}">
+                <StackPanel>
+                    <TextBlock Text="Em execução" FontWeight="SemiBold" Margin="0,0,0,6"
+                        Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                    <ScrollViewer MaxHeight="140" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding RunningGames}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="34" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Image Source="{Binding CoverImage}" Width="28" Height="40" Stretch="UniformToFill" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0">
+                                            <TextBlock Text="{Binding Game.Name}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                            <TextBlock Text="{Binding RuntimeAccountName}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <StackPanel.Style>
+                                                <Style TargetType="StackPanel">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DataContext.IsGameLaunchInProgress, RelativeSource={RelativeSource AncestorType=Page}}" Value="True">
+                                                            <Setter Property="IsEnabled" Value="False" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </StackPanel.Style>
+                                            <ui:Button Content="Ver jogo" Margin="0,0,8,0" Command="{Binding DataContext.ViewRunningGameCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" />
+                                            <ui:Button Content="Parar" Command="{Binding DataContext.StopGameCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+            <TextBlock Text="{Binding GameOperationMessage}" TextWrapping="Wrap" MaxHeight="80"
+                Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,0,0,8" />
+        </StackPanel>
+
         <!-- Conteúdo -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <ItemsControl
                 x:Name="GamesItemsControl"
                 Padding="12"
@@ -587,10 +640,39 @@
                                                 <ic:SymbolIcon Symbol="ImageOff" />
                                             </MenuItem.Icon>
                                         </MenuItem>
+                                        <Separator />
+                                        <MenuItem Header="Desinstalar…"
+                                            Command="{Binding PlacementTarget.Tag.UninstallGameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                            CommandParameter="{Binding}" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
 
                                 <Grid>
+                                    <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="4,42,4,0"
+                                        Background="{DynamicResource AppChromeBrush}" CornerRadius="6" Padding="6,3" Panel.ZIndex="22">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RuntimeStatus}" Value=""><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding RuntimeStatus}" FontSize="10" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="138">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource AppSuccessBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsBusy}" Value="True"><Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" /></DataTrigger>
+                                                        <DataTrigger Binding="{Binding RuntimeUncertain}" Value="True"><Setter Property="Foreground" Value="{DynamicResource AppWarningBrush}" /></DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                    <Button Content="⋯" Width="28" Height="28" Padding="0" FontSize="20"
+                                        Margin="0,174,8,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                        Panel.ZIndex="23" ToolTip="Opções do jogo" AutomationProperties.Name="Opções do jogo"
+                                        Click="GameOptionsButton_Click" />
                                     <Button Style="{StaticResource GameFavoriteIconButtonStyle}"
                                         Margin="0,8,8,0" HorizontalAlignment="Right" VerticalAlignment="Top"
                                         Panel.ZIndex="20" ToolTip="Favoritar jogo"
@@ -746,22 +828,14 @@
                                                                             <Setter Property="Symbol" Value="PersonAdd" />
                                                                             <Setter Property="IconVariant" Value="Regular" />
                                                                         </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                                            <Setter Property="Symbol" Value="Stop" />
+                                                                        </DataTrigger>
                                                                     </Style.Triggers>
                                                                 </Style>
                                                             </ic:SymbolIcon.Style>
                                                         </ic:SymbolIcon>
-                                                        <TextBlock VerticalAlignment="Center">
-                                                            <TextBlock.Style>
-                                                                <Style TargetType="TextBlock">
-                                                                    <Setter Property="Text" Value="Jogar" />
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding HasOwner}" Value="False">
-                                                                            <Setter Property="Text" Value="Associar conta" />
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </TextBlock.Style>
-                                                        </TextBlock>
+                                                        <TextBlock VerticalAlignment="Center" Text="{Binding PrimaryActionText}" />
                                                     </StackPanel>
                                                 </ui:Button>
                                                 <TextBlock
@@ -781,7 +855,7 @@
                                         CornerRadius="14,14,0,0"
                                         Height="240"
                                         VerticalAlignment="Top"
-                                        Visibility="{Binding IsLaunching, Converter={StaticResource BoolToVisibility}}">
+                                        Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}">
                                         <local:BusyRing Width="32" Height="32"
                                             VerticalAlignment="Center" HorizontalAlignment="Center" />
                                     </Border>
@@ -852,6 +926,9 @@
                             </Grid>
 
                             <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                    <Setter TargetName="CardRoot" Property="BorderBrush" Value="{DynamicResource AppSuccessBrush}" />
+                                </DataTrigger>
                                 <Trigger SourceName="CardRoot" Property="IsMouseOver" Value="True">
                                     <Setter TargetName="CardRoot" Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" />
                                     <Setter TargetName="CardRoot" Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
@@ -935,6 +1012,10 @@
                                         Command="{Binding PlacementTarget.Tag.RemoveManualCoverCommand,
                                             RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                         CommandParameter="{Binding}" />
+                                    <Separator />
+                                    <MenuItem Header="Desinstalar…"
+                                        Command="{Binding PlacementTarget.Tag.UninstallGameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
                                 </ContextMenu>
                             </Border.ContextMenu>
                             <Grid Height="60">
@@ -967,8 +1048,8 @@
                                     <TextBlock Text="{Binding Game.Name}" FontSize="13" FontWeight="SemiBold"
                                         Foreground="{DynamicResource AppTextPrimaryBrush}"
                                         TextTrimming="CharacterEllipsis" ToolTip="{Binding Game.Name}" />
-                                    <TextBlock Text="{Binding Game.AppId, StringFormat=App {0}}" FontSize="10"
-                                        Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,3,0,0" />
+                                    <TextBlock Text="{Binding RuntimeStatus}" FontSize="10"
+                                        Foreground="{DynamicResource AppSuccessBrush}" Margin="0,3,0,0" />
                                     <TextBlock Text="{Binding InstallationName}" FontSize="10"
                                         Foreground="{DynamicResource AppAccentBrush}" Margin="0,2,0,0"
                                         ToolTip="{Binding InstallationRootPath}" TextTrimming="CharacterEllipsis" />
@@ -1018,7 +1099,8 @@
                                 </Button>
 
                                 <ui:Button Grid.Column="7" Width="36" Height="36" Padding="0"
-                                    HorizontalAlignment="Center" VerticalAlignment="Center" ToolTip="Jogar"
+                                    HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="{Binding PrimaryActionText}"
+                                    AutomationProperties.Name="{Binding PrimaryActionText}"
                                     Command="{Binding DataContext.LaunchGameCommand,
                                         RelativeSource={RelativeSource AncestorType=ListBox}}"
                                     CommandParameter="{Binding}">
@@ -1044,11 +1126,18 @@
                                                     <DataTrigger Binding="{Binding HasOwner}" Value="False">
                                                         <Setter Property="Symbol" Value="PersonAdd" />
                                                     </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                        <Setter Property="Symbol" Value="Stop" />
+                                                    </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </ic:SymbolIcon.Style>
                                     </ic:SymbolIcon>
                                 </ui:Button>
+                                <Button Grid.Column="7" Content="⋯" Width="24" Height="32" Padding="0" FontSize="18"
+                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    ToolTip="Opções do jogo" AutomationProperties.Name="Opções do jogo"
+                                    Click="GameOptionsButton_Click" />
                             </Grid>
                         </Border>
                     </DataTemplate>

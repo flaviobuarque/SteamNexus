@@ -44,4 +44,21 @@ public partial class GamesPage : Page,
         element.ContextMenu.Placement = PlacementMode.Bottom;
         element.ContextMenu.IsOpen = true;
     }
+
+    private void GameOptionsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var current = sender as DependencyObject;
+        while (current is not null)
+        {
+            if (current is Border { ContextMenu: not null } card)
+            {
+                card.ContextMenu.PlacementTarget = card;
+                card.ContextMenu.Placement = PlacementMode.MousePoint;
+                card.ContextMenu.IsOpen = true;
+                e.Handled = true;
+                return;
+            }
+            current = System.Windows.Media.VisualTreeHelper.GetParent(current);
+        }
+    }
 }

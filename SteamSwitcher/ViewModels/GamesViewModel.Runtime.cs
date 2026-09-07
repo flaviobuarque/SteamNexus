@@ -1,0 +1,220 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using SteamSwitcher.Core.Services;
+using SteamSwitcher.Core.Models;
+using SteamSwitcher.Views.Dialogs;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Windows;
+
+namespace SteamSwitcher.ViewModels;
+
+public partial class GamesViewModel
+{
+    private readonly CancellationTokenSource _runtimeCancellation = new();
+    private readonly SemaphoreSlim _runtimeRefreshGate = new(1, 1);
+    private IReadOnlyDictionary<string, GameRuntimeSnapshot> _runtimeSnapshots = new Dictionary<string, GameRuntimeSnapshot>();
+    private sealed class UninstallRequest(SteamGame game)
+    {
+        public SteamGame Game { get; } = game;
+        public DateTime RequestedUtc { get; } = DateTime.UtcNow;
+        public DateTime? ManifestMissingSince { get; set; }
+        public bool Warned { get; set; }
+    }
+    private readonly Dictionary<string, UninstallRequest> _uninstallRequests = new();
+    private Window? _gameActionOwner;
+    public ObservableCollection<GameCardViewModel> RunningGames { get; } = [];
+    public bool HasRunningGames => RunningGames.Count > 0;
+    public bool HasPendingUninstall => _uninstallRequests.Count > 0;
+    [ObservableProperty] private bool _onlyRunning;
+    [ObservableProperty] private string _gameOperationMessage = string.Empty;
+    partial void OnOnlyRunningChanged(bool value) => ApplyFilters();
+
+    private async Task MonitorGamesAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                await RefreshRuntimeAsync();
+                await Task.Delay(2000, ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { break; }
+            catch (Exception ex)
+            {
+                GameOperationMessage = $"Não foi possível atualizar os jogos: {ex.Message}";
+                try { await Task.Delay(5000, ct); }
+                catch (OperationCanceledException) { break; }
+            }
+        }
+    }
+
+    private async Task RefreshRuntimeAsync()
+    {
+        await _runtimeRefreshGate.WaitAsync(_runtimeCancellation.Token);
+        try
+        {
+            var snapshots = await runtimeService.InspectAsync(_allGames.Select(card => card.Game).ToArray(), _runtimeCancellation.Token);
+            _runtimeSnapshots = snapshots;
+            var changed = false;
+            foreach (var card in _allGames)
+            {
+                if (!snapshots.TryGetValue(card.Game.UniqueKey, out var state)) continue;
+                changed |= card.IsRunning != state.IsRunning;
+                card.IsRunning = state.IsRunning;
+                card.RuntimeUncertain = state.IsUncertain;
+                if (!state.IsRunning) card.RuntimeAccountName = "Conta não identificada";
+            }
+            var running = _allGames.Where(card => card.IsRunning)
+                .DistinctBy(card => card.Game.InstallFullPath, StringComparer.OrdinalIgnoreCase).ToArray();
+            foreach (var old in RunningGames.Except(running).ToArray()) RunningGames.Remove(old);
+            foreach (var card in running.Except(RunningGames)) RunningGames.Add(card);
+            OnPropertyChanged(nameof(HasRunningGames));
+            if (changed && OnlyRunning) ApplyFilters(resetPage: false);
+            foreach (var request in _uninstallRequests.ToArray())
+            {
+                var library = Path.Combine(request.Value.Game.LibraryPath, "steamapps");
+                var manifest = Path.Combine(library, $"appmanifest_{request.Value.Game.AppId}.acf");
+                if (Directory.Exists(library) && !File.Exists(manifest))
+                {
+                    request.Value.ManifestMissingSince ??= DateTime.UtcNow;
+                    if (DateTime.UtcNow - request.Value.ManifestMissingSince.Value > TimeSpan.FromSeconds(2))
+                    {
+                        await _libraryRefreshGate.WaitAsync(_runtimeCancellation.Token);
+                        try
+                        {
+                            var games = await gameService.GetInstalledGamesAsync(_allAccounts, _runtimeCancellation.Token);
+                            ApplyLibrarySnapshot(games);
+                        }
+                        finally { _libraryRefreshGate.Release(); }
+                        if (!File.Exists(manifest) && Directory.Exists(library))
+                        {
+                            GameOperationMessage = $"{request.Value.Game.Name}: instalação removida da biblioteca Steam.";
+                            _uninstallRequests.Remove(request.Key);
+                        }
+                    }
+                }
+                else request.Value.ManifestMissingSince = null;
+                if (!request.Value.Warned && DateTime.UtcNow - request.Value.RequestedUtc > TimeSpan.FromMinutes(2))
+                {
+                    request.Value.Warned = true;
+                    GameOperationMessage = "A desinstalação ainda não foi confirmada. Verifique a Steam. Se você cancelou, use ‘Já cancelei na Steam’ para liberar as ações.";
+                }
+            }
+            OnPropertyChanged(nameof(HasPendingUninstall));
+        }
+        finally { _runtimeRefreshGate.Release(); }
+    }
+
+    private bool ConfirmGameAction(string title, string message, string action)
+    {
+        var dialog = new ConfirmDialog(title, message, action, kind: ConfirmDialog.DialogKind.Danger)
+        {
+            Owner = _gameActionOwner ?? Application.Current.MainWindow
+        };
+        dialog.CancelButton.IsDefault = true;
+        dialog.CancelButton.IsCancel = true;
+        dialog.Loaded += (_, _) => dialog.MoveFocus(new System.Windows.Input.TraversalRequest(System.Windows.Input.FocusNavigationDirection.First));
+        dialog.ShowDialog();
+        return dialog.Confirmed;
+    }
+
+    private bool TryBeginGameOperation()
+    {
+        if (_uninstallRequests.Count > 0)
+        {
+            GameOperationMessage = "Aguarde a desinstalação. Se você cancelou na Steam, use ‘Já cancelei na Steam’.";
+            return false;
+        }
+        if (Interlocked.CompareExchange(ref _launchOperationActive, 1, 0) != 0) return false;
+        IsGameLaunchInProgress = true;
+        return true;
+    }
+
+    private void EndGameOperation()
+    {
+        IsGameLaunchInProgress = false;
+        Volatile.Write(ref _launchOperationActive, 0);
+    }
+
+    [RelayCommand]
+    private void ViewRunningGame(GameCardViewModel card)
+    {
+        try
+        {
+            if (_runtimeSnapshots.TryGetValue(card.Game.UniqueKey, out var state)) runtimeService.BringToFront(state);
+        }
+        catch (Exception ex) { GameOperationMessage = ex.Message; }
+    }
+
+    [RelayCommand]
+    private async Task StopGameAsync(GameCardViewModel card)
+    {
+        if (!TryBeginGameOperation()) return;
+        try
+        {
+            if (!ConfirmGameAction("Encerrar jogo", $"Deseja encerrar {card.Game.Name}?\n\nProgresso não salvo pode ser perdido.", "Encerrar jogo")) return;
+            await StopGameCoreAsync(card);
+        }
+        catch (Exception ex) { GameOperationMessage = ex.Message; }
+        finally { EndGameOperation(); }
+    }
+
+    private async Task<bool> StopGameCoreAsync(GameCardViewModel card)
+    {
+        await RefreshRuntimeAsync();
+        if (!_runtimeSnapshots.TryGetValue(card.Game.UniqueKey, out var state)) return false;
+        if (!state.IsRunning && !state.IsUncertain) return true;
+        card.IsStopping = true;
+        GameOperationMessage = $"Encerrando {card.Game.Name}…";
+        try
+        {
+            var stopped = await runtimeService.StopAsync(card.Game, state, false, _runtimeCancellation.Token);
+            if (!stopped && ConfirmGameAction("O jogo ainda está aberto", $"{card.Game.Name} não encerrou. Deseja forçar o encerramento?\n\nIsso pode causar perda de progresso não salvo. Apenas os processos identificados serão encerrados.", "Forçar encerramento"))
+                stopped = await runtimeService.StopAsync(card.Game, state, true, _runtimeCancellation.Token);
+            GameOperationMessage = stopped ? $"{card.Game.Name} foi encerrado." : "O jogo continua aberto. Feche-o manualmente para continuar.";
+            return stopped;
+        }
+        finally
+        {
+            card.IsStopping = false;
+            await RefreshRuntimeAsync();
+        }
+    }
+
+    [RelayCommand]
+    private async Task UninstallGameAsync(GameCardViewModel card)
+    {
+        if (!TryBeginGameOperation()) return;
+        try
+        {
+            if (!Directory.Exists(card.Game.InstallFullPath)) throw new InvalidOperationException("A pasta do jogo não está disponível. Verifique o disco antes de continuar.");
+            if (!ConfirmGameAction("Desinstalar jogo", $"{card.Game.Name}\n{card.InstallSize}\n{card.InstallFullPath}\n\nEsta instalação será removida para todas as contas que usam os mesmos arquivos. A confirmação final será feita na Steam. Não apague saves ou mods sem um backup. Se estiver aberto, o jogo será encerrado primeiro.", "Continuar na Steam")) return;
+            if (!await StopGameCoreAsync(card)) return;
+            runtimeService.RequestUninstall(card.Game);
+            card.IsUninstalling = true;
+            _uninstallRequests[card.Game.UniqueKey] = new(card.Game);
+            OnPropertyChanged(nameof(HasPendingUninstall));
+            GameOperationMessage = $"Confirme a desinstalação de {card.Game.Name} na Steam. A biblioteca será atualizada automaticamente.";
+        }
+        catch (Exception ex) { GameOperationMessage = ex.Message; }
+        finally { EndGameOperation(); }
+    }
+
+    public void Dispose()
+    {
+        _runtimeCancellation.Cancel();
+        foreach (var watcher in _libraryWatchers) watcher.Dispose();
+        _libraryRefreshDebounceCts?.Cancel();
+    }
+
+    [RelayCommand]
+    private void AcknowledgeUninstallCancellation()
+    {
+        if (IsGameLaunchInProgress || !ConfirmGameAction("Cancelar acompanhamento", "Confirme somente se você já cancelou a desinstalação na Steam. Esta ação não cancela uma operação que a Steam ainda esteja executando.", "Já cancelei na Steam")) return;
+        foreach (var card in _allGames) card.IsUninstalling = false;
+        _uninstallRequests.Clear();
+        OnPropertyChanged(nameof(HasPendingUninstall));
+        GameOperationMessage = "Acompanhamento cancelado. Nenhum arquivo foi removido pelo SteamNexus.";
+    }
+}
