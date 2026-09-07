@@ -25,6 +25,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private readonly IContentDialogService _contentDialogService;
     private readonly IAppSettingsService _settingsService;
     private readonly GamesViewModel _gamesViewModel;
+    private readonly ISteamDiagnosticsService _diagnosticsService;
     private readonly CancellationTokenSource _trayGamesCancellation = new();
 
     private const int WmHotkey = 0x0312;
@@ -45,7 +46,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         INavigationViewPageProvider pageProvider,
         IContentDialogService contentDialogService,
         IAppSettingsService settingsService,
-        GamesViewModel gamesViewModel)
+        GamesViewModel gamesViewModel,
+        ISteamDiagnosticsService diagnosticsService)
     {
         _viewModel = viewModel;
         _snackbarService = snackbarService;
@@ -53,6 +55,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         _contentDialogService = contentDialogService;
         _settingsService = settingsService;
         _gamesViewModel = gamesViewModel;
+        _diagnosticsService = diagnosticsService;
 
         InitializeComponent();
         DataContext = _viewModel;
@@ -102,6 +105,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         if (TrayIcon.Menu is ContextMenu trayMenu)
             trayMenu.DataContext = _viewModel;
         _ = InitializeTrayGamesAsync(_trayGamesCancellation.Token);
+        _ = MonitorDiagnosticsAsync(_trayGamesCancellation.Token);
 
         var handle = new WindowInteropHelper(this).Handle;
         _windowSource = HwndSource.FromHwnd(handle);
@@ -113,6 +117,22 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             _settingsService.Current.IsGlobalHotkeyEnabled
                 ? _settingsService.Current.GlobalHotkey
                 : null);
+    }
+
+    private async Task MonitorDiagnosticsAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                var report = await _diagnosticsService.CheckAsync(ct);
+                if (!ct.IsCancellationRequested) _viewModel.UpdateDiagnosticIssues(report.Installations);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Diagnostics] {ex.Message}"); }
+            try { await Task.Delay(TimeSpan.FromSeconds(30), ct); }
+            catch (OperationCanceledException) { return; }
+        }
     }
 
     private bool CanNavigateAway()

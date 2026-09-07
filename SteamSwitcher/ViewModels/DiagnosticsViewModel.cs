@@ -72,6 +72,7 @@ public partial class DiagnosticsViewModel(
                 .Select(item => item.Report.InstallationId)
                 .ToHashSet(StringComparer.Ordinal);
             _report = await diagnosticsService.CheckAsync();
+            mainViewModel.UpdateDiagnosticIssues(_report.Installations);
             Installations = new ObservableCollection<DiagnosticInstallationItem>(
                 _report.Installations.Select(report => new DiagnosticInstallationItem(
                     report,
@@ -119,6 +120,7 @@ public partial class DiagnosticsViewModel(
                 Installations[index] = new DiagnosticInstallationItem(
                     report, item.IsExpanded, $"Verificado às {DateTime.Now:HH:mm:ss}");
 
+            mainViewModel.UpdateDiagnosticIssues(Installations.Select(installation => installation.Report));
             mainViewModel.UpdateStatusBar("Instalação verificada", report.InstallationName);
             NotifySummaryChanged();
         }

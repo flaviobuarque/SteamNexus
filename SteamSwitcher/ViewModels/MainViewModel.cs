@@ -21,6 +21,15 @@ public partial class MainViewModel(
     IGameRuntimeService runtimeService) : ObservableObject
 {
     [ObservableProperty] private bool _isGameRunning;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasDiagnosticIssues), nameof(DiagnosticsTooltip))]
+    private int _diagnosticIssueInstallationCount;
+    public bool HasDiagnosticIssues => DiagnosticIssueInstallationCount > 0;
+    public string DiagnosticsTooltip => HasDiagnosticIssues
+        ? $"Diagnóstico da Steam · {DiagnosticIssueInstallationCount} instalação(ões) precisam de atenção"
+        : "Diagnóstico da Steam";
+    public void UpdateDiagnosticIssues(IEnumerable<SteamInstallationDiagnosticReport> reports) =>
+        DiagnosticIssueInstallationCount = reports.Count(report => report.HasErrors || report.HasWarnings);
 
     public async Task<bool> CanChangeAccountAsync()
     {
