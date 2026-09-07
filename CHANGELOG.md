@@ -17,6 +17,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Selo de preferência de login movido para o rodapé do card de jogo, abaixo das informações de instalação e fora da capa e do botão Jogar.
 - Padrão global de login alterado somente por edição manual: salvar outros ajustes ou aplicar um tema preserva o valor atual, e mudanças pelo rodapé são sincronizadas com Configurações.
 - Corrigido descarte concorrente de CancellationTokenSource no monitor de jogos, buscas e carregamento de capas; o monitor não é duplicado ao recarregar a instalação.
 - A conta já ativa é reutilizada ao abrir jogos; se a abertura exigir Online e a sessão estiver Offline, a Steam é reiniciada em Online, sem alterar o padrão global.

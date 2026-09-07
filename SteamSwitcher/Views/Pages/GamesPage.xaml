@@ -575,7 +575,7 @@
                             <Border
                                 x:Name="CardRoot"
                                 Width="160"
-                                Height="308"
+                                Height="340"
                                 Margin="0,0,10,10"
                                 CornerRadius="{DynamicResource AppCardCornerRadius}"
                                 Effect="{DynamicResource AppCardEffect}"
@@ -673,11 +673,6 @@
                                         Margin="0,174,8,0" HorizontalAlignment="Right" VerticalAlignment="Top"
                                         Panel.ZIndex="23" ToolTip="Opções do jogo" AutomationProperties.Name="Opções do jogo"
                                         Click="GameOptionsButton_Click" />
-                                    <Button Content="{Binding LoginPreferenceText}"
-                                        local:LoginPreferenceMenu.Command="{Binding DataContext.SetGameLoginStateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                        local:LoginPreferenceMenu.State="{Binding LoginPreferenceValue}"
-                                        local:LoginPreferenceMenu.InheritedText="{Binding LoginPreferenceInheritedText}"
-                                        Margin="3,78,3,0" HorizontalAlignment="Center" VerticalAlignment="Top" Panel.ZIndex="24" />
                                     <Button Style="{StaticResource GameFavoriteIconButtonStyle}"
                                         Margin="0,8,8,0" HorizontalAlignment="Right" VerticalAlignment="Top"
                                         Panel.ZIndex="20" ToolTip="Favoritar jogo"
@@ -895,6 +890,7 @@
                                         <Grid>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="32" />
+                                                <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="*" />
                                             </Grid.RowDefinitions>
                                             <TextBlock
@@ -924,6 +920,11 @@
                                                     Foreground="{DynamicResource AppTextSecondaryBrush}"
                                                     VerticalAlignment="Center" />
                                             </StackPanel>
+                                            <Button Grid.Row="2" Content="{Binding LoginPreferenceText}"
+                                                local:LoginPreferenceMenu.Command="{Binding DataContext.SetGameLoginStateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                local:LoginPreferenceMenu.State="{Binding LoginPreferenceValue}"
+                                                local:LoginPreferenceMenu.InheritedText="{Binding LoginPreferenceInheritedText}"
+                                                Margin="0,7,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Grid>
                                     </Border>
                                 </Grid>
