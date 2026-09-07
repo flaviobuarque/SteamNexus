@@ -31,7 +31,7 @@ public partial class RepairRememberPasswordDialog : Window
         AccountList.ItemsSource = _accounts;
         Summary.Text = $"Steam {report.InstallationName} · {_accounts.Length} conta(s) sem a opção de lembrar senha.\nEscolha quais deseja corrigir.";
         Summary.ToolTip = "Estas contas têm RememberPassword=0 no loginusers.vdf.";
-        Feedback.Text = "Ao confirmar, a Steam será fechada após 5 segundos. Você poderá cancelar durante a contagem.";
+        Feedback.Text = "A Steam será fechada após 5 segundos e reaberta na última conta após a correção. Você poderá cancelar durante a contagem.";
         UpdateSelection();
         Closing += (_, e) => e.Cancel = _busy;
         Closed += (_, _) => _countdown?.Cancel();
@@ -79,7 +79,7 @@ public partial class RepairRememberPasswordDialog : Window
             countdown.Token.ThrowIfCancellationRequested();
             _busy = true;
             CancelButton.Visibility = SelectedButton.Visibility = AllButton.Visibility = Visibility.Collapsed;
-            Feedback.Text = "Verificando jogos, fechando a Steam e corrigindo as contas…";
+            Feedback.Text = "Corrigindo as contas e restaurando a última sessão da Steam…";
             Feedback.SetResourceReference(TextBlock.ForegroundProperty, "AppTextSecondaryBrush");
             RepairProgress.IsIndeterminate = true;
             RepairedCount = await _service.RepairRememberPasswordAsync(_installationId, ids);

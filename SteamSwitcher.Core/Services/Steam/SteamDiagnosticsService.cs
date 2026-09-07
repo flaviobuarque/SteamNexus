@@ -10,7 +10,8 @@ namespace SteamSwitcher.Core.Services;
 public sealed class SteamDiagnosticsService(
     ISteamInstallationService installationService,
     ISteamGameService gameService,
-    IGameRuntimeService runtimeService) : ISteamDiagnosticsService
+    IGameRuntimeService runtimeService,
+    ISteamAccountService accountService) : ISteamDiagnosticsService
 {
     private readonly SemaphoreSlim _rememberRepairGate = new(1, 1);
 
@@ -37,12 +38,27 @@ public sealed class SteamDiagnosticsService(
             var eligible = FindUnremembered(original).Select(account => account.SteamId64).ToHashSet(StringComparer.Ordinal);
             var selected = steamIds.Where(eligible.Contains).ToHashSet(StringComparer.Ordinal);
             if (selected.Count == 0) return 0;
+            var previousAccount = await accountService.GetActiveAccountAsync(ct);
+            if (previousAccount is null)
+            {
+                using var previousStream = new MemoryStream(original);
+                previousAccount = SteamAccountSnapshotParser.Parse(previousStream).ActiveAccount;
+                if (previousAccount is not null)
+                {
+                    previousAccount.InstallationId = installation.Id;
+                    previousAccount.InstallationRootPath = installation.RootPath;
+                }
+            }
             await CloseSteamForRepairAsync(ct);
             // Steam may flush its preferences on exit. Always edit the final file.
             original = await File.ReadAllBytesAsync(path, ct);
             eligible = FindUnremembered(original).Select(account => account.SteamId64).ToHashSet(StringComparer.Ordinal);
             selected.IntersectWith(eligible);
-            if (selected.Count == 0) return 0;
+            if (selected.Count == 0)
+            {
+                await RestorePreviousAccountAsync(previousAccount, ct);
+                return 0;
+            }
             var encoding = new UTF8Encoding(false, true);
             var content = encoding.GetString(original);
             var changed = new HashSet<string>(StringComparer.Ordinal);
@@ -66,12 +82,30 @@ public sealed class SteamDiagnosticsService(
                 throw new InvalidOperationException("O arquivo mudou durante a correção. Atualize o diagnóstico e tente novamente.");
             ct.ThrowIfCancellationRequested();
             File.Replace(temp, path, path + ".rememberpassword-" + Guid.NewGuid().ToString("N") + ".bak");
+            await RestorePreviousAccountAsync(previousAccount, ct);
             return changed.Count;
         }
         finally
         {
             if (temp is not null && File.Exists(temp)) File.Delete(temp);
             _rememberRepairGate.Release();
+        }
+    }
+
+    private async Task RestorePreviousAccountAsync(SteamAccount? previousAccount, CancellationToken ct)
+    {
+        if (previousAccount is null) return;
+        try
+        {
+            var refreshed = (await accountService.GetAllAccountsAsync(ct))
+                .FirstOrDefault(account => account.UniqueKey == previousAccount.UniqueKey)
+                ?? throw new InvalidOperationException("A conta anterior não está mais disponível.");
+            await accountService.SwitchAccountAsync(refreshed,
+                previousAccount.WantsOfflineMode ? LoginState.Offline : LoginState.Online, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new InvalidOperationException("A correção foi salva, mas não foi possível reabrir a conta anterior. " + ex.Message, ex);
         }
     }
 
