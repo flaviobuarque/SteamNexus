@@ -162,7 +162,10 @@ public partial class MainViewModel(
             return;
 
         window.Show();
+        if (window.WindowState == WindowState.Minimized)
+            window.WindowState = WindowState.Normal;
         window.Activate();
+        window.Focus();
     }
 
     public void UpdateStatusBar(string left, string right = "", bool showLoginToggle = false)

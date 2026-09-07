@@ -35,6 +35,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private HwndSource? _windowSource;
     private bool _globalHotkeyRegistered;
+    private bool _initialized;
 
     public MainWindow(
         MainViewModel viewModel,
@@ -75,6 +76,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
+        if (_initialized) return;
+        _initialized = true;
         _snackbarService.SetSnackbarPresenter(SnackbarPresenter);
         _contentDialogService.SetDialogHost(RootContentDialogHost);
 

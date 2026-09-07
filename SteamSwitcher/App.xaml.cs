@@ -25,6 +25,8 @@ public partial class App : Application
     private readonly CancellationTokenSource _updateMonitorCancellation = new();
     private readonly CancellationTokenSource _steamStateMonitorCancellation = new();
     private string _lastNotifiedUpdateVersion = string.Empty;
+    private bool _windowReady;
+    private bool _activationPending;
 
     [STAThread]
     private static void Main(string[] args)
@@ -57,6 +59,13 @@ public partial class App : Application
 
         var systemService = _host.Services.GetRequiredService<ISystemService>();
 
+        systemService.ExistingInstanceActivated += (_, _) =>
+            Dispatcher.BeginInvoke(() =>
+            {
+                _activationPending = true;
+                if (_windowReady) RestoreExistingWindow();
+            });
+
         // Single instance — se já existe outra, encerra
         if (!systemService.IsSingleInstance(out _))
         {
@@ -64,14 +73,6 @@ public partial class App : Application
             return;
         }
 
-        systemService.ExistingInstanceActivated += (_, _) =>
-        {
-            Dispatcher.BeginInvoke(() =>
-            {
-                var mainViewModel = _host?.Services.GetService<MainViewModel>();
-                mainViewModel?.ShowWindowFromTray();
-            });
-        };
 
         // Carrega settings
         var settingsService = _host.Services.GetRequiredService<IAppSettingsService>();
@@ -151,10 +152,19 @@ public partial class App : Application
         if (e.Args.Contains("--minimized"))
             Application.Current.MainWindow?.Hide();
 
+        _windowReady = true;
+        if (_activationPending) RestoreExistingWindow();
+
         // Arg --switch <steamid>
         var switchArg = GetArgValue(e.Args, "--switch");
         if (!string.IsNullOrEmpty(switchArg))
             await HandleCliSwitchAsync(switchArg, GetArgValue(e.Args, "--state"));
+    }
+
+    private void RestoreExistingWindow()
+    {
+        _activationPending = false;
+        _host?.Services.GetRequiredService<MainViewModel>().ShowWindowFromTray();
     }
 
     private async Task MonitorUpdatesAsync(CancellationToken ct)
