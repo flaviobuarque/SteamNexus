@@ -20,6 +20,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Opção Jogados recentemente padronizada com o menu de ordenação: ícone à esquerda e seleção à direita, com alinhamento uniforme.
 - Botões de cancelar e contagem ocultos após os cinco segundos; removida a mensagem de sucesso ao encerrar um jogo.
 - Removido o filtro Em execução da tela de jogos e o espaço vazio quando não há atividade; monitoramento e indicação de jogos abertos preservados.
 - Selo de preferência de login movido para o rodapé do card de jogo, abaixo das informações de instalação e fora da capa e do botão Jogar.

@@ -413,7 +413,7 @@
                                 Command="{Binding PlacementTarget.DataContext.SortGamesAlphabeticallyCommand,
                                     RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                 <MenuItem.Header>
-                                    <Grid Width="132">
+                                    <Grid Width="200">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
@@ -430,15 +430,32 @@
                                     <ui:SymbolIcon Symbol="TextSortAscending24" />
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="Jogados recentemente"
-                                Command="{Binding PlacementTarget.DataContext.SortGamesByRecentlyPlayedCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                IsCheckable="True"
-                                IsChecked="{Binding PlacementTarget.DataContext.IsRecentlyPlayedGameSort, RelativeSource={RelativeSource AncestorType=ContextMenu}, Mode=OneWay}" />
+                            <MenuItem
+                                Command="{Binding PlacementTarget.DataContext.SortGamesByRecentlyPlayedCommand,
+                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                <MenuItem.Header>
+                                    <Grid Width="200">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Jogados recentemente" VerticalAlignment="Center" />
+                                        <ic:SymbolIcon Grid.Column="1" Symbol="Checkmark" FontSize="14"
+                                            Foreground="{DynamicResource AppAccentBrush}"
+                                            Visibility="{Binding PlacementTarget.DataContext.IsRecentlyPlayedGameSort,
+                                                RelativeSource={RelativeSource AncestorType=ContextMenu},
+                                                Converter={StaticResource BoolToVisibility}}" />
+                                    </Grid>
+                                </MenuItem.Header>
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="Clock24" />
+                                </MenuItem.Icon>
+                            </MenuItem>
                             <MenuItem
                                 Command="{Binding PlacementTarget.DataContext.SortGamesByMostPlayedCommand,
                                     RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                 <MenuItem.Header>
-                                    <Grid Width="132">
+                                    <Grid Width="200">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
@@ -459,7 +476,7 @@
                                 Command="{Binding PlacementTarget.DataContext.SortGamesByLargestSizeCommand,
                                     RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                 <MenuItem.Header>
-                                    <Grid Width="132">
+                                    <Grid Width="200">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
