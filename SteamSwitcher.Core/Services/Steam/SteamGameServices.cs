@@ -131,6 +131,11 @@ public class SteamGameService(
         await _launchGate.WaitAsync(ct);
         try
         {
+            SteamAccountSwitchPolicy.RequireRememberedAccount(account);
+            if (!uint.TryParse(game.AppId, out _) || game.InstallationId != account.InstallationId)
+                throw new InvalidOperationException("O jogo e a conta devem pertencer à mesma instalação da Steam.");
+            var steamExe = Path.Combine(game.InstallationRootPath, "steam.exe");
+            if (!File.Exists(steamExe)) throw new InvalidOperationException("A instalação da Steam não está disponível.");
             // Resolve precedência: per-game > per-account > global.
             // null na camada inferior cai como Online garanteed no serviço, mas repassamos explicito.
             var state = game.LoginStateOverride
@@ -149,8 +154,19 @@ public class SteamGameService(
                 // Troca de conta primeiro (passando o estado resolvido).
                 await accountService.SwitchAccountAsync(account, state, ct);
 
-                // Aguarda Steam inicializar um pouco somente após uma troca real.
-                await Task.Delay(2000, ct);
+                // Observe the requested session instead of assuming a fixed delay is enough.
+                var deadline = DateTime.UtcNow.AddSeconds(45);
+                do
+                {
+                    ct.ThrowIfCancellationRequested();
+                    activeAccount = await accountService.GetActiveAccountAsync(ct);
+                    if (activeAccount?.UniqueKey == account.UniqueKey
+                        && activeAccount.WantsOfflineMode == (state == LoginState.Offline)) break;
+                    await Task.Delay(1000, ct);
+                } while (DateTime.UtcNow < deadline);
+                if (activeAccount?.UniqueKey != account.UniqueKey
+                    || activeAccount.WantsOfflineMode != (state == LoginState.Offline))
+                    throw new InvalidOperationException("A Steam ainda não confirmou a conta de destino. Verifique o login antes de tentar abrir o jogo novamente.");
             }
             else
             {
@@ -161,12 +177,13 @@ public class SteamGameService(
             }
 
             // Lança o jogo
-            var uri = $"steam://rungameid/{game.AppId}";
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
-                FileName = uri,
-                UseShellExecute = true
-            });
+                FileName = steamExe,
+                Arguments = $"-applaunch {game.AppId}",
+                WorkingDirectory = game.InstallationRootPath,
+                UseShellExecute = false
+            })?.Dispose();
 
             logger.LogInformation("Jogo {Game} lançado na conta {Account} (estado {State})",
                 game.Name, account.AccountName, state);
