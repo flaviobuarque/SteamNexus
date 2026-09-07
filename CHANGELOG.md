@@ -4,6 +4,13 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.28] - 2026-09-07
+
+### Correções
+
+- Corrigida a falha na inicialização causada pelo registro duplicado dos metadados do ícone da janela.
+- O ícone padrão agora é aplicado às janelas sem substituir ícones já definidos.
+
 ## [1.0.27] - 2026-09-07
 
 ### Correções
