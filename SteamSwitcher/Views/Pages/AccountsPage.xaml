@@ -245,12 +245,12 @@
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.Items>
-                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
-                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
-                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
-                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
-                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
-                    <local:SkeletonCard Width="180" Height="220" Margin="0,0,12,12" />
+                    <local:SkeletonCard Width="180" Height="250" Margin="0,0,12,12" />
+                    <local:SkeletonCard Width="180" Height="250" Margin="0,0,12,12" />
+                    <local:SkeletonCard Width="180" Height="250" Margin="0,0,12,12" />
+                    <local:SkeletonCard Width="180" Height="250" Margin="0,0,12,12" />
+                    <local:SkeletonCard Width="180" Height="250" Margin="0,0,12,12" />
+                    <local:SkeletonCard Width="180" Height="250" Margin="0,0,12,12" />
                 </ItemsControl.Items>
             </ItemsControl>
 
@@ -300,6 +300,8 @@
                             </Grid.LayoutTransform>
                             <local:AccountGridCard
                                 DataContext="{Binding}"
+                                LoginPreferenceCommand="{Binding DataContext.ChangeAccountLoginStateCommand,
+                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                 SwitchCommand="{Binding DataContext.SwitchAccountCommand,
                                     RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                 EditCommand="{Binding DataContext.EditAccountCommand,
@@ -363,7 +365,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:AccountCardViewModel}">
                         <Border
-                            Height="72"
+                            Height="94"
                             Margin="0,0,0,7"
                             Padding="12,7"
                             CornerRadius="10"
@@ -452,6 +454,11 @@
                                         TextTrimming="CharacterEllipsis" />
                                     <TextBlock Text="{Binding AccountName, StringFormat=@{0}}" FontSize="11"
                                         Foreground="{DynamicResource AppTextMutedBrush}" />
+                                    <Button Content="{Binding LoginPreferenceText}" ToolTip="{Binding LoginPreferenceTooltip}"
+                                        Command="{Binding DataContext.ChangeAccountLoginStateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}" FontSize="10" Padding="5,2" Margin="0,3,0,0" HorizontalAlignment="Left"
+                                        Background="{DynamicResource AppAccentSurfaceBrush}" Foreground="{DynamicResource AppAccentBrush}"
+                                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" />
                                     <TextBlock Text="Conta arquivada · será recuperada ao entrar" FontSize="10"
                                         Margin="0,2,0,0" Foreground="{DynamicResource AppWarningBrush}"
                                         Visibility="{Binding IsArchived, Converter={StaticResource BoolToVisibility}}" />

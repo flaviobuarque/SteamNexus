@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Win32;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
@@ -101,6 +102,8 @@ public partial class EditAccountViewModel(
         _account.CustomDisplayName = override_.CustomDisplayName;
         _account.CustomAvatarPath = override_.CustomAvatarPath;
         _account.LoginStateOverride = override_.LoginStateOverride;
+        WeakReferenceMessenger.Default.Send(
+            new AccountLoginPreferenceChanged(_account.UniqueKey, _account.LoginStateOverride));
 
         snackbarService.Show(
             "Conta atualizada",

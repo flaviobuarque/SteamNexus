@@ -34,6 +34,14 @@ public partial class AccountGridCard : System.Windows.Controls.UserControl
 
     public AccountGridCard() => InitializeComponent();
 
+    public static readonly DependencyProperty LoginPreferenceCommandProperty =
+        DependencyProperty.Register(nameof(LoginPreferenceCommand), typeof(ICommand), typeof(AccountGridCard));
+    public ICommand? LoginPreferenceCommand
+    {
+        get => (ICommand?)GetValue(LoginPreferenceCommandProperty);
+        set => SetValue(LoginPreferenceCommandProperty, value);
+    }
+
     public static readonly DependencyProperty EditCommandProperty =
     DependencyProperty.Register(nameof(EditCommand), typeof(ICommand), typeof(AccountGridCard));
 

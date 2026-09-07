@@ -6,6 +6,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Novidades
 
+- Cards de contas e jogos exibem a preferência Ao entrar (Padrão com modo herdado, Online ou Offline), com acesso direto à edição e atualização ao mudar o padrão global ou a conta associada.
 - Contagem regressiva de cinco segundos ao iniciar jogos, com cancelamento antes de encerrar jogos ou trocar a conta.
 - Tela de jogos com monitoramento de execução, faixa de jogos abertos, filtro e ações Ver jogo e Parar.
 - Jogos em execução exibidos no tray somente enquanto estão abertos, preservando as opções existentes e sem exigir uma visita à tela de jogos.

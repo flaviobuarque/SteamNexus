@@ -8,18 +8,21 @@ public partial class GameLoginStateDialog : Window
 {
     public LoginState? SelectedLoginState { get; private set; }
 
-    public GameLoginStateDialog(string gameName, LoginState? currentState)
+    public GameLoginStateDialog(string gameName, LoginState? currentState, bool forAccount = false)
     {
         InitializeComponent();
         var options = EditAccountViewModel.LoginStateOptions.Select(item => new LoginStateItem
         {
             Value = item.Value,
-            Label = item.Value == -1 ? "Herdar da conta / padrão global" : item.Label,
+            Label = item.Value == -1 ? (forAccount ? "Herdar do padrão global" : "Herdar da conta / padrão global") : item.Label,
             Icon = item.Icon,
             Color = item.Color
         }).ToList();
         DataContext = options;
         GameNameText.Text = gameName;
+        PreferenceExplanation.Text = forAccount
+            ? "Preferência para entrar nesta conta. Não altera o padrão global nem a sessão atual."
+            : "Preferência ao abrir este jogo. A sessão ativa pode ser reutilizada. Não altera o padrão global.";
         StateCombo.SelectedItem = options.FirstOrDefault(item =>
             item.Value == (currentState.HasValue ? (int)currentState.Value : -1));
         Loaded += (_, _) =>

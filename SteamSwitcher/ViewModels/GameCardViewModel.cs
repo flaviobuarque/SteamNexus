@@ -7,6 +7,18 @@ namespace SteamSwitcher.ViewModels;
 public partial class GameCardViewModel : ObservableObject
 {
     public SteamGame Game { get; private set; }
+    private LoginState? _globalLoginPreference;
+    public string LoginPreferenceText => Helpers.LoginPreferencePresentation.Label(Game.LoginStateOverride,
+        Game.OwnerAccount?.LoginStateOverride ?? _globalLoginPreference);
+    public string LoginPreferenceTooltip => Game.LoginStateOverride.HasValue
+        ? "Preferência deste jogo. A sessão já ativa pode ser reutilizada; isto não é o status atual da Steam. Clique para alterar."
+        : $"Herdado {(Game.OwnerAccount?.LoginStateOverride.HasValue == true ? "da conta" : "do padrão global")}: {Helpers.LoginPreferencePresentation.StateName(Game.OwnerAccount?.LoginStateOverride ?? _globalLoginPreference)}. Clique para alterar somente este jogo.";
+    public void RefreshLoginPreference(LoginState? globalPreference)
+    {
+        _globalLoginPreference = globalPreference;
+        OnPropertyChanged(nameof(LoginPreferenceText));
+        OnPropertyChanged(nameof(LoginPreferenceTooltip));
+    }
 
     [ObservableProperty] private string _coverPath = string.Empty;
     [ObservableProperty] private ImageSource? _coverImage;
@@ -65,10 +77,12 @@ public partial class GameCardViewModel : ObservableObject
         OnPropertyChanged(nameof(InstallFullPath));
         OnPropertyChanged(nameof(InstallationName));
         OnPropertyChanged(nameof(InstallationRootPath));
+        RefreshLoginPreference(_globalLoginPreference);
     }
 
     public void OnOwnerChanged()
     {
+        RefreshLoginPreference(_globalLoginPreference);
         OnPropertyChanged(nameof(PrimaryActionText));
         OnPropertyChanged(nameof(HasOwner));
         OnPropertyChanged(nameof(OwnerAccountName));

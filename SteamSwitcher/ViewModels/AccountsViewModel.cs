@@ -58,7 +58,7 @@ public partial class AccountsViewModel(
     };
     public Size AccountGridItemSize => new(
         Math.Ceiling(188 * AccountCardScale),
-        Math.Ceiling(220 * AccountCardScale));
+        Math.Ceiling(250 * AccountCardScale));
     public WpfToolkit.Controls.SpacingMode AccountGridSpacingMode =>
         WpfToolkit.Controls.SpacingMode.None;
 
@@ -207,6 +207,20 @@ public partial class AccountsViewModel(
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
+        if (!WeakReferenceMessenger.Default.IsRegistered<DefaultLoginPreferenceChanged>(this))
+            WeakReferenceMessenger.Default.Register<DefaultLoginPreferenceChanged>(this, (_, message) =>
+            {
+                foreach (var card in _accounts) card.RefreshLoginPreference(message.State);
+            });
+        if (!WeakReferenceMessenger.Default.IsRegistered<AccountLoginPreferenceChanged>(this))
+            WeakReferenceMessenger.Default.Register<AccountLoginPreferenceChanged>(this, (_, message) =>
+            {
+                foreach (var card in _accounts.Where(card => card.UniqueKey == message.AccountKey))
+                {
+                    card.Account.LoginStateOverride = message.State;
+                    card.RefreshLoginPreference(settingsService.Current.DefaultLoginStateOverride);
+                }
+            });
         mainViewModel.LiveSessionChanged -= ApplyLiveSession;
         mainViewModel.LiveSessionChanged += ApplyLiveSession;
         await _initLock.WaitAsync(ct);
@@ -581,6 +595,7 @@ public partial class AccountsViewModel(
             }
         }
 
+        foreach (var card in reconciled) card.RefreshLoginPreference(settingsService.Current.DefaultLoginStateOverride);
         var membershipChanged = _accounts.Count != reconciled.Count
             || !_accounts.Select(c => c.UniqueKey)
                 .SequenceEqual(reconciled.Select(c => c.UniqueKey),
@@ -794,6 +809,29 @@ public partial class AccountsViewModel(
             default:
                 break;
         }
+    }
+
+    [RelayCommand]
+    private async Task ChangeAccountLoginStateAsync(AccountCardViewModel card)
+    {
+        var dialog = new Views.Dialogs.GameLoginStateDialog(card.DisplayName, card.Account.LoginStateOverride, forAccount: true)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        if (dialog.ShowDialog() != true) return;
+        var existing = await overrideService.GetOverrideAsync(card.UniqueKey)
+            ?? await overrideService.GetOverrideAsync(card.SteamId64);
+        var preference = new AccountOverride
+        {
+            CustomDisplayName = existing is null ? card.Account.CustomDisplayName : existing.CustomDisplayName,
+            CustomAvatarPath = existing is null ? card.Account.CustomAvatarPath : existing.CustomAvatarPath,
+            IsFavorite = existing?.IsFavorite ?? card.Account.IsFavorite,
+            LoginStateOverride = dialog.SelectedLoginState
+        };
+        await overrideService.SaveOverrideAsync(card.UniqueKey, preference);
+        card.Account.LoginStateOverride = dialog.SelectedLoginState;
+        card.RefreshLoginPreference(settingsService.Current.DefaultLoginStateOverride);
+        WeakReferenceMessenger.Default.Send(new AccountLoginPreferenceChanged(card.UniqueKey, dialog.SelectedLoginState));
     }
 
     [RelayCommand]

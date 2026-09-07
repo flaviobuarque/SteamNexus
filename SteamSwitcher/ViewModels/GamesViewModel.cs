@@ -22,7 +22,8 @@ public partial class GamesViewModel(
     ISnackbarService snackbarService,
     IAppSettingsService settingsService,
     MainViewModel mainViewModel,
-    IGameRuntimeService runtimeService) : ObservableObject, IDisposable
+    IGameRuntimeService runtimeService,
+    IAccountOverrideService accountOverrideService) : ObservableObject, IDisposable
 {
     private IReadOnlyList<GameCardViewModel> _allGames = [];
     private IReadOnlyList<GameCardViewModel> _filteredGames = [];
@@ -167,6 +168,20 @@ public partial class GamesViewModel(
 
     private async Task InitializeCoreAsync(CancellationToken ct)
     {
+        if (!WeakReferenceMessenger.Default.IsRegistered<DefaultLoginPreferenceChanged>(this))
+            WeakReferenceMessenger.Default.Register<DefaultLoginPreferenceChanged>(this, (_, message) =>
+                RunOnUi(() => { foreach (var card in _allGames) card.RefreshLoginPreference(message.State); }));
+        if (!WeakReferenceMessenger.Default.IsRegistered<AccountLoginPreferenceChanged>(this))
+            WeakReferenceMessenger.Default.Register<AccountLoginPreferenceChanged>(this, (_, message) => RunOnUi(() =>
+            {
+                foreach (var account in _allAccounts.Where(account => account.UniqueKey == message.AccountKey))
+                    account.LoginStateOverride = message.State;
+                foreach (var card in _allGames.Where(card => card.Game.OwnerAccount?.UniqueKey == message.AccountKey))
+                {
+                    card.Game.OwnerAccount!.LoginStateOverride = message.State;
+                    card.RefreshLoginPreference(settingsService.Current.DefaultLoginStateOverride);
+                }
+            }));
         if (!WeakReferenceMessenger.Default.IsRegistered<SteamGridDbKeyChanged>(this))
             WeakReferenceMessenger.Default.Register<SteamGridDbKeyChanged>(this, async (_, _) =>
                 await RetryMissingCoversAsync());
@@ -200,6 +215,16 @@ public partial class GamesViewModel(
         try
         {
             var accounts = await accountService.GetAllAccountsAsync(ct);
+            foreach (var account in accounts)
+            {
+                ct.ThrowIfCancellationRequested();
+                var preference = await accountOverrideService.GetOverrideAsync(account.UniqueKey)
+                    ?? await accountOverrideService.GetOverrideAsync(account.SteamId64);
+                if (preference is null) continue;
+                account.LoginStateOverride = preference.LoginStateOverride;
+                account.CustomDisplayName = preference.CustomDisplayName;
+                account.CustomAvatarPath = preference.CustomAvatarPath;
+            }
             _allAccounts = accounts;
 
             // Monta lista de filtros
@@ -684,6 +709,7 @@ public partial class GamesViewModel(
 
         await gameService.SetGameLoginStateAsync(cardVm.Game.UniqueKey, dialog.SelectedLoginState);
         cardVm.Game.LoginStateOverride = dialog.SelectedLoginState;
+        cardVm.RefreshLoginPreference(settingsService.Current.DefaultLoginStateOverride);
         snackbarService.Show(
             "Status ao entrar atualizado",
             dialog.SelectedLoginState?.ToString() ?? "Usando o status padrão da conta.",
@@ -933,6 +959,7 @@ public partial class GamesViewModel(
 
     private void ApplyFilters(bool resetPage = true)
     {
+        foreach (var card in _allGames) card.RefreshLoginPreference(settingsService.Current.DefaultLoginStateOverride);
         _filteredGames = Helpers.GameLibraryProjection.FilterAndSort(
             OnlyRunning ? _allGames.Where(card => card.IsRunning).ToArray() : _allGames,
             SelectedFilterAccount?.UniqueKey,
