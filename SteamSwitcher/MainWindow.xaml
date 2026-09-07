@@ -20,6 +20,21 @@
     ExtendsContentIntoTitleBar="True">
 
     <ui:FluentWindow.Resources>
+        <Style x:Key="TrayInfoItemStyle" TargetType="MenuItem">
+            <Setter Property="IsEnabled" Value="False" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border Background="{DynamicResource AppSurfaceBrush}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header" TextElement.Foreground="{TemplateBinding Foreground}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="NavItemStyle" TargetType="ui:NavigationViewItem">
             <Setter Property="Margin" Value="0,2,0,2" />
         </Style>
@@ -362,13 +377,31 @@
             TooltipText="{Binding TrayTooltip}">
             <tray:NotifyIcon.Menu>
                 <ContextMenu
+            Style="{StaticResource AppCardContextMenuStyle}"
+            UseLayoutRounding="True" SnapsToDevicePixels="True"
+            TextOptions.TextFormattingMode="Display"
+            TextOptions.TextRenderingMode="ClearType"
+            FontFamily="Segoe UI" FontSize="14"
             Background="{DynamicResource AppSurfaceBrush}"
             BorderBrush="{DynamicResource AppBorderBrush}"
             BorderThickness="1"
             Foreground="{DynamicResource AppTextPrimaryBrush}">
+                    <ContextMenu.Template>
+                        <ControlTemplate TargetType="ContextMenu">
+                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}"
+                                CornerRadius="8" RenderOptions.ClearTypeHint="Enabled"
+                                UseLayoutRounding="True" SnapsToDevicePixels="True">
+                                <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                            </Border>
+                        </ControlTemplate>
+                    </ContextMenu.Template>
+                    <ContextMenu.Resources>
+                        <Style TargetType="MenuItem" BasedOn="{StaticResource AppCardMenuItemStyle}" />
+                    </ContextMenu.Resources>
 
                     <!-- Conta ativa -->
-                    <MenuItem IsEnabled="False">
+                    <MenuItem Style="{StaticResource TrayInfoItemStyle}">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal" Margin="2,4,8,4">
 
@@ -464,7 +497,7 @@
 
                     <Separator />
 
-                    <MenuItem x:Name="TrayRunningGamesItem" IsEnabled="False"
+                    <MenuItem x:Name="TrayRunningGamesItem" Style="{StaticResource TrayInfoItemStyle}"
                         Visibility="{Binding HasRunningGames, Converter={StaticResource BoolToVisibility}}">
                         <MenuItem.Header>
                             <StackPanel Margin="2,4,8,4" MaxWidth="280">
