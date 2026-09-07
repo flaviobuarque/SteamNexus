@@ -38,6 +38,12 @@ public partial class MainViewModel(
 
     private string? _activeSteamId64;
     public event Action<SteamAccount?>? LiveSessionChanged;
+    private readonly Helpers.AccountSwitchPresentation _switchPresentation = new();
+    private SteamAccount? _displayedAccount;
+    private SteamAccount? _previousSwitchAccount;
+    private string _previousSwitchAvatar = string.Empty;
+
+    public SteamAccount? ResolveObservedAccount(SteamAccount? observed) => _switchPresentation.Resolve(observed);
 
     public string TrayAccountStatusText => IsSwitchingAccount ? "Trocando conta..." : "Conta ativa";
     public int AccountGridDensityPercent => NormalizeAccountGridDensity(
@@ -127,15 +133,25 @@ public partial class MainViewModel(
     partial void OnIsSwitchingAccountChanged(bool value)
         => OnPropertyChanged(nameof(TrayAccountStatusText));
 
-    public void NotifyAccountSwitchStarted(string targetName, string targetAvatarPath)
+    public void NotifyAccountSwitchStarted(SteamAccount target, string targetAvatarPath)
     {
-        ActiveAccountName = targetName;
-        ActiveAccountAvatarPath = targetAvatarPath;
+        _previousSwitchAccount = _displayedAccount;
+        _previousSwitchAvatar = ActiveAccountAvatarPath;
+        _switchPresentation.Begin(target);
         IsSwitchingAccount = true;
+        ApplyActiveAccount(target, targetAvatarPath);
+        LiveSessionChanged?.Invoke(target);
     }
 
-    public void NotifyAccountSwitchFinished()
+    public void NotifyAccountSwitchFinished(bool success = true)
     {
+        if (success) _switchPresentation.Complete();
+        else
+        {
+            _switchPresentation.Cancel();
+            ApplyActiveAccount(_previousSwitchAccount, _previousSwitchAvatar);
+            LiveSessionChanged?.Invoke(_previousSwitchAccount);
+        }
         IsSwitchingAccount = false;
     }
 
@@ -210,7 +226,7 @@ public partial class MainViewModel(
         {
             var accounts = await accountService.GetAllAccountsAsync(ct);
             TrayAccounts = new ObservableCollection<SteamAccount>(accounts);
-            ApplyActiveAccount(accounts.FirstOrDefault(a => a.IsActive));
+            ApplyActiveAccount(ResolveObservedAccount(accounts.FirstOrDefault(a => a.IsActive)));
         }
         catch (Exception ex)
         {
@@ -226,8 +242,10 @@ public partial class MainViewModel(
     public async Task RefreshActiveAccountAsync(CancellationToken ct = default)
     {
         if (accountService.IsOperationInProgress || IsSwitchingAccount) return;
+        var revision = _switchPresentation.Revision;
         var active = await accountService.GetActiveAccountAsync(ct);
-        if (accountService.IsOperationInProgress || IsSwitchingAccount) return;
+        if (accountService.IsOperationInProgress || IsSwitchingAccount || revision != _switchPresentation.Revision) return;
+        active = ResolveObservedAccount(active);
         var known = TrayAccounts.FirstOrDefault(a => a.UniqueKey == active?.UniqueKey);
         if (active is not null && known is not null)
         {
@@ -249,6 +267,7 @@ public partial class MainViewModel(
     /// </summary>
     public void ApplyActiveAccount(SteamAccount? active, string? avatarPath = null)
     {
+        _displayedAccount = active;
         if (active is null)
         {
             _activeSteamId64 = null;
@@ -311,6 +330,7 @@ public partial class MainViewModel(
     [RelayCommand]
     private async Task SwitchFromTrayAsync(SteamAccount account)
     {
+        if (IsSwitchingAccount || accountService.IsOperationInProgress) return;
         snackbarService.Show(
             "Alternando conta",
             $"Entrando como {account.DisplayName}...",
@@ -320,7 +340,9 @@ public partial class MainViewModel(
 
         try
         {
+            NotifyAccountSwitchStarted(account, account.CustomAvatarPath ?? string.Empty);
             await accountService.SwitchAccountAsync(account);
+            NotifyAccountSwitchFinished();
             ApplyActiveAccount(account);
 
             var settings = settingsService.Current;
@@ -331,6 +353,7 @@ public partial class MainViewModel(
         }
         catch (Exception ex)
         {
+            NotifyAccountSwitchFinished(success: false);
             snackbarService.Show(
                 "Erro",
                 $"Não foi possível trocar de conta: {ex.Message}",

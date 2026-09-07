@@ -224,7 +224,7 @@ public partial class AccountsViewModel(
             try
             {
                 var rawAccounts = await accountService.GetAllAccountsAsync(ct);
-                var activeAccount = rawAccounts.FirstOrDefault(a => a.IsActive);
+                var activeAccount = mainViewModel.ResolveObservedAccount(rawAccounts.FirstOrDefault(a => a.IsActive));
                 RefreshInstallationFilters();
 
                 System.Diagnostics.Debug.WriteLine(
@@ -249,6 +249,10 @@ public partial class AccountsViewModel(
 
                 }
 
+                // Overrides load asynchronously; a switch may have started meanwhile.
+                activeAccount = mainViewModel.ResolveObservedAccount(activeAccount);
+                foreach (var account in rawAccounts)
+                    account.IsActive = account.UniqueKey == activeAccount?.UniqueKey;
                 ApplyAccountsIncrementally(rawAccounts);
 
                 AccountsView.Refresh();
@@ -643,7 +647,7 @@ public partial class AccountsViewModel(
         try
         {
             mainViewModel.NotifyAccountSwitchStarted(
-                cardVm.Account.DisplayName,
+                cardVm.Account,
                 cardVm.AvatarPath);
 
             watchdogService.BeginSwitch(cardVm.Account.SteamId64);
@@ -685,7 +689,7 @@ public partial class AccountsViewModel(
             cardVm.IsActive = false;
             if (previousActive is not null) previousActive.IsActive = true;
             AccountsView.Refresh();
-            mainViewModel.NotifyAccountSwitchFinished();
+            mainViewModel.NotifyAccountSwitchFinished(success: false);
             watchdogService.EndSwitch();
 
             snackbarService.Show(
