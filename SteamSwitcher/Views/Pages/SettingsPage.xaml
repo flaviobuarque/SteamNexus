@@ -230,7 +230,7 @@
                                 </ui:Button>
                                 <ui:Button Grid.Column="1" Width="42" Height="42" Padding="0" HorizontalAlignment="Left"
                                            Click="ImportTheme_Click" ToolTip="Importar tema" AutomationProperties.Name="Importar tema">
-                                    <ic:SymbolIcon Symbol="ArrowDownload" FontSize="18"/>
+                                    <ic:SymbolIcon Symbol="ArrowUpload" FontSize="18"/>
                                 </ui:Button>
                                 <ui:Button Grid.Column="2" Width="42" Height="42" Padding="0" HorizontalAlignment="Left"
                                            Click="OpenThemeEditor_Click" ToolTip="Editar tema" AutomationProperties.Name="Editar tema"
