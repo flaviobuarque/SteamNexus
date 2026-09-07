@@ -309,13 +309,7 @@ public class SteamAccountService(
         var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
         if (!File.Exists(vdfPath))
         {
-            if (string.IsNullOrWhiteSpace(target.AccountName))
-                throw new InvalidOperationException(
-                    "O loginusers.vdf está ausente e a conta não possui nome de login para recuperação.");
-            logger.LogWarning(
-                "loginusers.vdf ausente; será reconstruído para a conta selecionada. Target={Target}",
-                MaskSteamId(target.SteamId64));
-            return false;
+            SteamAccountSwitchPolicy.RequireRememberedAccount(null);
         }
 
         if ((File.GetAttributes(vdfPath) & FileAttributes.ReadOnly) != 0)
@@ -344,27 +338,11 @@ public class SteamAccountService(
         var persisted = snapshot.Accounts.FirstOrDefault(a =>
             string.Equals(a.SteamId64, target.SteamId64, StringComparison.Ordinal));
 
-        if (persisted is null)
-        {
-            if (string.IsNullOrWhiteSpace(target.AccountName))
-                throw new InvalidOperationException(
-                    "A conta selecionada não existe mais no loginusers.vdf e não possui nome de login para recuperação.");
-
-            persisted = target;
-            logger.LogInformation(
-                "Conta será restaurada no loginusers.vdf antes da troca. Target={Target}",
-                MaskSteamId(target.SteamId64));
-        }
+        SteamAccountSwitchPolicy.RequireRememberedAccount(persisted);
 
         if (string.IsNullOrWhiteSpace(persisted.AccountName))
             throw new InvalidOperationException("A conta selecionada não possui um nome de login válido.");
 
-        if (!persisted.RememberPassword)
-        {
-            logger.LogWarning(
-                "A conta de destino não está marcada como lembrada; a Steam poderá solicitar autenticação. Target={Target}",
-                MaskSteamId(target.SteamId64));
-        }
 
         var targetIsAlreadyActive = string.Equals(
             snapshot.ActiveAccount?.SteamId64,
@@ -1100,14 +1078,17 @@ public class SteamAccountService(
             if (vdfExisted)
             {
                 using var input = new MemoryStream(originalVdf, writable: false);
+                var persisted = SteamAccountSnapshotParser.Parse(input).Accounts
+                    .FirstOrDefault(a => a.SteamId64 == target.SteamId64);
+                SteamAccountSwitchPolicy.RequireRememberedAccount(persisted);
+                input.Position = 0;
                 SteamLoginUsersEditor.Rewrite(
                     input, output, target.SteamId64,
                     state ?? LoginState.Online, target);
             }
             else
             {
-                SteamLoginUsersEditor.Create(
-                    output, target, state ?? LoginState.Online);
+                SteamAccountSwitchPolicy.RequireRememberedAccount(null);
             }
 
             WriteVdfAtomically(vdfPath, output.ToArray(), createBackup: true);
@@ -1237,6 +1218,8 @@ public class SteamAccountService(
         var mostRecentAccounts = snapshot.Accounts.Where(a => a.MostRecent).ToList();
         var selected = snapshot.Accounts.FirstOrDefault(a =>
             string.Equals(a.SteamId64, target.SteamId64, StringComparison.Ordinal));
+
+        SteamAccountSwitchPolicy.RequireRememberedAccount(selected);
 
         if (selected is null
             || autoLoginAccounts.Count != 1

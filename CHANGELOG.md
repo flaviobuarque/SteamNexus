@@ -13,6 +13,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 ### Correções
 
 - Preservação de RememberPassword ao alternar contas.
+- Troca permitida somente para contas com RememberPassword=1, validado antes de fechar a Steam, sem modificar essa preferência.
 - Restauração da janela do tray ao abrir novamente o executável.
 - Atualização automática da sessão Steam nos cartões, rodapé e tray.
 

@@ -154,6 +154,7 @@ public class SteamGameService(
             }
             else
             {
+                SteamAccountSwitchPolicy.RequireRememberedAccount(activeAccount);
                 logger.LogInformation(
                     "Conta {Account} já está ativa; reinicialização da Steam ignorada",
                     account.AccountName);
