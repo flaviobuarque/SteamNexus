@@ -226,30 +226,39 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel Margin="0,0,8,8">
+                    <Viewbox Grid.Row="0" Stretch="Uniform" StretchDirection="DownOnly"
+                             HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <StackPanel Width="340" Margin="0,0,0,8">
                     <TextBlock Text="Prévia" FontSize="18" FontWeight="SemiBold"
                                Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                    <TextBlock Text="Componentes reais do tema" Margin="0,4,0,18"
+                    <TextBlock Text="Componentes reais do tema" Margin="0,4,0,10"
                                Foreground="{DynamicResource AppTextMutedBrush}" />
-                    <Border Padding="18" CornerRadius="{DynamicResource AppCardCornerRadius}"
+                    <Border Padding="12" CornerRadius="{DynamicResource AppCardCornerRadius}"
                             Background="{DynamicResource AppSurfaceBrush}"
                             BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
                         <StackPanel>
-                            <Border Width="54" Height="54" CornerRadius="27" HorizontalAlignment="Left"
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                            <Border Width="38" Height="38" CornerRadius="19" HorizontalAlignment="Left"
                                     Background="{DynamicResource AppAccentSurfaceBrush}">
-                                <ic:SymbolIcon Symbol="Person" FontSize="25" Foreground="{DynamicResource AppAccentBrush}" />
+                                <ic:SymbolIcon Symbol="Person" FontSize="20" Foreground="{DynamicResource AppAccentBrush}" />
                             </Border>
-                            <TextBlock Text="Conta de exemplo" FontSize="16" FontWeight="SemiBold" Margin="0,13,0,0"
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="Conta de exemplo" FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                            <TextBlock Text="@steamnexus" Margin="0,3,0,14"
+                            <TextBlock Text="@steamnexus" Margin="0,2,0,0"
                                        Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                            <TextBox Text="Campo de busca" Margin="0,0,0,12" />
+                            </StackPanel>
+                            </Grid>
+                            <TextBox Text="Campo de busca" Margin="0,0,0,8" />
                             <StackPanel Orientation="Horizontal">
                                 <ui:Button Content="Ação principal" Style="{StaticResource ThemeEditorAccentButtonStyle}" Margin="0,0,8,0" />
                                 <ui:Button Content="Secundário" Appearance="Secondary" />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                 <Border Padding="8,3" CornerRadius="6" Background="{DynamicResource AppSuccessSurfaceBrush}">
                                     <TextBlock Text="Sucesso" Foreground="{DynamicResource AppSuccessBrush}" />
                                 </Border>
@@ -263,7 +272,7 @@
                         </StackPanel>
                     </Border>
                         </StackPanel>
-                    </ScrollViewer>
+                    </Viewbox>
                     <StackPanel Grid.Row="1">
                     <Border Margin="0,18,0,0" Padding="12" CornerRadius="8"
                             Background="{DynamicResource AppSurfaceBrush}">
