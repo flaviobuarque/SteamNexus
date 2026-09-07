@@ -40,8 +40,9 @@ public sealed class GameRuntimeService : IGameRuntimeService
         }
 
         var result = new Dictionary<string, GameRuntimeSnapshot>(StringComparer.Ordinal);
-        var matchesByGame = games.ToDictionary(game => game.UniqueKey,
-            game => processes.Where(p => BelongsToGame(p.Executable, game)).ToArray());
+        var groups = games.GroupBy(game => game.UniqueKey).ToDictionary(group => group.Key, group => group.ToArray());
+        var matchesByGame = groups.ToDictionary(group => group.Key,
+            group => processes.Where(p => group.Value.Any(game => BelongsToGame(p.Executable, game))).ToArray());
         foreach (var game in games)
         {
             var matches = matchesByGame[game.UniqueKey];
@@ -51,7 +52,8 @@ public sealed class GameRuntimeService : IGameRuntimeService
             if (matches.Length == 0 && games.Any(other => other.AppId == game.AppId && matchesByGame[other.UniqueKey].Length > 0))
                 steamRunning = false;
             result[game.UniqueKey] = new(matches.Length > 0 || steamRunning == true,
-                matches.Length == 0 && steamRunning != false, matches);
+                (matches.Length == 0 && steamRunning != false)
+                    || (matches.Length > 0 && groups[game.UniqueKey].Select(copy => copy.InstallFullPath).Distinct(StringComparer.OrdinalIgnoreCase).Count() > 1), matches);
         }
         return (IReadOnlyDictionary<string, GameRuntimeSnapshot>)result;
     }, ct);
@@ -137,7 +139,7 @@ public sealed class GameRuntimeService : IGameRuntimeService
         throw new InvalidOperationException("Não foi possível trazer a janela à frente. Use a barra de tarefas ou Alt+Tab.");
     }
 
-    public void RequestUninstall(SteamGame game)
+    public void ValidateUninstallTarget(SteamGame game)
     {
         if (!uint.TryParse(game.AppId, out _)) throw new InvalidOperationException("Identificador de jogo inválido.");
         var exe = Path.Combine(game.InstallationRootPath, "steam.exe");
@@ -150,6 +152,12 @@ public sealed class GameRuntimeService : IGameRuntimeService
                     throw new InvalidOperationException("Outra instalação da Steam está aberta. Feche-a e abra a instalação deste jogo antes de desinstalar.");
             }
         }
+    }
+
+    public void RequestUninstall(SteamGame game)
+    {
+        ValidateUninstallTarget(game);
+        var exe = Path.Combine(game.InstallationRootPath, "steam.exe");
         Process.Start(new ProcessStartInfo(exe, $"steam://uninstall/{game.AppId}")
         {
             WorkingDirectory = game.InstallationRootPath,

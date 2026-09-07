@@ -890,8 +890,8 @@ public partial class GamesViewModel(
 
     private void ApplyLibrarySnapshot(IReadOnlyList<SteamGame> rawGames)
     {
-        var existing = _allGames.ToDictionary(
-            card => card.Game.UniqueKey,
+        var existing = _allGames.GroupBy(card => card.Game.UniqueKey).ToDictionary(
+            group => group.Key, group => group.First(),
             StringComparer.Ordinal);
         var updated = new List<GameCardViewModel>(rawGames.Count);
 
@@ -1268,7 +1268,8 @@ public partial class GamesViewModel(
                 if (!cardVm.IsRunning || cardVm.RuntimeUncertain)
                     throw new InvalidOperationException("A abertura foi solicitada, mas a execução não foi confirmada. Verifique a Steam: pode haver atualização, Steam Guard ou um launcher aguardando sua ação.");
                 GameOperationMessage = $"{cardVm.Game.Name} está em execução.";
-                cardVm.RuntimeAccountName = account.DisplayName;
+                foreach (var copy in _allGames.Where(card => string.Equals(card.Game.InstallFullPath, cardVm.Game.InstallFullPath, StringComparison.OrdinalIgnoreCase)))
+                    copy.RuntimeAccountName = account.DisplayName;
                 return true;
             }
             GameOperationMessage = otherGames.Length > 0 ? "Confirme para encerrar os jogos e continuar." : "Preparando abertura…";

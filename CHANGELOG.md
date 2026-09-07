@@ -14,6 +14,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 ### Correções
 
 - A abertura pela tela de jogos aguarda a confirmação da sessão e da execução, em vez de assumir que uma espera fixa significa que o jogo iniciou.
+- Validação da instalação da Steam antes de encerrar um jogo para desinstalação; processos ambíguos ou protegidos exigem fechamento manual.
 - Status padrão do rodapé independente da sessão Steam: o monitor não sobrescreve a preferência, e o primeiro clique alterna Online para Offline.
 - Conta escolhida permanece visível nos cartões e no tray durante o reinício da Steam após uma troca pelo aplicativo.
 - Conta offline reconhecida nos cartões e no tray quando a Steam mantém ActiveUser=0 no Registro.

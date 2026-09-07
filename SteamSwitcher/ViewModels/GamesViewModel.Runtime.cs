@@ -170,6 +170,16 @@ public partial class GamesViewModel
         try
         {
             var stopped = await runtimeService.StopAsync(card.Game, state, false, _runtimeCancellation.Token);
+            if (!stopped)
+            {
+                await RefreshRuntimeAsync();
+                if (!_runtimeSnapshots.TryGetValue(card.Game.UniqueKey, out var remaining)
+                    || remaining.IsUncertain || remaining.Processes.Count == 0)
+                {
+                    GameOperationMessage = "A Steam ainda não confirmou o encerramento, mas não há um processo seguro para encerrar à força. Verifique a Steam e tente novamente.";
+                    return false;
+                }
+            }
             if (!stopped && ConfirmGameAction("O jogo ainda está aberto", $"{card.Game.Name} não encerrou. Deseja forçar o encerramento?\n\nIsso pode causar perda de progresso não salvo. Apenas os processos identificados serão encerrados.", "Forçar encerramento"))
                 stopped = await runtimeService.StopAsync(card.Game, state, true, _runtimeCancellation.Token);
             GameOperationMessage = stopped ? $"{card.Game.Name} foi encerrado." : "O jogo continua aberto. Feche-o manualmente para continuar.";
@@ -189,6 +199,7 @@ public partial class GamesViewModel
         try
         {
             if (!Directory.Exists(card.Game.InstallFullPath)) throw new InvalidOperationException("A pasta do jogo não está disponível. Verifique o disco antes de continuar.");
+            runtimeService.ValidateUninstallTarget(card.Game);
             if (!ConfirmGameAction("Desinstalar jogo", $"{card.Game.Name}\n{card.InstallSize}\n{card.InstallFullPath}\n\nEsta instalação será removida para todas as contas que usam os mesmos arquivos. A confirmação final será feita na Steam. Não apague saves ou mods sem um backup. Se estiver aberto, o jogo será encerrado primeiro.", "Continuar na Steam")) return;
             if (!await StopGameCoreAsync(card)) return;
             runtimeService.RequestUninstall(card.Game);
