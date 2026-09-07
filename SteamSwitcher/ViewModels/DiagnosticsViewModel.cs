@@ -18,6 +18,8 @@ public partial class DiagnosticsViewModel(
     [ObservableProperty] private bool _isChecking;
     [ObservableProperty] private string _lastCheckText = "Ainda não verificado";
     private SteamDiagnosticReport? _report;
+    public string OverviewText => _report is null ? "Verifique as instalações para começar." :
+        $"{Installations.Count} instalação(ões) · {Installations.Sum(item => item.Report.ErrorCount)} problema(s) · {Installations.Sum(item => item.Report.WarningCount)} aviso(s)";
 
     public async Task InitializeAsync() => await RefreshAsync();
 
@@ -64,9 +66,10 @@ public partial class DiagnosticsViewModel(
             Installations = new ObservableCollection<DiagnosticInstallationItem>(
                 _report.Installations.Select(report => new DiagnosticInstallationItem(
                     report,
-                    expandedIds.Contains(report.InstallationId),
+                    expandedIds.Contains(report.InstallationId) || report.HasErrors || report.HasWarnings,
                     $"Verificado às {_report.CheckedAt:HH:mm:ss}")));
             LastCheckText = $"Verificado às {_report.CheckedAt:HH:mm:ss}";
+            OnPropertyChanged(nameof(OverviewText));
             mainViewModel.UpdateStatusBar(
                 _report.HasBlockingIssues ? "Diagnóstico encontrou problemas" : "Diagnóstico concluído",
                 $"{Installations.Count} instalação(ões)");
@@ -108,6 +111,7 @@ public partial class DiagnosticsViewModel(
                     report, item.IsExpanded, $"Verificado às {DateTime.Now:HH:mm:ss}");
 
             mainViewModel.UpdateStatusBar("Instalação verificada", report.InstallationName);
+            OnPropertyChanged(nameof(OverviewText));
         }
         catch (Exception ex)
         {
@@ -184,6 +188,7 @@ public partial class DiagnosticInstallationItem(
     string checkedAtText) : ObservableObject
 {
     public SteamInstallationDiagnosticReport Report { get; } = report;
+    public IEnumerable<SteamDiagnosticItem> DisplayItems => Report.Items.OrderByDescending(item => item.Severity);
     public string CheckedAtText { get; } = checkedAtText;
     [ObservableProperty] private bool _isExpanded = isExpanded;
 }

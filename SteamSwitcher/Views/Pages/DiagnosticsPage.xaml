@@ -20,8 +20,10 @@
                 <StackPanel>
                     <TextBlock Text="Diagnóstico da Steam" FontSize="25" FontWeight="Bold"
                                Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                    <TextBlock Text="Acompanhe e repare cada instalação separadamente."
-                               Margin="0,7,0,0" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                    <TextBlock Text="Veja o que precisa de atenção em cada instalação."
+                               TextWrapping="Wrap" Margin="0,7,16,0" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                    <TextBlock Text="{Binding OverviewText}" Margin="0,10,0,0" FontSize="11"
+                               Foreground="{DynamicResource AppTextMutedBrush}" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <ui:Button Command="{Binding CopyReportCommand}" Appearance="Secondary"
@@ -192,15 +194,31 @@
 
                             <StackPanel Margin="16,0,16,16">
                                 <Border Height="1" Background="{DynamicResource AppBorderBrush}" Margin="0,0,0,12" />
-                                <ItemsControl ItemsSource="{Binding Report.Items}">
+                                <ItemsControl ItemsSource="{Binding DisplayItems}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Margin="0,0,0,8" Padding="14,12" CornerRadius="10"
-                                                    Background="{DynamicResource AppSurfaceAltBrush}">
+                                            <Border Margin="0,0,0,6" Padding="12,10" CornerRadius="8" BorderThickness="1">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="Transparent" />
+                                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource AppWarningSurfaceBrush}" />
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource AppWarningBrush}" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource AppDangerSurfaceBrush}" />
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource AppDangerBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="42" />
+                                                        <ColumnDefinition Width="46" />
                                                         <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
                                                     <Border Width="34" Height="34" CornerRadius="17"
                                                             Background="{DynamicResource AppSuccessSurfaceBrush}"
@@ -225,12 +243,12 @@
                                                                    Foreground="{DynamicResource AppTextPrimaryBrush}" />
                                                         <TextBlock Text="{Binding Detail}" Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap"
                                                                    Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                                                        <ui:Button Content="Corrigir" Margin="0,10,0,0" HorizontalAlignment="Left"
+                                                    </StackPanel>
+                                                        <ui:Button Grid.Column="2" Content="Corrigir" Margin="16,0,0,0" VerticalAlignment="Center"
                                                             Appearance="Secondary"
                                                             Visibility="{Binding CanRepairRememberPassword, Converter={StaticResource BoolToVisibility}}"
                                                             Command="{Binding DataContext.RepairRememberPasswordCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                             CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Expander}}" />
-                                                    </StackPanel>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
