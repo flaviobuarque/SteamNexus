@@ -33,6 +33,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Novidades
 
+- Criação guiada de temas com escolha da base, amostra de cores e nome antes de personalizar uma cópia.
 - Biblioteca local de temas com identificadores próprios e migração do personalizado existente, preservando a aparência atual.
 - Diagnóstico de contas com RememberPassword=0 por instalação, com lista limitada e rolagem para corrigir selecionadas ou todas. Ação manual fecha a Steam após contagem cancelável, preserva os demais campos e cria backup antes da gravação.
 - Selo Última Usada abaixo da data da conta, na grade e lista, exibido somente quando não há uma conta ativa; utiliza a última sessão observada ou a data registrada pela Steam.

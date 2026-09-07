@@ -22,12 +22,12 @@ public partial class ThemeEditorWindow : Window
     public ThemeEditorViewModel ViewModel { get; }
     public CustomThemeSettings? ResultTheme { get; private set; }
 
-    public ThemeEditorWindow(AppTheme baseTheme, CustomThemeSettings? customTheme)
+    public ThemeEditorWindow(AppTheme baseTheme, CustomThemeSettings? customTheme, bool editCustom = false)
     {
         _originalBaseTheme = baseTheme;
         _originalCustomTheme = customTheme?.Clone();
         var hasActiveCustomTheme = customTheme is { IsEnabled: true };
-        var activePreset = hasActiveCustomTheme && ThemeEditorViewModel.IsBuiltInPreset(customTheme!.Name)
+        var activePreset = !editCustom && hasActiveCustomTheme && ThemeEditorViewModel.IsBuiltInPreset(customTheme!.Name)
             ? customTheme.Name
             : null;
         var hasEditableCustomTheme = hasActiveCustomTheme && activePreset is null;
