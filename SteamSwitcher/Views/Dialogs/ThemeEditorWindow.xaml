@@ -304,8 +304,14 @@
                         <TextBlock Text="Aplica uma cor transparente sobre a imagem para facilitar a leitura dos textos."
                                    Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap"
                                    Foreground="{DynamicResource AppTextMutedBrush}" />
-                        <TextBox Text="{Binding BackgroundOverlay, UpdateSourceTrigger=PropertyChanged}"
-                                 Margin="0,7,0,18" TextChanged="EditorValue_Changed" />
+                        <ui:Button Content="{Binding BackgroundOverlay}" Click="BackgroundOverlay_Click"
+                                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                   Background="{DynamicResource AppSurfaceBrush}"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                   BorderBrush="{DynamicResource AppBorderBrush}"
+                                   ToolTip="Escolher cor e transparência do filtro"
+                                   AutomationProperties.Name="Escolher cor e transparência do filtro"
+                                   Margin="0,7,0,18" />
 
                         <TextBlock Text="Ajuste da imagem" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextPrimaryBrush}" />

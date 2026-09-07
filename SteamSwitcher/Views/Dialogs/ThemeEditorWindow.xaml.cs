@@ -202,6 +202,14 @@ public partial class ThemeEditorWindow : Window
         PreviewTheme();
     }
 
+    private void BackgroundOverlay_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ThemeColorPickerDialog(ViewModel.BackgroundOverlay) { Owner = this };
+        if (dialog.ShowDialog() != true) return;
+        ViewModel.BackgroundOverlay = dialog.SelectedColor;
+        PreviewTheme();
+    }
+
     private void FixContrast_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.FixContrast();
