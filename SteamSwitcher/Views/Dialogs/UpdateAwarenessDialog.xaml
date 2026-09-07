@@ -1,0 +1,27 @@
+<Window x:Class="SteamSwitcher.Views.Dialogs.UpdateAwarenessDialog"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+ Title="Novidades importantes" Width="640" SizeToContent="Height" ResizeMode="NoResize"
+ WindowStyle="None" WindowStartupLocation="CenterScreen" Background="{DynamicResource AppBackgroundBrush}">
+ <Border BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" Padding="28">
+  <StackPanel>
+   <TextBlock Text="Antes de continuar" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+   <TextBlock Text="Esta atualização muda como as contas são mantidas na Steam." Margin="0,8,0,18"
+              TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+   <TextBlock Text="Contas salvas por padrão" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+   <TextBlock Margin="0,8,0,16" TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondaryBrush}"
+              Text="A cada abertura do SteamNexus, todas as contas das instalações detectadas terão RememberPassword=1. Isso não recupera senhas nem garante que a Steam dispense um novo login."/>
+   <Border Padding="14" Background="{DynamicResource AppSurfaceBrush}" CornerRadius="8">
+    <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource AppTextPrimaryBrush}"
+               Text="Para não alterar uma conta, abra Editar conta e desmarque Ativar lembrar senha. Desmarcado, o SteamNexus preserva o valor da Steam: 0 continua 0 e 1 continua 1. Isso não apaga credenciais nem força o valor 0."/>
+   </Border>
+   <TextBlock Text="Outras melhorias" Margin="0,18,0,8" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+   <TextBlock Text="Biblioteca de temas, editor com prévia e contraste, diálogos seguindo o tema e suspensão do atalho global durante sua edição."
+              TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+   <TextBlock x:Name="StatusText" Margin="0,18,0,12" TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+   <ui:Button x:Name="AcknowledgeButton" Content="Estou ciente" IsEnabled="False" HorizontalAlignment="Right"
+              Style="{StaticResource SteamSwitcherPrimaryButtonStyle}" Click="Acknowledge_Click"/>
+  </StackPanel>
+ </Border>
+</Window>

@@ -12,7 +12,8 @@ namespace SteamSwitcher.ViewModels;
 
 public partial class EditAccountViewModel(
     IAccountOverrideService overrideService,
-    ISnackbarService snackbarService) : ObservableObject
+    ISnackbarService snackbarService,
+    IAppSettingsService settingsService) : ObservableObject
 {
     private SteamAccount? _account;
     private string _steamAvatarPath = string.Empty;
@@ -21,6 +22,7 @@ public partial class EditAccountViewModel(
     [ObservableProperty] private string _customAvatarPath = string.Empty;
     [ObservableProperty] private string _avatarPreviewPath = string.Empty;
     [ObservableProperty] private int _selectedLoginState = -1;
+    [ObservableProperty] private bool _automaticallyRememberPassword = true;
 
     public static IReadOnlyList<LoginStateItem> LoginStateOptions { get; } =
 [
@@ -35,6 +37,7 @@ public partial class EditAccountViewModel(
     public void Load(SteamAccount account, string steamAvatarPath)
     {
         _account = account;
+        AutomaticallyRememberPassword = !settingsService.Current.PreserveRememberPasswordAccounts.Contains(account.UniqueKey);
         _steamAvatarPath = steamAvatarPath;
 
         CustomDisplayName = account.CustomDisplayName ?? string.Empty;
@@ -97,6 +100,10 @@ public partial class EditAccountViewModel(
         };
 
         await overrideService.SaveOverrideAsync(_account.UniqueKey, override_);
+        var settings = settingsService.Current;
+        settings.PreserveRememberPasswordAccounts.RemoveAll(key => key == _account.UniqueKey);
+        if (!AutomaticallyRememberPassword) settings.PreserveRememberPasswordAccounts.Add(_account.UniqueKey);
+        await settingsService.SaveAsync(settings);
 
         // Aplica ao model em memória
         _account.CustomDisplayName = override_.CustomDisplayName;

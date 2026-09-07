@@ -675,6 +675,8 @@ public partial class SettingsViewModel(
             CustomTheme = current.CustomTheme?.Clone(),
             ThemeLibrary = current.ThemeLibrary.Select(theme => theme.Clone()).ToList(),
             ActiveCustomThemeId = current.ActiveCustomThemeId,
+            PreserveRememberPasswordAccounts = [.. current.PreserveRememberPasswordAccounts],
+            AcknowledgedAccountPolicy = current.AcknowledgedAccountPolicy,
             SteamApiKey = FeatureFlags.SteamWebApiKey
                 ? (string.IsNullOrWhiteSpace(SteamApiKey) ? null : SteamApiKey)
                 : null,

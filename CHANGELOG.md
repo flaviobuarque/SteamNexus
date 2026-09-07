@@ -4,6 +4,12 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+### Contas e aviso da atualização
+
+- Ao abrir o SteamNexus, ativa RememberPassword=1 nas contas das instalações detectadas, com backup antes da gravação.
+- Em Editar conta, desmarcar Ativar lembrar senha preserva o valor existente da Steam (0 ou 1), inclusive durante trocas de conta.
+- Aviso obrigatório sobre a nova regra e melhorias recentes: Estou ciente é liberado após 15 segundos. Sem confirmação salva, o aviso reaparece na próxima abertura.
+
 ### Melhorias
 
 - Biblioteca local de temas personalizados, com migração do tema existente, criação guiada, importação e ações de editar, duplicar, renomear, compartilhar e excluir.

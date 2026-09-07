@@ -16,6 +16,42 @@ public class SteamAccountService(
     ILogger<SteamAccountService> logger) : ISteamAccountService
 {
     public bool IsOperationInProgress => _steamMutationGate.CurrentCount == 0;
+    public async Task<IReadOnlyList<string>> ApplyRememberPasswordDefaultsAsync(CancellationToken ct = default)
+    {
+        var failures = new List<string>();
+        await _steamMutationGate.WaitAsync(ct);
+        try
+        {
+            foreach (var installation in installationService.Installations)
+            {
+                var path = installation.LoginUsersPath;
+                if (!File.Exists(path)) continue;
+                try
+                {
+                    var original = await File.ReadAllBytesAsync(path, ct);
+                    var prefix = installation.Id + ":";
+                    var excluded = settingsService.Current.PreserveRememberPasswordAccounts
+                        .Where(key => key.StartsWith(prefix, StringComparison.Ordinal))
+                        .Select(key => key[prefix.Length..]).ToHashSet(StringComparer.Ordinal);
+                    using var input = new MemoryStream(original);
+                    using var output = new MemoryStream();
+                    if (!SteamLoginUsersEditor.EnableRememberPassword(input, output, excluded)) continue;
+                    var latest = await File.ReadAllBytesAsync(path, ct);
+                    if (!original.AsSpan().SequenceEqual(latest))
+                        throw new IOException("A Steam alterou o arquivo durante a leitura. Tente novamente.");
+                    WriteVdfAtomically(path, output.ToArray(), createBackup: true);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    logger.LogWarning(ex, "Falha ao ativar lembrar senha em {Installation}", installation.Id);
+                    failures.Add(installation.DisplayName + ": " + ex.Message);
+                }
+            }
+            InvalidateSnapshot();
+        }
+        finally { _steamMutationGate.Release(); }
+        return failures;
+    }
     private string SteamPath => _operationContext.Value?.RootPath
         ?? installationService.SelectedInstallation?.RootPath
         ?? string.Empty;
@@ -356,7 +392,8 @@ public class SteamAccountService(
             == (targetState == LoginState.Offline);
 
         return targetIsAlreadyActive
-            && persisted.RememberPassword
+            && (persisted.RememberPassword ||
+                settingsService.Current.PreserveRememberPasswordAccounts.Contains(target.UniqueKey))
             && SteamSessionResolver.Resolve(snapshot, ReadActiveUser())?.SteamId64 == target.SteamId64
             && persistedStateMatches
             && IsOnlySelectedSteamMainProcessRunning();
@@ -1085,7 +1122,8 @@ public class SteamAccountService(
                 input.Position = 0;
                 SteamLoginUsersEditor.Rewrite(
                     input, output, target.SteamId64,
-                    state ?? LoginState.Online, target);
+                    state ?? LoginState.Online, target,
+                    !settingsService.Current.PreserveRememberPasswordAccounts.Contains(target.UniqueKey));
             }
             else
             {

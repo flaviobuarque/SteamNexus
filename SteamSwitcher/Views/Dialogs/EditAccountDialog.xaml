@@ -180,6 +180,11 @@
 
                     <!-- Coluna direita: Status -->
                     <StackPanel Grid.Column="2">
+                        <CheckBox Content="Ativar lembrar senha" IsChecked="{Binding AutomaticallyRememberPassword}"
+                                  Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,0,0,8" />
+                        <TextBlock Text="Ao abrir o SteamNexus, define RememberPassword=1. Desmarcado: preserva o valor atual da Steam (0 ou 1)."
+                                   TextWrapping="Wrap" FontSize="11" Margin="0,0,0,16"
+                                   Foreground="{DynamicResource AppTextMutedBrush}" />
 
                         <TextBlock
         Text="STATUS AO ENTRAR"

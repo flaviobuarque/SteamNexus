@@ -103,6 +103,22 @@ public partial class App : Application
             ApplyTheme(settingsService.Current.Theme);
         }
 
+        // Gate all entry paths (including minimized/CLI startup) before showing the main window.
+        var previousShutdownMode = ShutdownMode;
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        if (settingsService.Current.AcknowledgedAccountPolicy != Views.Dialogs.UpdateAwarenessDialog.PolicyId)
+        {
+            var notice = new Views.Dialogs.UpdateAwarenessDialog(settingsService);
+            if (notice.ShowDialog() != true) { Shutdown(); return; }
+        }
+        var rememberFailures = await _host.Services.GetRequiredService<ISteamAccountService>()
+            .ApplyRememberPasswordDefaultsAsync();
+        if (rememberFailures.Count > 0)
+            new Views.Dialogs.ConfirmDialog("Algumas contas não foram atualizadas",
+                string.Join("\n", rememberFailures), "Entendi").ShowDialog();
+        MainWindow = null;
+        ShutdownMode = previousShutdownMode;
+
         // Watchdog — verifica se houve crash durante troca
         var watchdog = _host.Services.GetRequiredService<IWatchdogService>();
         if (watchdog.HasInterruptedSwitch(out var interruptedId))

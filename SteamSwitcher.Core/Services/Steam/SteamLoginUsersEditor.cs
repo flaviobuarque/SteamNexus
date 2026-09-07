@@ -6,6 +6,25 @@ namespace SteamSwitcher.Core.Services;
 
 public static class SteamLoginUsersEditor
 {
+    public static bool EnableRememberPassword(Stream input, Stream output, ISet<string> excludedIds)
+    {
+        var serializer = KVSerializer.Create(KVSerializationFormat.KeyValues1Text);
+        var document = serializer.Deserialize(input);
+        if (!string.Equals(document.Name, "users", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("loginusers.vdf inválido.");
+        var changed = false;
+        foreach (var user in document.Children)
+        {
+            if (!ulong.TryParse(user.Name, out _) || excludedIds.Contains(user.Name)) continue;
+            var field = user.Children.FirstOrDefault(child => child.Name.Equals("RememberPassword", StringComparison.OrdinalIgnoreCase));
+            if (field?.Value?.ToString() == "1") continue;
+            SetString(user, "RememberPassword", "1");
+            changed = true;
+        }
+        if (changed) serializer.Serialize(output, document);
+        return changed;
+    }
+
     public static void Create(
         Stream output,
         SteamAccount target,
@@ -31,7 +50,8 @@ public static class SteamLoginUsersEditor
         Stream output,
         string targetSteamId64,
         LoginState state,
-        SteamAccount? missingTarget = null)
+        SteamAccount? missingTarget = null,
+        bool enableRememberPassword = true)
     {
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(output);
@@ -59,7 +79,7 @@ public static class SteamLoginUsersEditor
                 targetSteamId64,
                 StringComparison.Ordinal);
             foundTarget |= isTarget;
-            if (isTarget) SetString(user, "RememberPassword", "1");
+            if (isTarget && enableRememberPassword) SetString(user, "RememberPassword", "1");
 
             SetString(user, "MostRecent", isTarget ? "1" : "0");
             SetString(user, "AutoLogin", isTarget ? "1" : "0");

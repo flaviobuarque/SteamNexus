@@ -5,6 +5,7 @@ namespace SteamSwitcher.Core.Services;
 public interface ISteamAccountService
 {
     bool IsOperationInProgress { get; }
+    Task<IReadOnlyList<string>> ApplyRememberPasswordDefaultsAsync(CancellationToken ct = default);
     Task<SteamAccountsSnapshot> GetSnapshotAsync(CancellationToken ct = default);
     Task<IReadOnlyList<SteamAccount>> GetAccountsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<SteamAccount>> GetAllAccountsAsync(CancellationToken ct = default);

@@ -2,6 +2,8 @@
 
 public class AppSettings
 {
+    public List<string> PreserveRememberPasswordAccounts { get; set; } = [];
+    public string? AcknowledgedAccountPolicy { get; set; }
     // Aparência
     public AppTheme Theme { get; set; } = AppTheme.System;
     public AccountSortMode AccountSortMode { get; set; } = AccountSortMode.RecentUsage;
