@@ -235,10 +235,18 @@ public partial class App : Application
             while (!ct.IsCancellationRequested)
             {
                 await Task.Delay(TimeSpan.FromSeconds(2), ct);
-                await Dispatcher.InvokeAsync(
-                        () => mainViewModel.RefreshActiveAccountAsync(ct))
-                    .Task
-                    .Unwrap();
+                try
+                {
+                    await Dispatcher.InvokeAsync(
+                            () => mainViewModel.RefreshActiveAccountAsync(ct))
+                        .Task
+                        .Unwrap();
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _host.Services.GetRequiredService<ILogger<App>>()
+                        .LogWarning(ex, "Steam session refresh failed; retrying on next poll");
+                }
             }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)

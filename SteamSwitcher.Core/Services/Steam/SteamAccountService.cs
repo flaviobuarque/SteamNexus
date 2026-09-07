@@ -111,6 +111,7 @@ public class SteamAccountService(
         if (installations.Count == 0) return [];
 
         var activeInstallationId = FindRunningInstallationId(installations);
+        var activeUser = ReadActiveUser();
         var tasks = installations.Select(async installation =>
         {
             if (!File.Exists(installation.LoginUsersPath))
@@ -127,7 +128,7 @@ public class SteamAccountService(
                     useAsync: true);
                 var snapshot = SteamAccountSnapshotParser.Parse(stream);
                 var activeId = installation.Id == activeInstallationId
-                    ? snapshot.ActiveAccount?.SteamId64
+                    ? snapshot.Accounts.FirstOrDefault(a => a.SteamId32 == activeUser)?.SteamId64
                     : null;
 
                 foreach (var account in snapshot.Accounts)
@@ -396,25 +397,53 @@ public class SteamAccountService(
 
     public async Task<SteamAccount?> GetActiveAccountAsync(CancellationToken ct = default)
     {
-        // Padrao TcNo-Acc-Switcher: o source of truth e o loginusers.vdf.
-        // O registry "ActiveProcess\ActiveUser" so e escrito pela Steam em execucao
-        // — useless em startup apos troca de conta (Steam ainda fechando/abrindo).
-        //
-        // Preferimos o campo "AutoLogin" (atual Steam); fallback "MostRecent" (legado).
-        // Exigimos EXATAMENTE UM usuario com a flag — retorna null se 0 ou 2+.
-        // Preferimos null em vez de adivinhar errado.
+        // Autologin is a saved preference, not evidence of a signed-in session.
+        // Read only the running installation; polling must not rewrite the archive.
+        var installations = installationService.Installations.Where(i => i.IsValid).ToList();
+        return await Task.Run(() =>
+        {
+            ct.ThrowIfCancellationRequested();
+            var id = FindRunningInstallationId(installations);
+            var installation = installations.FirstOrDefault(i => i.Id == id);
+            var user = ReadActiveUser();
+            if (installation is null || user is null || !File.Exists(installation.LoginUsersPath)) return null;
+            using var stream = new FileStream(installation.LoginUsersPath, FileMode.Open,
+                FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            var active = SteamAccountSnapshotParser.Parse(stream).Accounts.FirstOrDefault(a => a.SteamId32 == user);
+            if (active is null) return null;
+            active.InstallationId = installation.Id;
+            active.InstallationName = installation.DisplayName;
+            active.InstallationRootPath = installation.RootPath;
+            active.IsActive = true;
+            return active;
+        }, ct);
+    }
 
-        return (await GetAllAccountsAsync(ct)).FirstOrDefault(account => account.IsActive);
+    private static string? ReadActiveUser()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(@"Software\Valve\Steam\ActiveProcess");
+        if (key?.GetValue("ActiveUser") is not int user || user == 0) return null;
+        if (key.GetValue("pid") is not int pid || pid <= 0) return null;
+        try
+        {
+            using var process = Process.GetProcessById(pid);
+            return process.ProcessName.Equals("steam", StringComparison.OrdinalIgnoreCase)
+                ? unchecked((uint)user).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : null;
+        }
+        catch (ArgumentException) { return null; }
     }
 
     private static string? FindRunningInstallationId(
         IReadOnlyList<SteamInstallation> installations)
     {
+        var activePid = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam\ActiveProcess", "pid", null);
         var processes = Process.GetProcessesByName("steam");
         try
         {
             foreach (var process in processes)
             {
+                if (activePid is not int pid || process.Id != pid) continue;
                 try
                 {
                     var executablePath = process.MainModule?.FileName;

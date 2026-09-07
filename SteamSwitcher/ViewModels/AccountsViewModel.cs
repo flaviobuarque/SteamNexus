@@ -207,6 +207,8 @@ public partial class AccountsViewModel(
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
+        mainViewModel.LiveSessionChanged -= ApplyLiveSession;
+        mainViewModel.LiveSessionChanged += ApplyLiveSession;
         await _initLock.WaitAsync(ct);
         try
         {
@@ -528,6 +530,24 @@ public partial class AccountsViewModel(
         {
             // Avatar não deve bloquear a tela de contas.
         }
+    }
+
+    private void ApplyLiveSession(SteamAccount? active)
+    {
+        var changed = false;
+        foreach (var card in _accounts)
+        {
+            var isActive = card.UniqueKey == active?.UniqueKey;
+            changed |= card.IsActive != isActive;
+            card.Account.IsActive = isActive;
+            card.IsActive = isActive;
+            if (isActive)
+            {
+                card.Account.WantsOfflineMode = active!.WantsOfflineMode;
+                mainViewModel.ApplyActiveAccount(card.Account, card.AvatarPath);
+            }
+        }
+        if (changed) _accountsView?.Refresh();
     }
 
     private void ApplyAccountsIncrementally(IReadOnlyList<SteamAccount> incoming)

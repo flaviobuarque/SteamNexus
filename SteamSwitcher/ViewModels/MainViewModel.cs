@@ -37,6 +37,7 @@ public partial class MainViewModel(
     [ObservableProperty] private bool _isSwitchingAccount;
 
     private string? _activeSteamId64;
+    public event Action<SteamAccount?>? LiveSessionChanged;
 
     public string TrayAccountStatusText => IsSwitchingAccount ? "Trocando conta..." : "Conta ativa";
     public int AccountGridDensityPercent => NormalizeAccountGridDensity(
@@ -207,10 +208,9 @@ public partial class MainViewModel(
 
         try
         {
-            var snapshot = await accountService.GetSnapshotAsync(ct);
-            TrayAccounts = new ObservableCollection<SteamAccount>(snapshot.Accounts);
-            ApplyActiveAccount(snapshot.ActiveAccount
-                ?? snapshot.Accounts.FirstOrDefault(a => a.MostRecent));
+            var accounts = await accountService.GetAllAccountsAsync(ct);
+            TrayAccounts = new ObservableCollection<SteamAccount>(accounts);
+            ApplyActiveAccount(accounts.FirstOrDefault(a => a.IsActive));
         }
         catch (Exception ex)
         {
@@ -225,12 +225,21 @@ public partial class MainViewModel(
     /// </summary>
     public async Task RefreshActiveAccountAsync(CancellationToken ct = default)
     {
+        if (accountService.IsOperationInProgress || IsSwitchingAccount) return;
         var active = await accountService.GetActiveAccountAsync(ct);
+        if (accountService.IsOperationInProgress || IsSwitchingAccount) return;
+        var known = TrayAccounts.FirstOrDefault(a => a.UniqueKey == active?.UniqueKey);
+        if (active is not null && known is not null)
+        {
+            active.CustomDisplayName = known.CustomDisplayName;
+            active.CustomAvatarPath = known.CustomAvatarPath;
+        }
 
         System.Diagnostics.Debug.WriteLine(
             $"[MainViewModel.RefreshActiveAccountAsync] active={(active is null ? "NULL" : active.AccountName)}");
 
         ApplyActiveAccount(active);
+        LiveSessionChanged?.Invoke(active);
     }
 
     /// <summary>
@@ -258,10 +267,10 @@ public partial class MainViewModel(
 
         var sameAccount = string.Equals(
             _activeSteamId64,
-            active.SteamId64,
+            active.UniqueKey,
             StringComparison.Ordinal);
 
-        _activeSteamId64 = active.SteamId64;
+        _activeSteamId64 = active.UniqueKey;
         HasActiveAccount = true;
         ActiveAccountName = active.DisplayName;
         StatusAccountName = active.DisplayName;
@@ -273,14 +282,12 @@ public partial class MainViewModel(
             sameAccount,
             ActiveAccountAvatarPath);
 
-        var appliedState = active.LoginStateOverride
-            ?? settingsService.Current.DefaultLoginStateOverride;
-        StatusLoginState = appliedState == LoginState.Offline
+        StatusLoginState = active.WantsOfflineMode
             ? "Offline"
             : "Online";
 
         foreach (var a in TrayAccounts)
-            a.IsActive = a.SteamId64 == active.SteamId64;
+            a.IsActive = a.UniqueKey == active.UniqueKey;
     }
 
     private static string ResolveTrayAvatarPath(
