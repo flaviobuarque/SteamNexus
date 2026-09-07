@@ -4,6 +4,8 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.25] - 2026-09-07
+
 ### Contas e aviso da atualização
 
 - Ao abrir o SteamNexus, ativa RememberPassword=1 nas contas das instalações detectadas, com backup antes da gravação.
@@ -17,7 +19,10 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 - Seletores Online/Offline acompanham o tema, logo do cabeçalho neutra e ícone explícito da janela na barra de tarefas.
 - Indicador de atenção no diagnóstico da barra lateral, atualizado automaticamente quando há instalações com avisos ou problemas.
 - Editor focado em aparência (incluindo cor da borda) e fundo, sem compartilhamento interno; cancelar confirma descarte e abrir o editor não aplica prévia automaticamente.
-- Contas com lembrar senha desativado são aceitas; ao utilizá-las, a troca ativa RememberPassword somente na conta escolhida, usando o backup existente.
+- A preferência de preservar RememberPassword também é respeitada nas trocas de conta.
+- Correções na exclusão de temas e bloqueio de nomes duplicados.
+- Editor de conta com seções alinhadas; ações de temas em uma barra fixa de ícones com tooltips.
+- Cabeçalhos de diálogos personalizados e atalho global suspenso durante sua edição.
 
 ## [1.0.24] - 2026-09-07
 
