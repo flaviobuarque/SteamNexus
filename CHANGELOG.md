@@ -22,6 +22,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Diálogo de lembrar contas com contador de seleção, destaque das contas selecionadas, avisos curtos e progresso visual; ação de corrigir selecionados indisponível sem seleção.
 - Diagnóstico prioriza avisos e problemas, expande instalações com pendências e destaca ações de correção; verificações saudáveis ficam visualmente mais discretas.
 - Correção de lembrar senha anuncia o fechamento automático da Steam após 5 segundos, com cancelamento antes da ação; bloqueia jogos em execução e aguarda o encerramento sem forçar processos.
 - Hover da lista de jogos aplicado apenas ao card com cores do tema, sem o realce externo padrão do ListBox; destaque de jogo ativo preservado.

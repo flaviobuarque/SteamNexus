@@ -1,14 +1,17 @@
 using SteamSwitcher.Core.Services;
 using System.Windows;
+using CommunityToolkit.Mvvm.ComponentModel;
+using System.Windows.Controls;
 
 namespace SteamSwitcher.Views.Dialogs;
 
 public partial class RepairRememberPasswordDialog : Window
 {
-    public sealed class AccountSelection(RememberPasswordAccount account)
+    public sealed class AccountSelection(RememberPasswordAccount account) : ObservableObject
     {
         public RememberPasswordAccount Account { get; } = account;
-        public bool IsSelected { get; set; }
+        private bool _isSelected;
+        public bool IsSelected { get => _isSelected; set => SetProperty(ref _isSelected, value); }
     }
 
     private readonly ISteamDiagnosticsService _service;
@@ -24,9 +27,12 @@ public partial class RepairRememberPasswordDialog : Window
         _service = service;
         _installationId = report.InstallationId;
         _accounts = report.AccountsWithoutRememberPassword.Select(account => new AccountSelection(account)).ToArray();
+        foreach (var account in _accounts) account.PropertyChanged += (_, _) => UpdateSelection();
         AccountList.ItemsSource = _accounts;
-        Summary.Text = $"{report.InstallationName} · {_accounts.Length} conta(s) com RememberPassword=0.\nSelecione as contas que deseja corrigir ou corrija todas as listadas.";
-        Feedback.Text = "A Steam será fechada após uma contagem de 5 segundos, que você poderá cancelar. Será criado um backup. Credenciais expiradas ainda podem exigir login.";
+        Summary.Text = $"Steam {report.InstallationName} · {_accounts.Length} conta(s) sem a opção de lembrar senha.\nEscolha quais deseja corrigir.";
+        Summary.ToolTip = "Estas contas têm RememberPassword=0 no loginusers.vdf.";
+        Feedback.Text = "Ao confirmar, a Steam será fechada após 5 segundos. Você poderá cancelar durante a contagem.";
+        UpdateSelection();
         Closing += (_, e) => e.Cancel = _busy;
         Closed += (_, _) => _countdown?.Cancel();
         Loaded += (_, _) =>
@@ -34,12 +40,20 @@ public partial class RepairRememberPasswordDialog : Window
             if (Owner is null) return;
             Width = Owner.ActualWidth;
             Height = Owner.ActualHeight;
+            DialogCard.MaxHeight = Math.Max(200, Height - 40);
             Left = Owner.Left;
             Top = Owner.Top;
         };
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
+    private void UpdateSelection()
+    {
+        var count = _accounts.Count(account => account.IsSelected);
+        SelectionSummary.Text = $"{count} de {_accounts.Length} selecionada(s)";
+        SelectedButton.Content = count > 0 ? $"Corrigir selecionados ({count})" : "Corrigir selecionados";
+        SelectedButton.IsEnabled = count > 0 && !_busy && _countdown is null;
+    }
     private async void Selected_Click(object sender, RoutedEventArgs e) => await RepairAsync(false);
     private async void All_Click(object sender, RoutedEventArgs e) => await RepairAsync(true);
 
@@ -51,29 +65,41 @@ public partial class RepairRememberPasswordDialog : Window
         using var countdown = new CancellationTokenSource();
         _countdown = countdown;
         SelectedButton.IsEnabled = AllButton.IsEnabled = AccountList.IsEnabled = false;
+        RepairProgress.Visibility = Visibility.Visible;
+        RepairProgress.IsIndeterminate = false;
+        Feedback.SetResourceReference(TextBlock.ForegroundProperty, "AppWarningBrush");
         try
         {
             for (var seconds = 5; seconds > 0; seconds--)
             {
                 Feedback.Text = $"A Steam será fechada em {seconds}s para corrigir {ids.Length} conta(s). Você pode cancelar.";
+                RepairProgress.Value = 6 - seconds;
                 await Task.Delay(1000, countdown.Token);
             }
             countdown.Token.ThrowIfCancellationRequested();
             _busy = true;
             CancelButton.Visibility = SelectedButton.Visibility = AllButton.Visibility = Visibility.Collapsed;
             Feedback.Text = "Verificando jogos, fechando a Steam e corrigindo as contas…";
+            Feedback.SetResourceReference(TextBlock.ForegroundProperty, "AppTextSecondaryBrush");
+            RepairProgress.IsIndeterminate = true;
             RepairedCount = await _service.RepairRememberPasswordAsync(_installationId, ids);
             _busy = false;
             DialogResult = true;
         }
         catch (OperationCanceledException) when (countdown.IsCancellationRequested) { }
-        catch (Exception ex) { Feedback.Text = ex.Message; }
+        catch (Exception ex)
+        {
+            Feedback.Text = ex.Message;
+            Feedback.SetResourceReference(TextBlock.ForegroundProperty, "AppDangerBrush");
+        }
         finally
         {
             _busy = false;
             _countdown = null;
             CancelButton.Visibility = SelectedButton.Visibility = AllButton.Visibility = Visibility.Visible;
             CancelButton.IsEnabled = SelectedButton.IsEnabled = AllButton.IsEnabled = AccountList.IsEnabled = true;
+            RepairProgress.Visibility = Visibility.Collapsed;
+            UpdateSelection();
         }
     }
 }
