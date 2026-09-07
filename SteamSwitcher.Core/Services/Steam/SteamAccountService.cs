@@ -543,11 +543,6 @@ public class SteamAccountService(
                 @"HKEY_CURRENT_USER\Software\Valve\Steam",
                 "AutoLoginUser",
                 string.Empty);
-            Registry.SetValue(
-                @"HKEY_CURRENT_USER\Software\Valve\Steam",
-                "RememberPassword",
-                0,
-                RegistryValueKind.DWord);
         }
 
         InvalidateSnapshot();
@@ -1070,10 +1065,6 @@ public class SteamAccountService(
                 @"HKEY_CURRENT_USER\Software\Valve\Steam",
                 "AutoLoginUser",
                 null);
-            var previousRememberPassword = Registry.GetValue(
-                @"HKEY_CURRENT_USER\Software\Valve\Steam",
-                "RememberPassword",
-                null);
 
             using var output = new MemoryStream();
             if (vdfExisted)
@@ -1095,8 +1086,7 @@ public class SteamAccountService(
                 vdfPath,
                 originalVdf,
                 vdfExisted,
-                previousAutoLoginUser,
-                previousRememberPassword);
+                previousAutoLoginUser);
         }, ct);
     }
 
@@ -1144,7 +1134,6 @@ public class SteamAccountService(
             else if (File.Exists(backup.VdfPath))
                 File.Delete(backup.VdfPath);
             RestoreRegistryValue("AutoLoginUser", backup.AutoLoginUser);
-            RestoreRegistryValue("RememberPassword", backup.RememberPassword);
             InvalidateSnapshot();
         });
     }
@@ -1162,8 +1151,7 @@ public class SteamAccountService(
         string VdfPath,
         byte[] OriginalVdf,
         bool VdfExisted,
-        object? AutoLoginUser,
-        object? RememberPassword);
+        object? AutoLoginUser);
 
     private void InvalidateSnapshot()
     {
@@ -1178,11 +1166,6 @@ public class SteamAccountService(
             @"HKEY_CURRENT_USER\Software\Valve\Steam",
             "AutoLoginUser",
             account.AccountName);
-        Registry.SetValue(
-            @"HKEY_CURRENT_USER\Software\Valve\Steam",
-            "RememberPassword",
-            1,
-            RegistryValueKind.DWord);
     }
 
     private async Task ValidateSwitchStateAsync(
@@ -1229,8 +1212,7 @@ public class SteamAccountService(
             || autoLoginAccounts.Count != 1
             || mostRecentAccounts.Count != 1
             || !string.Equals(autoLoginAccounts[0].SteamId64, target.SteamId64, StringComparison.Ordinal)
-            || !string.Equals(mostRecentAccounts[0].SteamId64, target.SteamId64, StringComparison.Ordinal)
-            || !selected.RememberPassword)
+            || !string.Equals(mostRecentAccounts[0].SteamId64, target.SteamId64, StringComparison.Ordinal))
         {
             throw new InvalidDataException(
                 "A Steam não confirmou a conta selecionada no loginusers.vdf.");
@@ -1251,13 +1233,7 @@ public class SteamAccountService(
             @"HKEY_CURRENT_USER\Software\Valve\Steam",
             "AutoLoginUser",
             null)?.ToString();
-        var rememberPassword = Registry.GetValue(
-            @"HKEY_CURRENT_USER\Software\Valve\Steam",
-            "RememberPassword",
-            null);
-
-        if (!string.Equals(registryAccount, target.AccountName, StringComparison.OrdinalIgnoreCase)
-            || Convert.ToInt32(rememberPassword ?? 0) != 1)
+        if (!string.Equals(registryAccount, target.AccountName, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidDataException(
                 "O Registro da Steam não confirmou a conta selecionada.");
@@ -1415,11 +1391,6 @@ public class SteamAccountService(
             "AutoLoginUser",
             string.Empty);
 
-        Registry.SetValue(
-            @"HKEY_CURRENT_USER\Software\Valve\Steam",
-            "RememberPassword",
-            0,
-            RegistryValueKind.DWord);
 
         // 3. Abre Steam sem argumentos (cai na tela de login)
         var steamExe = locator.GetSteamExePath(SteamPath);

@@ -23,7 +23,7 @@ public sealed class SteamLoginUsersEditorTests
 
         first.AutoLogin.Should().BeFalse();
         first.MostRecent.Should().BeFalse();
-        first.RememberPassword.Should().BeFalse();
+        first.RememberPassword.Should().BeTrue();
         first.WantsOfflineMode.Should().BeFalse();
 
         second.AutoLogin.Should().BeTrue();
@@ -58,7 +58,8 @@ public sealed class SteamLoginUsersEditorTests
         foreach (var user in document.Children)
         {
             user.Children.Select(child => child.Name).Should().Contain(
-                ["MostRecent", "AutoLogin", "RememberPassword", "WantsOfflineMode", "SkipOfflineModeWarning"]);
+                ["MostRecent", "AutoLogin", "WantsOfflineMode", "SkipOfflineModeWarning"]);
+            user.Children.Should().NotContain(child => child.Name.Equals("RememberPassword", StringComparison.OrdinalIgnoreCase));
         }
     }
 
@@ -146,7 +147,7 @@ public sealed class SteamLoginUsersEditorTests
         restored.AccountName.Should().Be("restored_login");
         restored.AutoLogin.Should().BeTrue();
         restored.MostRecent.Should().BeTrue();
-        restored.RememberPassword.Should().BeTrue();
+        restored.RememberPassword.Should().BeFalse();
     }
 
     [Theory]
@@ -174,7 +175,7 @@ public sealed class SteamLoginUsersEditorTests
         restored.AccountName.Should().Be("restored_login");
         restored.AutoLogin.Should().BeTrue();
         restored.MostRecent.Should().BeTrue();
-        restored.RememberPassword.Should().BeTrue();
+        restored.RememberPassword.Should().BeFalse();
         restored.WantsOfflineMode.Should().Be(expectsOffline);
         snapshot.ActiveAccount.Should().BeSameAs(restored);
     }
@@ -190,6 +191,19 @@ public sealed class SteamLoginUsersEditorTests
 
         action.Should().Throw<Exception>();
         output.Length.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData("0", FirstId)]
+    [InlineData("0", SecondId)]
+    [InlineData("1", FirstId)]
+    [InlineData("1", SecondId)]
+    public void Rewrite_PreservesPasswordPreferenceForEveryAccount(string value, string target)
+    {
+        var source = CreateVdf().Replace("\"RememberPassword\" \"1\"", $"\"rememberpassword\" \"{value}\"");
+        using var output = Rewrite(source, target, LoginState.Offline);
+        foreach (var user in Deserialize(output).Children)
+            Value(user, "RememberPassword").Should().Be(value);
     }
 
     private static MemoryStream Rewrite(string source, string target, LoginState state)

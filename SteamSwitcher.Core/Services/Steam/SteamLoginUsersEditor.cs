@@ -64,8 +64,7 @@ public static class SteamLoginUsersEditor
             SetString(user, "AutoLogin", isTarget ? "1" : "0");
             // A Steam guarda esta preferencia por conta. A troca só define qual
             // conta entra automaticamente; nunca deve desconectar as demais.
-            // Para uma conta de destino recém-restaurada, ApplySessionFlags
-            // continua criando o valor padrão "1".
+            // Campos ausentes continuam ausentes, inclusive na recuperação.
 
             SetString(user, "WantsOfflineMode", isTarget && wantsOffline ? "1" : "0");
             SetString(user, "SkipOfflineModeWarning", isTarget && wantsOffline ? "1" : "0");
@@ -104,7 +103,6 @@ public static class SteamLoginUsersEditor
     {
         SetString(user, "MostRecent", "1");
         SetString(user, "AutoLogin", "1");
-        SetString(user, "RememberPassword", "1");
         var offline = state == LoginState.Offline ? "1" : "0";
         SetString(user, "WantsOfflineMode", offline);
         SetString(user, "SkipOfflineModeWarning", offline);
