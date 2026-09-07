@@ -21,6 +21,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Corrigida a compilação do teste do rodapé após a inclusão dos serviços de jogos no MainViewModel.
 - Troca e edição de contas bloqueadas durante jogos em execução. Menus de contas e jogos padronizados; durante a execução exibem apenas favoritos, copiar SteamID nas contas e aviso para parar o jogo.
 - Última usada e data unificadas na mesma linha, com destaque na cor do tema; cards mais compactos e com altura uniforme, sem espaço reservado para o selo.
 - Cards de contas com mais espaço entre o @ e o status e acima e abaixo da divisória, com altura da grade ajustada.

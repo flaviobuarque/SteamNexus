@@ -21,7 +21,8 @@ public sealed class FooterLoginStateTests
         settings.Current.Returns(stored);
         var vm = new MainViewModel(Substitute.For<ISteamAccountService>(),
             Substitute.For<ISteamLocatorService>(), Substitute.For<ISnackbarService>(),
-            settings, Substitute.For<IUpdateService>());
+            settings, Substitute.For<IUpdateService>(),
+            Substitute.For<ISteamGameService>(), Substitute.For<IGameRuntimeService>());
         var notifications = new List<string?>();
         vm.PropertyChanged += (_, e) => notifications.Add(e.PropertyName);
 
