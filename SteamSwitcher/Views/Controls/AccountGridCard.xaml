@@ -334,7 +334,7 @@
                             local:LoginPreferenceMenu.Command="{Binding LoginPreferenceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                             local:LoginPreferenceMenu.State="{Binding LoginPreferenceValue}"
                             local:LoginPreferenceMenu.InheritedText="{Binding LoginPreferenceInheritedText}"
-                            Margin="0,6,0,0" HorizontalAlignment="Center" />
+                            Margin="0,12,0,0" HorizontalAlignment="Center" />
 
                         <Border Padding="7,2" Margin="0,6,0,0" CornerRadius="6"
                                 HorizontalAlignment="Center"
@@ -353,7 +353,7 @@
                         <Border
             Height="1"
             Background="{DynamicResource AccountCardSeparatorBrush}"
-            Margin="0,9,0,7" />
+            Margin="0,14,0,14" />
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <ic:SymbolIcon
