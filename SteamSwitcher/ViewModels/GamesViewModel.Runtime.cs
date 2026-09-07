@@ -212,10 +212,11 @@ public partial class GamesViewModel
         if (!TryBeginGameOperation()) return;
         try
         {
+            if (!await RequireStoppedGameAsync(card)) return;
             if (!Directory.Exists(card.Game.InstallFullPath)) throw new InvalidOperationException("A pasta do jogo não está disponível. Verifique o disco antes de continuar.");
             runtimeService.ValidateUninstallTarget(card.Game);
-            if (!ConfirmGameAction("Desinstalar jogo", $"{card.Game.Name}\n{card.InstallSize}\n{card.InstallFullPath}\n\nEsta instalação será removida para todas as contas que usam os mesmos arquivos. A confirmação final será feita na Steam. Não apague saves ou mods sem um backup. Se estiver aberto, o jogo será encerrado primeiro.", "Continuar na Steam")) return;
-            if (!await StopGameCoreAsync(card)) return;
+            if (!ConfirmGameAction("Desinstalar jogo", $"{card.Game.Name}\n{card.InstallSize}\n{card.InstallFullPath}\n\nEsta instalação será removida para todas as contas que usam os mesmos arquivos. A confirmação final será feita na Steam. Não apague saves ou mods sem um backup. O jogo precisa estar parado.", "Continuar na Steam")) return;
+            if (!await RequireStoppedGameAsync(card)) return;
             runtimeService.RequestUninstall(card.Game);
             card.IsUninstalling = true;
             _uninstallRequests[card.Game.UniqueKey] = new(card.Game);
@@ -234,6 +235,16 @@ public partial class GamesViewModel
         _visibleCoverLoad.Dispose();
         _gameSearchDebounce.Dispose();
         _accountSearchDebounce.Dispose();
+    }
+
+    private async Task<bool> RequireStoppedGameAsync(GameCardViewModel card)
+    {
+        await RefreshRuntimeAsync();
+        if (_runtimeSnapshots.TryGetValue(card.Game.UniqueKey, out var state)
+            && !state.IsRunning && !state.IsUncertain && !card.IsBusy) return true;
+        snackbarService.Show("Pare o jogo primeiro", "O jogo precisa estar parado para alterar a conta ou desinstalar.",
+            Wpf.Ui.Controls.ControlAppearance.Caution, null, TimeSpan.FromSeconds(5));
+        return false;
     }
 
     [RelayCommand]

@@ -12,7 +12,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 - Selos de login compactos (Padrão, Online ou Offline), com menu ancorado de seleção e salvamento imediato. Tooltips acompanham o tema do aplicativo e mostram a origem do modo herdado.
 - Cards de contas e jogos exibem a preferência Ao entrar (Padrão com modo herdado, Online ou Offline), com acesso direto à edição e atualização ao mudar o padrão global ou a conta associada.
 - Contagem regressiva de cinco segundos ao iniciar jogos, com cancelamento antes de encerrar jogos ou trocar a conta.
-- Tela de jogos com monitoramento de execução, faixa de jogos abertos e ações Ver jogo e Parar.
+- Tela de jogos com monitoramento de execução e ações Ver jogo e Parar.
 - Jogos em execução exibidos no tray somente enquanto estão abertos, preservando as opções existentes e sem exigir uma visita à tela de jogos.
 - Estados de início, execução e encerramento nos cards e na lista compacta; menu de opções com desinstalação pela Steam.
 - Diálogo de troca de jogo com capas, conta de destino, progresso e confirmação antes de encerrar o jogo atual. Encerramento forçado exige uma confirmação adicional.
@@ -20,6 +20,8 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Removida a faixa superior de jogos em execução. O jogo ativo recebe destaque verde no card, preservado no hover e na lista compacta.
+- Alteração da conta associada e desinstalação bloqueadas enquanto o jogo estiver em execução, com orientação para pará-lo primeiro e nova verificação antes de aplicar a ação.
 - Opção Jogados recentemente padronizada com o menu de ordenação: ícone à esquerda e seleção à direita, com alinhamento uniforme.
 - Botões de cancelar e contagem ocultos após os cinco segundos; removida a mensagem de sucesso ao encerrar um jogo.
 - Removido o filtro Em execução da tela de jogos e o espaço vazio quando não há atividade; monitoramento e indicação de jogos abertos preservados.

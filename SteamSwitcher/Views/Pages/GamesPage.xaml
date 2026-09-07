@@ -15,6 +15,23 @@
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
         <converters:PathToImageSourceConverter x:Key="PathToImageSource" />
         <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibility" />
+        <Style x:Key="StoppedGameOnlyMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                    <Setter Property="ToolTip" Value="Pare o jogo antes de alterar a conta ou desinstalar." />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding RuntimeUncertain}" Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                    <Setter Property="ToolTip" Value="Confirme que o jogo foi parado antes de continuar." />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                    <Setter Property="ToolTip" Value="Aguarde a operação atual terminar." />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="GameFavoriteIconButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="30" />
             <Setter Property="Height" Value="30" />
@@ -505,7 +522,6 @@
                     <Style.Triggers>
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding HasRunningGames}" Value="False" />
                                 <Condition Binding="{Binding HasPendingUninstall}" Value="False" />
                                 <Condition Binding="{Binding GameOperationMessage}" Value="" />
                             </MultiDataTrigger.Conditions>
@@ -519,45 +535,6 @@
                     Command="{Binding AcknowledgeUninstallCancellationCommand}"
                     Visibility="{Binding HasPendingUninstall, Converter={StaticResource BoolToVisibility}}" />
             </DockPanel>
-            <Border Padding="12" CornerRadius="10" Margin="0,0,0,8"
-                Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
-                Visibility="{Binding HasRunningGames, Converter={StaticResource BoolToVisibility}}">
-                <StackPanel>
-                    <TextBlock Text="Em execução" FontWeight="SemiBold" Margin="0,0,0,6"
-                        Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                    <ScrollViewer MaxHeight="140" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding RunningGames}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="34" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <Image Source="{Binding CoverImage}" Width="28" Height="40" Stretch="UniformToFill" />
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0">
-                                            <TextBlock Text="{Binding Game.Name}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                            <TextBlock Text="{Binding RuntimeAccountName}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                            <StackPanel.Style>
-                                                <Style TargetType="StackPanel">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding DataContext.IsGameLaunchInProgress, RelativeSource={RelativeSource AncestorType=Page}}" Value="True">
-                                                            <Setter Property="IsEnabled" Value="False" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </StackPanel.Style>
-                                            <ui:Button Content="Ver jogo" Margin="0,0,8,0" Command="{Binding DataContext.ViewRunningGameCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" />
-                                            <ui:Button Content="Parar" Command="{Binding DataContext.StopGameCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </StackPanel>
-            </Border>
             <TextBlock Text="{Binding GameOperationMessage}" TextWrapping="Wrap" MaxHeight="80"
                 Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,0,0,8" />
         </StackPanel>
@@ -638,6 +615,7 @@
                                         <Separator />
                                         <MenuItem
                                             Header="Alterar conta do jogo"
+                                            Style="{StaticResource StoppedGameOnlyMenuItemStyle}"
                                             Command="{Binding PlacementTarget.Tag.ChangeGameAccountCommand,
                                                 RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                             CommandParameter="{Binding}">
@@ -674,8 +652,13 @@
                                         </MenuItem>
                                         <Separator />
                                         <MenuItem Header="Desinstalar…"
+                                            Style="{StaticResource StoppedGameOnlyMenuItemStyle}"
                                             Command="{Binding PlacementTarget.Tag.UninstallGameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                             CommandParameter="{Binding}" />
+                                        <MenuItem Header="Ver jogo"
+                                            Command="{Binding PlacementTarget.Tag.ViewRunningGameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                            CommandParameter="{Binding}"
+                                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
 
@@ -816,6 +799,9 @@
                                     </Border>
 
                                     <!-- 3. Overlay hover com botão -->
+                                    <Border Height="240" VerticalAlignment="Top" CornerRadius="14,14,0,0"
+                                        Background="{DynamicResource AppSuccessBrush}" Opacity="0.12" IsHitTestVisible="False"
+                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}" />
                                     <Border
                                         x:Name="HoverOverlay"
                                         CornerRadius="14,14,0,0"
@@ -964,14 +950,16 @@
                             </Grid>
 
                             <DataTemplate.Triggers>
-                                <DataTrigger Binding="{Binding IsRunning}" Value="True">
-                                    <Setter TargetName="CardRoot" Property="BorderBrush" Value="{DynamicResource AppSuccessBrush}" />
-                                </DataTrigger>
                                 <Trigger SourceName="CardRoot" Property="IsMouseOver" Value="True">
                                     <Setter TargetName="CardRoot" Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" />
                                     <Setter TargetName="CardRoot" Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
                                     <Setter TargetName="HoverOverlay" Property="Visibility" Value="Visible" />
                                 </Trigger>
+                                <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                    <Setter TargetName="CardRoot" Property="BorderBrush" Value="{DynamicResource AppSuccessBrush}" />
+                                    <Setter TargetName="CardRoot" Property="BorderThickness" Value="2" />
+                                    <Setter TargetName="CardRoot" Property="Background" Value="{DynamicResource AppSuccessSurfaceBrush}" />
+                                </DataTrigger>
                             </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -1012,10 +1000,21 @@
                             Margin="0,0,0,8"
                             Padding="8"
                             CornerRadius="10"
-                            Background="{DynamicResource AppSurfaceBrush}"
-                            BorderBrush="{DynamicResource AppBorderBrush}"
-                            BorderThickness="1"
                             Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+                                    <Setter Property="BorderThickness" Value="1" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource AppSuccessSurfaceBrush}" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AppSuccessBrush}" />
+                                            <Setter Property="BorderThickness" Value="2" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
                             <Border.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem
@@ -1035,6 +1034,7 @@
                                     </MenuItem>
                                     <Separator />
                                     <MenuItem Header="Alterar conta do jogo"
+                                        Style="{StaticResource StoppedGameOnlyMenuItemStyle}"
                                         Command="{Binding PlacementTarget.Tag.ChangeGameAccountCommand,
                                             RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                         CommandParameter="{Binding}" />
@@ -1052,8 +1052,13 @@
                                         CommandParameter="{Binding}" />
                                     <Separator />
                                     <MenuItem Header="Desinstalar…"
+                                        Style="{StaticResource StoppedGameOnlyMenuItemStyle}"
                                         Command="{Binding PlacementTarget.Tag.UninstallGameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                         CommandParameter="{Binding}" />
+                                    <MenuItem Header="Ver jogo"
+                                        Command="{Binding PlacementTarget.Tag.ViewRunningGameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}"
+                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}" />
                                 </ContextMenu>
                             </Border.ContextMenu>
                             <Grid Height="82">

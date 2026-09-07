@@ -645,6 +645,10 @@ public partial class GamesViewModel(
     [RelayCommand]
     private async Task ChangeGameAccountAsync(GameCardViewModel cardVm)
     {
+        if (!TryBeginGameOperation()) return;
+        try
+        {
+        if (!await RequireStoppedGameAsync(cardVm)) return;
         if (_allAccounts.Count == 0)
         {
             snackbarService.Show(
@@ -681,6 +685,8 @@ public partial class GamesViewModel(
         if (dialog.ShowDialog() != true || dialog.SelectedAccount is null)
             return;
 
+        if (!await RequireStoppedGameAsync(cardVm)) return;
+
         cardVm.Game.OwnerAccount = dialog.SelectedAccount;
         cardVm.Game.OwnerSteamId64 = dialog.SelectedAccount.SteamId64;
         _savedOwners[cardVm.Game.UniqueKey] = dialog.SelectedAccount.UniqueKey;
@@ -698,6 +704,12 @@ public partial class GamesViewModel(
             TimeSpan.FromSeconds(4));
 
         ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            snackbarService.Show("Não foi possível alterar a conta", ex.Message, ControlAppearance.Caution, null, TimeSpan.FromSeconds(5));
+        }
+        finally { EndGameOperation(); }
     }
 
     [RelayCommand]
@@ -1286,7 +1298,7 @@ public partial class GamesViewModel(
                 if (cardVm.IsRunning)
                 {
                     runtimeService.BringToFront(_runtimeSnapshots[cardVm.Game.UniqueKey]);
-                    GameOperationMessage = "O jogo já está em execução. Nenhuma conta foi trocada.";
+                    GameOperationMessage = string.Empty;
                     return true;
                 }
                 var unexpectedGames = RunningGames.Where(card => !otherGames.Any(previous =>
@@ -1319,7 +1331,7 @@ public partial class GamesViewModel(
                 } while (DateTime.UtcNow < deadline);
                 if (!cardVm.IsRunning || cardVm.RuntimeUncertain)
                     throw new InvalidOperationException("A abertura foi solicitada, mas a execução não foi confirmada. Verifique a Steam: pode haver atualização, Steam Guard ou um launcher aguardando sua ação.");
-                GameOperationMessage = $"{cardVm.Game.Name} está em execução.";
+                GameOperationMessage = string.Empty;
                 foreach (var copy in _allGames.Where(card => string.Equals(card.Game.InstallFullPath, cardVm.Game.InstallFullPath, StringComparison.OrdinalIgnoreCase)))
                     copy.RuntimeAccountName = account.DisplayName;
                 return true;
