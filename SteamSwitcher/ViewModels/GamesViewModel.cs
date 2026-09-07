@@ -1267,10 +1267,8 @@ public partial class GamesViewModel(
 
         try
         {
-            SteamAccountSwitchPolicy.RequireRememberedAccount(account);
-            var freshAccount = (await accountService.GetAllAccountsAsync(_runtimeCancellation.Token))
-                .FirstOrDefault(candidate => candidate.UniqueKey == account.UniqueKey);
-            SteamAccountSwitchPolicy.RequireRememberedAccount(freshAccount);
+            account = SteamAccountSwitchPolicy.ResolveRememberedAccount(
+                await accountService.GetAllAccountsAsync(_runtimeCancellation.Token), account.UniqueKey);
             if (!Directory.Exists(cardVm.Game.InstallFullPath))
                 throw new InvalidOperationException("A pasta do jogo não está disponível. Verifique o disco da biblioteca.");
             await RefreshRuntimeAsync();
@@ -1287,9 +1285,8 @@ public partial class GamesViewModel(
             {
                 // Nothing destructive happens before the dialog's countdown ends.
                 // Revalidate the destination and running games after that delay.
-                var currentAccount = (await accountService.GetAllAccountsAsync(_runtimeCancellation.Token))
-                    .FirstOrDefault(candidate => candidate.UniqueKey == account.UniqueKey);
-                SteamAccountSwitchPolicy.RequireRememberedAccount(currentAccount);
+                var currentAccount = SteamAccountSwitchPolicy.ResolveRememberedAccount(
+                    await accountService.GetAllAccountsAsync(_runtimeCancellation.Token), account.UniqueKey);
                 if (!Directory.Exists(cardVm.Game.InstallFullPath))
                     throw new InvalidOperationException("A pasta do jogo não está disponível. Nenhum jogo será encerrado.");
                 await RefreshRuntimeAsync();
@@ -1319,7 +1316,7 @@ public partial class GamesViewModel(
                 if (RunningGames.Count > 0 || _allGames.Any(card => card.RuntimeUncertain))
                     throw new InvalidOperationException("Um jogo está em execução. A abertura foi interrompida para evitar uma troca de conta insegura.");
                 GameOperationMessage = $"Preparando {cardVm.Game.Name} na conta {account.DisplayName}…";
-                await gameService.LaunchGameAsync(cardVm.Game, account, _runtimeCancellation.Token);
+                await gameService.LaunchGameAsync(cardVm.Game, currentAccount, _runtimeCancellation.Token);
 
                 GameOperationMessage = $"Aguardando {cardVm.Game.Name} iniciar…";
                 var deadline = DateTime.UtcNow.AddSeconds(60);

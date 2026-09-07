@@ -4,6 +4,14 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.24] - 2026-09-07
+
+### Correções
+
+- Corrigido o bloqueio ao clicar em Jogar após corrigir a opção de lembrar senha no diagnóstico. A abertura agora consulta os dados atualizados da conta.
+- A preferência é conferida novamente antes de iniciar o jogo, evitando usar informações antigas da tela.
+- Mensagem de conta indisponível atualizada para orientar quem já utilizou a correção no diagnóstico.
+
 ## [1.0.23] - 2026-09-07
 
 ### Melhorias

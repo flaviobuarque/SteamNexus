@@ -8,6 +8,20 @@ namespace SteamSwitcher.Tests;
 public sealed class SteamAccountSwitchPolicyTests
 {
     [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void LaunchUsesRefreshedPreferenceInsteadOfCachedCard(bool cachedValue, bool persistedValue)
+    {
+        var cached = new SteamSwitcher.Core.Models.SteamAccount
+            { SteamId64 = "76561198000000001", AccountName = "test", InstallationId = "steam", RememberPassword = cachedValue };
+        var refreshed = new SteamSwitcher.Core.Models.SteamAccount
+            { SteamId64 = cached.SteamId64, AccountName = "test", InstallationId = cached.InstallationId, RememberPassword = persistedValue };
+        var resolve = () => SteamAccountSwitchPolicy.ResolveRememberedAccount([refreshed], cached.UniqueKey);
+        if (persistedValue) resolve().Should().BeSameAs(refreshed);
+        else resolve.Should().Throw<InvalidOperationException>();
+    }
+
+    [Theory]
     [InlineData("1", true)]
     [InlineData("0", false)]
     [InlineData(null, false)]
