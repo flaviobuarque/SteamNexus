@@ -86,15 +86,10 @@
                         VerticalAlignment="Center" />
                 </StackPanel>
 
-                <!-- 2 colunas -->
+                <!-- Shared rows keep both columns aligned even when descriptions wrap. -->
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Coluna esquerda: Avatar + Nome -->
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                     <StackPanel Grid.Column="0">
 
                         <TextBlock
@@ -152,12 +147,24 @@
                         </Grid>
 
                         <TextBlock
-                            Text="⚠ Apenas neste app."
+                            Text="Personalização apenas no SteamNexus."
                             FontSize="10"
                             Foreground="{DynamicResource AppTextMutedBrush}"
-                            Margin="0,0,0,20" />
+                            Margin="0,0,0,0" />
 
-                        <Border Height="1" Background="{DynamicResource AppBorderBrush}" Margin="0,0,0,16" />
+                        </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="LEMBRAR SENHA" FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,0,0,10"/>
+                        <CheckBox IsChecked="{Binding AutomaticallyRememberPassword}" Padding="0"
+                                  Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,0,0,10">
+                            <TextBlock Text="Ativar automaticamente" TextWrapping="Wrap"/>
+                        </CheckBox>
+                        <TextBlock Text="Ao abrir o SteamNexus, define RememberPassword=1. Desmarcado: mantém o valor atual (0 ou 1)."
+                                   TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}"/>
+                    </StackPanel>
+                    <Border Grid.Row="1" Grid.ColumnSpan="3" Height="1" Background="{DynamicResource AppBorderBrush}" Margin="0,18,0,16"/>
+                    <StackPanel Grid.Row="2" Grid.Column="0">
 
                         <TextBlock
                             Text="NOME DE EXIBIÇÃO"
@@ -173,32 +180,18 @@
                             Margin="0,0,0,6" />
 
                         <TextBlock
-                            Text="⚠ Apenas neste app."
+                            Text="Não altera o nome na Steam."
                             FontSize="10"
                             Foreground="{DynamicResource AppTextMutedBrush}" />
                     </StackPanel>
-
-                    <!-- Coluna direita: Status -->
-                    <StackPanel Grid.Column="2">
-                        <CheckBox Content="Ativar lembrar senha" IsChecked="{Binding AutomaticallyRememberPassword}"
-                                  Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,0,0,8" />
-                        <TextBlock Text="Ao abrir o SteamNexus, define RememberPassword=1. Desmarcado: preserva o valor atual da Steam (0 ou 1)."
-                                   TextWrapping="Wrap" FontSize="11" Margin="0,0,0,16"
-                                   Foreground="{DynamicResource AppTextMutedBrush}" />
-
-                        <TextBlock
+                    <StackPanel Grid.Row="2" Grid.Column="2"><TextBlock
         Text="STATUS AO ENTRAR"
         FontSize="10"
         FontWeight="Bold"
         Foreground="{DynamicResource AppTextMutedBrush}"
-        Margin="0,0,0,10" />
+        Margin="0,0,0,8" />
 
-                        <TextBlock
-        Text="Status do Steam ao trocar para esta conta."
-        FontSize="11"
-        Foreground="{DynamicResource AppTextMutedBrush}"
-        TextWrapping="Wrap"
-        Margin="0,0,0,12" />
+
 
                         <ComboBox
                             ItemsSource="{Binding LoginStateOptions}"
@@ -244,7 +237,7 @@
                         </ComboBox>
 
                         <TextBlock
-        Text="⚠ Apenas neste app."
+        Text="Aplicado ao trocar para esta conta."
         FontSize="10"
         Foreground="{DynamicResource AppTextMutedBrush}"
         Margin="0,8,0,0" />
