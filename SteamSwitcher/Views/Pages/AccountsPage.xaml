@@ -257,7 +257,7 @@
             <!-- Grid View (virtualizado) -->
             <ItemsControl
                 x:Name="AccountsItemsControl"
-                Padding="10,10,10,76"
+                Padding="10,10,10,10"
                 ItemsSource="{Binding AccountsView}"
                 Focusable="False"
                 ClipToBounds="True"
@@ -276,7 +276,7 @@
                             HorizontalScrollBarVisibility="Disabled"
                             Padding="{TemplateBinding Padding}"
                             Focusable="False">
-                            <ItemsPresenter />
+                            <ItemsPresenter Margin="0,0,0,72" />
                         </ScrollViewer>
                     </ControlTemplate>
                 </ItemsControl.Template>
@@ -340,7 +340,7 @@
 
             <!-- Lista compacta (virtualizada) -->
             <ItemsControl
-                Padding="20,16,20,88"
+                Padding="20,16,20,16"
                 ItemsSource="{Binding AccountsView}"
                 VirtualizingPanel.IsVirtualizing="True"
                 VirtualizingPanel.VirtualizationMode="Recycling"
@@ -353,7 +353,7 @@
                             VerticalScrollBarVisibility="Auto"
                             HorizontalScrollBarVisibility="Disabled"
                             Padding="{TemplateBinding Padding}">
-                            <ItemsPresenter />
+                            <ItemsPresenter Margin="0,0,0,72" />
                         </ScrollViewer>
                     </ControlTemplate>
                 </ItemsControl.Template>
@@ -437,7 +437,7 @@
                                     <ColumnDefinition Width="48" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="150" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="132" />
                                 </Grid.ColumnDefinitions>
 
                                 <Grid Width="40" Height="40" VerticalAlignment="Center">
@@ -458,21 +458,24 @@
                                         TextTrimming="CharacterEllipsis" />
                                     <TextBlock Text="{Binding AccountName, StringFormat=@{0}}" FontSize="11"
                                         Foreground="{DynamicResource AppTextMutedBrush}" />
-                                    <Button Content="{Binding LoginPreferenceText}"
+                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                        <Button Content="{Binding LoginPreferenceText}"
                                         local:LoginPreferenceMenu.Command="{Binding DataContext.SetAccountLoginStateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         local:LoginPreferenceMenu.State="{Binding LoginPreferenceValue}"
                                         local:LoginPreferenceMenu.InheritedText="{Binding LoginPreferenceInheritedText}"
-                                        Margin="0,3,0,0" HorizontalAlignment="Left" />
-                                    <TextBlock Text="Conta arquivada · será recuperada ao entrar" FontSize="10"
-                                        Margin="0,2,0,0" Foreground="{DynamicResource AppWarningBrush}"
-                                        Visibility="{Binding IsArchived, Converter={StaticResource BoolToVisibility}}" />
-                                    <TextBlock Text="{Binding InstallationName}" FontSize="10" Margin="0,2,0,0"
+                                        Margin="0,0,10,0" HorizontalAlignment="Left" />
+                                        <TextBlock Text="{Binding InstallationName, StringFormat=Steam: {0}}" FontSize="10" Margin="0" VerticalAlignment="Center"
                                         ToolTip="{Binding InstallationRootPath}"
                                         Foreground="{DynamicResource AppAccentBrush}"
                                         Visibility="{Binding ShowInstallationBadge, Converter={StaticResource BoolToVisibility}}" />
+                                    </StackPanel>
+                                    <TextBlock Text="Conta arquivada · será recuperada ao entrar" FontSize="10"
+                                        Margin="0,2,0,0" Foreground="{DynamicResource AppWarningBrush}"
+                                        Visibility="{Binding IsArchived, Converter={StaticResource BoolToVisibility}}" />
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                    <TextBlock Text="Último uso" FontSize="10" Margin="0,0,0,4" Foreground="{DynamicResource AppTextMutedBrush}" />
                                     <TextBlock Text="{Binding LastUsageText}" FontSize="11">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
@@ -505,19 +508,26 @@
                                             </ic:SymbolIcon.Style>
                                         </ic:SymbolIcon>
                                     </Button>
-                                    <ui:Button Width="34" Height="34" Padding="0" Margin="0,0,6,0"
+                                    <ui:Button Width="36" Height="36" Padding="0" Margin="0,0,6,0"
                                         ToolTip="Editar conta"
                                         Foreground="{DynamicResource AppTextPrimaryBrush}"
                                         Command="{Binding DataContext.EditAccountCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}">
                                         <ui:SymbolIcon Symbol="Edit24" />
                                     </ui:Button>
-                                    <ui:Button Width="34" Height="34" Padding="0"
+                                    <ui:Button Width="36" Height="36" Padding="0"
                                         ToolTip="Trocar para esta conta"
                                         Foreground="{DynamicResource AppTextPrimaryBrush}"
                                         Command="{Binding DataContext.SwitchAccountCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}"
-                                        Visibility="{Binding IsActive, Converter={StaticResource InverseBoolToVisibility}}">
+                                        >
+                                        <ui:Button.Style>
+                                            <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsActive}" Value="True"><Setter Property="Visibility" Value="Hidden" /></DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ui:Button.Style>
                                         <ui:SymbolIcon Symbol="ArrowSwap24" />
                                     </ui:Button>
                                 </StackPanel>

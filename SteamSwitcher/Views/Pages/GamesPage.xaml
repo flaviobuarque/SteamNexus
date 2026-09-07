@@ -974,7 +974,7 @@
                 </ItemsControl>
 
             <ListBox
-                Padding="20,16,20,88"
+                Padding="20,16,20,16"
                 ItemsSource="{Binding Games}"
                 Background="Transparent"
                 BorderThickness="0"
@@ -1006,7 +1006,7 @@
                     <DataTemplate DataType="{x:Type vm:GameCardViewModel}">
                         <Border
                             Margin="0,0,0,8"
-                            Padding="8"
+                            Padding="12,8"
                             CornerRadius="10"
                             Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}">
                             <Border.Style>
@@ -1074,11 +1074,11 @@
                                     <ColumnDefinition Width="44" />
                                     <ColumnDefinition Width="14" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="170" />
-                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="110" />
                                     <ColumnDefinition Width="130" />
                                     <ColumnDefinition Width="40" />
-                                    <ColumnDefinition Width="68" />
+                                    <ColumnDefinition Width="84" />
                                 </Grid.ColumnDefinitions>
 
                                 <Border Grid.Column="0" CornerRadius="6" ClipToBounds="True"
@@ -1100,15 +1100,18 @@
                                         Foreground="{DynamicResource AppTextPrimaryBrush}"
                                         TextTrimming="CharacterEllipsis" ToolTip="{Binding Game.Name}" />
                                     <TextBlock Text="{Binding RuntimeStatus}" FontSize="10"
-                                        Foreground="{DynamicResource AppSuccessBrush}" Margin="0,3,0,0" />
-                                    <Button Content="{Binding LoginPreferenceText}"
+                                        Foreground="{DynamicResource AppSuccessBrush}" Margin="0,3,0,0"
+                                        Visibility="{Binding RuntimeStatus, Converter={StaticResource EmptyStringToVisibility}}" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                        <Button Content="{Binding LoginPreferenceText}"
                                         local:LoginPreferenceMenu.Command="{Binding DataContext.SetGameLoginStateCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                         local:LoginPreferenceMenu.State="{Binding LoginPreferenceValue}"
                                         local:LoginPreferenceMenu.InheritedText="{Binding LoginPreferenceInheritedText}"
-                                        Margin="0,3,0,0" HorizontalAlignment="Left" />
-                                    <TextBlock Text="{Binding InstallationName}" FontSize="10"
-                                        Foreground="{DynamicResource AppAccentBrush}" Margin="0,2,0,0"
+                                        Margin="0,0,10,0" HorizontalAlignment="Left" />
+                                        <TextBlock Text="{Binding InstallationName, StringFormat=Steam: {0}}" FontSize="10"
+                                        Foreground="{DynamicResource AppAccentBrush}" Margin="0" VerticalAlignment="Center"
                                         ToolTip="{Binding InstallationRootPath}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="3" VerticalAlignment="Center">
@@ -1130,7 +1133,7 @@
 
                                 <StackPanel Grid.Column="5" VerticalAlignment="Center">
                                     <TextBlock Text="Armazenamento" FontSize="9" Foreground="{DynamicResource AppTextMutedBrush}" />
-                                    <TextBlock Text="{Binding SizeAndDrive}" FontSize="11"
+                                    <TextBlock Text="{Binding SizeAndDrive, StringFormat=Jogo: {0}}" FontSize="11"
                                         Foreground="{DynamicResource AppTextSecondaryBrush}" />
                                 </StackPanel>
 
@@ -1190,7 +1193,7 @@
                                         </ic:SymbolIcon.Style>
                                     </ic:SymbolIcon>
                                 </ui:Button>
-                                <Button Grid.Column="7" Content="⋯" Width="24" Height="32" Padding="0" FontSize="18"
+                                <Button Grid.Column="7" Content="⋯" Width="36" Height="36" Padding="0" FontSize="18"
                                     HorizontalAlignment="Right" VerticalAlignment="Center"
                                     ToolTip="Opções do jogo" AutomationProperties.Name="Opções do jogo"
                                     Click="GameOptionsButton_Click" />
