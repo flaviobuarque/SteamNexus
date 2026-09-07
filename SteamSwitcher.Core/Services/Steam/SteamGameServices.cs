@@ -148,8 +148,11 @@ public class SteamGameService(
                 account.UniqueKey,
                 StringComparison.Ordinal);
 
-            var stateAlreadyApplied = activeAccount?.WantsOfflineMode == (state == LoginState.Offline);
-            if (!accountAlreadyActive || !stateAlreadyApplied)
+            // Reuse the active session unless this launch requires going online.
+            // An offline preference must not restart an already-online session.
+            var needsOnlineSession = state != LoginState.Offline
+                && activeAccount?.WantsOfflineMode == true;
+            if (!accountAlreadyActive || needsOnlineSession)
             {
                 // Troca de conta primeiro (passando o estado resolvido).
                 await accountService.SwitchAccountAsync(account, state, ct);

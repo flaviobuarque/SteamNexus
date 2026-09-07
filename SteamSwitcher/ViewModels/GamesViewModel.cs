@@ -1242,6 +1242,26 @@ public partial class GamesViewModel(
                 throw new InvalidOperationException("Há um jogo cujo processo não pôde ser identificado. Feche-o manualmente antes de continuar.");
             async Task<bool> PrepareAndLaunchAsync()
             {
+                // Nothing destructive happens before the dialog's countdown ends.
+                // Revalidate the destination and running games after that delay.
+                var currentAccount = (await accountService.GetAllAccountsAsync(_runtimeCancellation.Token))
+                    .FirstOrDefault(candidate => candidate.UniqueKey == account.UniqueKey);
+                SteamAccountSwitchPolicy.RequireRememberedAccount(currentAccount);
+                if (!Directory.Exists(cardVm.Game.InstallFullPath))
+                    throw new InvalidOperationException("A pasta do jogo não está disponível. Nenhum jogo será encerrado.");
+                await RefreshRuntimeAsync();
+                if (_allGames.Any(card => card.RuntimeUncertain))
+                    throw new InvalidOperationException("A execução de um jogo ficou incerta. Feche-o manualmente antes de continuar.");
+                if (cardVm.IsRunning)
+                {
+                    runtimeService.BringToFront(_runtimeSnapshots[cardVm.Game.UniqueKey]);
+                    GameOperationMessage = "O jogo já está em execução. Nenhuma conta foi trocada.";
+                    return true;
+                }
+                var unexpectedGames = RunningGames.Where(card => !otherGames.Any(previous =>
+                    string.Equals(previous.Game.InstallFullPath, card.Game.InstallFullPath, StringComparison.OrdinalIgnoreCase))).ToArray();
+                if (unexpectedGames.Length > 0)
+                    throw new InvalidOperationException("Outro jogo foi aberto durante a contagem. A operação foi interrompida; clique em Jogar novamente para revisar os jogos em execução.");
                 if (otherGames.Length > 0)
                 {
                     foreach (var running in otherGames)
@@ -1273,7 +1293,7 @@ public partial class GamesViewModel(
                     copy.RuntimeAccountName = account.DisplayName;
                 return true;
             }
-            GameOperationMessage = otherGames.Length > 0 ? "Confirme para encerrar os jogos e continuar." : "Preparando abertura…";
+            GameOperationMessage = "Preparando contagem regressiva…";
             var launchDialog = new SteamSwitcher.Views.Dialogs.GameActionDialog(this, otherGames, cardVm, account.DisplayName, PrepareAndLaunchAsync)
             {
                 Owner = Application.Current.MainWindow

@@ -6,6 +6,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Novidades
 
+- Contagem regressiva de cinco segundos ao iniciar jogos, com cancelamento antes de encerrar jogos ou trocar a conta.
 - Tela de jogos com monitoramento de execução, faixa de jogos abertos, filtro e ações Ver jogo e Parar.
 - Jogos em execução exibidos no tray somente enquanto estão abertos, preservando as opções existentes e sem exigir uma visita à tela de jogos.
 - Estados de início, execução e encerramento nos cards e na lista compacta; menu de opções com desinstalação pela Steam.
@@ -14,6 +15,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- A conta já ativa é reutilizada ao abrir jogos; se a abertura exigir Online e a sessão estiver Offline, a Steam é reiniciada em Online, sem alterar o padrão global.
 - A abertura pela tela de jogos aguarda a confirmação da sessão e da execução, em vez de assumir que uma espera fixa significa que o jogo iniciou.
 - Validação da instalação da Steam antes de encerrar um jogo para desinstalação; processos ambíguos ou protegidos exigem fechamento manual.
 - Status padrão do rodapé independente da sessão Steam: o monitor não sobrescreve a preferência, e o primeiro clique alterna Online para Offline.

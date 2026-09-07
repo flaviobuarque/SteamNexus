@@ -9,6 +9,10 @@ public partial class GameActionDialog : Window
 {
     private readonly Func<Task<bool>> _operation;
     private readonly GamesViewModel _viewModel;
+    private readonly CancellationTokenSource _countdownCancellation = new();
+    private bool _countdownStarted;
+    private bool _operationStarted;
+    private bool _closed;
     private bool _busy;
     public bool Completed { get; private set; }
 
@@ -26,6 +30,14 @@ public partial class GameActionDialog : Window
         DestinationAccount.Text = accountName;
         StatusText.SetBinding(TextBlock.TextProperty, new Binding(nameof(GamesViewModel.GameOperationMessage)) { Source = viewModel });
         Closing += (_, e) => { if (_busy) e.Cancel = true; };
+        Closed += (_, _) =>
+        {
+            _closed = true;
+            _countdownCancellation.Cancel();
+            _countdownCancellation.Dispose();
+            if (!_operationStarted)
+                _viewModel.GameOperationMessage = "Abertura cancelada. Nenhum jogo foi encerrado e nenhuma conta foi trocada.";
+        };
         Loaded += async (_, _) =>
         {
             if (Owner is not null)
@@ -36,16 +48,36 @@ public partial class GameActionDialog : Window
                 Top = Owner.Top;
             }
             CancelButton.Focus();
-            if (running.Count == 0) await ExecuteAsync();
+            await StartCountdownAsync();
         };
     }
 
-    private async void Continue_Click(object sender, RoutedEventArgs e) => await ExecuteAsync();
+    private async Task StartCountdownAsync()
+    {
+        if (_countdownStarted || _closed) return;
+        _countdownStarted = true;
+        var ct = _countdownCancellation.Token;
+        ContinueButton.IsEnabled = false;
+        try
+        {
+            for (var seconds = 5; seconds > 0; seconds--)
+            {
+                _viewModel.GameOperationMessage = $"Iniciando em {seconds} segundo(s)… Você pode cancelar antes de qualquer alteração.";
+                ContinueButton.Content = $"Aguarde {seconds}s";
+                await Task.Delay(TimeSpan.FromSeconds(1), ct);
+            }
+            ct.ThrowIfCancellationRequested();
+            if (!_closed) await ExecuteAsync();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
+    }
 
     private async Task ExecuteAsync()
     {
-        if (_busy) return;
+        if (_busy || _closed || _operationStarted) return;
+        _operationStarted = true;
         _busy = true;
+        _viewModel.GameOperationMessage = "Preparando a abertura. A contagem terminou; aguarde a conclusão desta etapa.";
         ContinueButton.IsEnabled = CancelButton.IsEnabled = false;
         ProgressRing.Visibility = Visibility.Visible;
         try { Completed = await _operation(); }
