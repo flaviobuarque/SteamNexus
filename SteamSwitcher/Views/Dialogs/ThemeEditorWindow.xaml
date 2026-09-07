@@ -7,6 +7,74 @@
     Title="Editor de tema — SteamNexus" Width="1050" Height="720" MinWidth="920" MinHeight="620"
     WindowStartupLocation="CenterOwner" Background="{DynamicResource AppBackgroundBrush}">
     <Window.Resources>
+        <Style x:Key="ThemeSliderTrackButton" TargetType="RepeatButton">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent">
+                            <Border Height="4" VerticalAlignment="Center" CornerRadius="2"
+                                    Background="{TemplateBinding Background}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="Slider">
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid x:Name="SliderRoot" Background="Transparent">
+                            <Track x:Name="PART_Track" Orientation="Horizontal"
+                                   Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                                   Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                   IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge"
+                                                  Style="{StaticResource ThemeSliderTrackButton}"
+                                                  Background="{DynamicResource AppAccentBrush}"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Width="22" Height="22" Cursor="Hand">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Grid Background="Transparent">
+                                                    <Ellipse x:Name="Handle" Margin="3"
+                                                             Fill="{DynamicResource AppAccentBrush}"
+                                                             Stroke="{DynamicResource AppSurfaceBrush}" StrokeThickness="2"/>
+                                                </Grid>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Handle" Property="Fill" Value="{DynamicResource AppAccentAltBrush}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsDragging" Value="True">
+                                                        <Setter TargetName="Handle" Property="Fill" Value="{DynamicResource AppAccentAltBrush}"/>
+                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding IsKeyboardFocused, RelativeSource={RelativeSource AncestorType=Slider}}" Value="True">
+                                                        <Setter TargetName="Handle" Property="Stroke" Value="{DynamicResource AppTextPrimaryBrush}"/>
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge"
+                                                  Style="{StaticResource ThemeSliderTrackButton}"
+                                                  Background="{DynamicResource AppBorderBrush}"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="SliderRoot" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="EditorTabStyle" TargetType="TabItem">
             <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}"/>
             <Setter Property="Padding" Value="12,10"/>
