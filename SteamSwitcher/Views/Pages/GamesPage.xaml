@@ -974,7 +974,8 @@
                 </ItemsControl>
 
             <ListBox
-                Padding="20,16,20,16"
+                Margin="20,16,20,16"
+                Padding="0"
                 ItemsSource="{Binding Games}"
                 Background="Transparent"
                 BorderThickness="0"
@@ -1071,7 +1072,7 @@
                             </Border.ContextMenu>
                             <Grid Height="82">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="44" />
+                                    <ColumnDefinition Width="54" />
                                     <ColumnDefinition Width="14" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="150" />
@@ -1084,7 +1085,7 @@
                                 <Border Grid.Column="0" CornerRadius="6" ClipToBounds="True"
                                     Background="{DynamicResource AppBackgroundBrush}">
                                     <Grid>
-                                        <Image Source="{Binding CoverImage}" Stretch="UniformToFill" />
+                                        <Image Source="{Binding CoverImage}" Stretch="Uniform" />
                                         <ic:SymbolIcon Symbol="Games" FontSize="20"
                                             Foreground="{DynamicResource AppTextMutedBrush}"
                                             HorizontalAlignment="Center" VerticalAlignment="Center"
