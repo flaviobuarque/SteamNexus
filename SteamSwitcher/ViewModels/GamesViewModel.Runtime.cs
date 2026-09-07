@@ -55,9 +55,26 @@ public partial class GamesViewModel
         {
             var snapshots = await runtimeService.InspectAsync(_allGames.Select(card => card.Game).ToArray(), _runtimeCancellation.Token);
             _runtimeSnapshots = snapshots;
+            var orderChanged = false;
+            var gameStarted = false;
             foreach (var card in _allGames)
             {
                 if (!snapshots.TryGetValue(card.Game.UniqueKey, out var state)) continue;
+                orderChanged |= card.IsRunning != state.IsRunning;
+                gameStarted |= !card.IsRunning && state.IsRunning;
+                if (state.Processes.Count > 0)
+                {
+                    var previousLastPlayed = card.Game.LastPlayedTimestamp;
+                    card.Game.LastPlayedTimestamp = Math.Max(card.Game.LastPlayedTimestamp,
+                        new DateTimeOffset(state.Processes.Min(process => process.StartedUtc)).ToUnixTimeSeconds());
+                    orderChanged |= GameSortMode == GameSortMode.RecentlyPlayed && previousLastPlayed != card.Game.LastPlayedTimestamp;
+                    var executable = state.Processes[0].Executable;
+                    if (card.RuntimeIconPath != executable)
+                    {
+                        card.RuntimeIconPath = executable;
+                        card.TrayIconImage = await Helpers.GameExecutableIconLoader.LoadAsync(executable);
+                    }
+                }
                 card.IsRunning = state.IsRunning;
                 card.RuntimeUncertain = state.IsUncertain;
                 if (!state.IsRunning) card.RuntimeAccountName = "Conta não identificada";
@@ -67,6 +84,7 @@ public partial class GamesViewModel
             foreach (var old in RunningGames.Except(running).ToArray()) RunningGames.Remove(old);
             foreach (var card in running.Except(RunningGames)) RunningGames.Add(card);
             OnPropertyChanged(nameof(HasRunningGames));
+            if (orderChanged) ApplyFilters(resetPage: gameStarted);
             foreach (var request in _uninstallRequests.ToArray())
             {
                 var library = Path.Combine(request.Value.Game.LibraryPath, "steamapps");
@@ -178,7 +196,7 @@ public partial class GamesViewModel
             }
             if (!stopped && ConfirmGameAction("O jogo ainda está aberto", $"{card.Game.Name} não encerrou. Deseja forçar o encerramento?\n\nIsso pode causar perda de progresso não salvo. Apenas os processos identificados serão encerrados.", "Forçar encerramento"))
                 stopped = await runtimeService.StopAsync(card.Game, state, true, _runtimeCancellation.Token);
-            GameOperationMessage = stopped ? $"{card.Game.Name} foi encerrado." : "O jogo continua aberto. Feche-o manualmente para continuar.";
+            GameOperationMessage = stopped ? string.Empty : "O jogo continua aberto. Feche-o manualmente para continuar.";
             return stopped;
         }
         finally

@@ -93,6 +93,6 @@ public sealed class HotkeyDefinition
 public enum AppTheme { Light, Dark, System }
 public enum AccountSortMode { RecentUsage, Alphabetical }
 public enum AccountViewMode { Grid, Compact }
-public enum GameSortMode { Alphabetical, MostPlayed, LargestSize }
+public enum GameSortMode { Alphabetical, MostPlayed, LargestSize, RecentlyPlayed }
 public enum GameViewMode { Grid, Compact }
 public enum PostSwitchBehavior { MinimizeToTray, Close, KeepOpen }

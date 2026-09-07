@@ -79,6 +79,7 @@ public partial class GameActionDialog : Window
         _busy = true;
         _viewModel.GameOperationMessage = "Preparando a abertura. A contagem terminou; aguarde a conclusão desta etapa.";
         ContinueButton.IsEnabled = CancelButton.IsEnabled = false;
+        ContinueButton.Visibility = CancelButton.Visibility = Visibility.Collapsed;
         ProgressRing.Visibility = Visibility.Visible;
         try { Completed = await _operation(); }
         catch (Exception ex) { _viewModel.GameOperationMessage = ex.Message; }
@@ -89,6 +90,7 @@ public partial class GameActionDialog : Window
             ContinueButton.Visibility = Visibility.Collapsed;
             CancelButton.Content = "Fechar";
             CancelButton.IsEnabled = true;
+            if (!Completed) CancelButton.Visibility = Visibility.Visible;
         }
         if (Completed) Close();
         else CancelButton.Focus();

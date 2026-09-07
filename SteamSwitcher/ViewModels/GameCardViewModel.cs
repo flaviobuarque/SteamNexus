@@ -7,6 +7,8 @@ namespace SteamSwitcher.ViewModels;
 public partial class GameCardViewModel : ObservableObject
 {
     public SteamGame Game { get; private set; }
+    [ObservableProperty] private ImageSource? _trayIconImage;
+    public string? RuntimeIconPath { get; set; }
     private LoginState? _globalLoginPreference;
     public string LoginPreferenceText => Helpers.LoginPreferencePresentation.Label(Game.LoginStateOverride,
         Game.OwnerAccount?.LoginStateOverride ?? _globalLoginPreference);
@@ -68,6 +70,7 @@ public partial class GameCardViewModel : ObservableObject
 
     public void ApplySnapshot(SteamGame game)
     {
+        game.LastPlayedTimestamp = Math.Max(game.LastPlayedTimestamp, Game.LastPlayedTimestamp);
         Game = game;
         OnPropertyChanged(nameof(Game));
         OnPropertyChanged(nameof(OwnerAccountName));

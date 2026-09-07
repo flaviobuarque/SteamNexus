@@ -69,11 +69,13 @@ public partial class GamesViewModel(
     {
         GameSortMode.MostPlayed => "Mais jogados",
         GameSortMode.LargestSize => "Maior tamanho",
+        GameSortMode.RecentlyPlayed => "Jogados recentemente",
         _ => "Nome: A–Z"
     };
     public bool IsAlphabeticalGameSort => GameSortMode == GameSortMode.Alphabetical;
     public bool IsMostPlayedGameSort => GameSortMode == GameSortMode.MostPlayed;
     public bool IsLargestSizeGameSort => GameSortMode == GameSortMode.LargestSize;
+    public bool IsRecentlyPlayedGameSort => GameSortMode == GameSortMode.RecentlyPlayed;
     public GameViewMode GameViewMode => settingsService.Current.GameViewMode;
     public bool IsGameGridView => GameViewMode == GameViewMode.Grid;
     public bool IsGameCompactView => GameViewMode == GameViewMode.Compact;
@@ -1033,6 +1035,9 @@ public partial class GamesViewModel(
     private async Task SortGamesByLargestSizeAsync() =>
         await SetGameSortModeAsync(GameSortMode.LargestSize);
 
+    [RelayCommand]
+    private async Task SortGamesByRecentlyPlayedAsync() => await SetGameSortModeAsync(GameSortMode.RecentlyPlayed);
+
     private async Task SetGameSortModeAsync(GameSortMode mode)
     {
         if (GameSortMode == mode) return;
@@ -1043,6 +1048,7 @@ public partial class GamesViewModel(
         OnPropertyChanged(nameof(IsAlphabeticalGameSort));
         OnPropertyChanged(nameof(IsMostPlayedGameSort));
         OnPropertyChanged(nameof(IsLargestSizeGameSort));
+        OnPropertyChanged(nameof(IsRecentlyPlayedGameSort));
         ApplyFilters();
         await settingsService.SaveAsync(settingsService.Current);
     }

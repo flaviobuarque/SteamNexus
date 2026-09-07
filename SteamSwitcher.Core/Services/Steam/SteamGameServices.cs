@@ -74,24 +74,25 @@ public class SteamGameService(
 
             // Cada localconfig.vdf e lido uma única vez, mesmo quando a conta
             // possui centenas de jogos instalados.
-            foreach (var ownerGroup in games
-                .Where(g => g.OwnerAccount is not null)
-                .GroupBy(g => new
+            foreach (var accountGroup in accounts
+                .GroupBy(account => new
                 {
-                    g.InstallationRootPath,
-                    g.OwnerAccount!.SteamId32,
+                    account.InstallationRootPath,
+                    account.SteamId32,
                 }))
             {
                 ct.ThrowIfCancellationRequested();
                 var localConfigPath = locator.GetLocalConfigVdfPath(
-                    ownerGroup.Key.InstallationRootPath,
-                    ownerGroup.Key.SteamId32);
+                    accountGroup.Key.InstallationRootPath,
+                    accountGroup.Key.SteamId32);
                 var playtimes = ReadPlaytimes(localConfigPath);
 
-                foreach (var game in ownerGroup)
+                foreach (var game in games.Where(game => string.Equals(game.InstallationRootPath, accountGroup.Key.InstallationRootPath, StringComparison.OrdinalIgnoreCase)))
                 {
-                    if (playtimes.TryGetValue(game.AppId, out var minutes))
-                        game.PlaytimeMinutes = minutes;
+                    if (!playtimes.TryGetValue(game.AppId, out var usage)) continue;
+                    if (game.OwnerAccount?.SteamId32 == accountGroup.Key.SteamId32)
+                        game.PlaytimeMinutes = usage.Minutes;
+                    game.LastPlayedTimestamp = Math.Max(game.LastPlayedTimestamp, usage.LastPlayed);
                 }
             }
 
@@ -212,14 +213,17 @@ public class SteamGameService(
             if (!File.Exists(localConfigPath)) return;
 
             var playtimes = ReadPlaytimes(localConfigPath);
-            if (playtimes.TryGetValue(game.AppId, out var minutes))
-                game.PlaytimeMinutes = minutes;
+            if (playtimes.TryGetValue(game.AppId, out var usage))
+            {
+                game.PlaytimeMinutes = usage.Minutes;
+                game.LastPlayedTimestamp = Math.Max(game.LastPlayedTimestamp, usage.LastPlayed);
+            }
         }, ct);
     }
 
-    private static Dictionary<string, int> ReadPlaytimes(string path)
+    private static Dictionary<string, (int Minutes, long LastPlayed)> ReadPlaytimes(string path)
     {
-        var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var result = new Dictionary<string, (int Minutes, long LastPlayed)>(StringComparer.OrdinalIgnoreCase);
         if (!File.Exists(path)) return result;
 
         try
@@ -280,11 +284,16 @@ public class SteamGameService(
                     continue;
                 }
 
-                if (currentAppId is not null
-                    && string.Equals(key, "Playtime", StringComparison.OrdinalIgnoreCase)
-                    && int.TryParse(value, out var minutes))
+                if (currentAppId is not null && depth == appDepth)
                 {
-                    result[currentAppId] = minutes;
+                    result.TryGetValue(currentAppId, out var usage);
+                    if (string.Equals(key, "Playtime", StringComparison.OrdinalIgnoreCase)
+                        && int.TryParse(value, out var minutes))
+                        result[currentAppId] = (Math.Max(0, minutes), usage.LastPlayed);
+                    else if (string.Equals(key, "LastPlayed", StringComparison.OrdinalIgnoreCase)
+                        && long.TryParse(value, out var timestamp) && timestamp > 0
+                        && timestamp <= DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+                        result[currentAppId] = (usage.Minutes, timestamp);
                 }
             }
         }

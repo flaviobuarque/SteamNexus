@@ -430,6 +430,10 @@
                                     <ui:SymbolIcon Symbol="TextSortAscending24" />
                                 </MenuItem.Icon>
                             </MenuItem>
+                            <MenuItem Header="Jogados recentemente"
+                                Command="{Binding PlacementTarget.DataContext.SortGamesByRecentlyPlayedCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                IsCheckable="True"
+                                IsChecked="{Binding PlacementTarget.DataContext.IsRecentlyPlayedGameSort, RelativeSource={RelativeSource AncestorType=ContextMenu}, Mode=OneWay}" />
                             <MenuItem
                                 Command="{Binding PlacementTarget.DataContext.SortGamesByMostPlayedCommand,
                                     RelativeSource={RelativeSource AncestorType=ContextMenu}}">

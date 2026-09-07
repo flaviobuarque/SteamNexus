@@ -33,17 +33,25 @@ public static class GameLibraryProjection
         var sorted = sortMode switch
         {
             GameSortMode.MostPlayed => filtered
-                .OrderByDescending(game => game.IsFavorite)
+                .OrderByDescending(game => game.IsRunning)
+                .ThenByDescending(game => game.IsFavorite)
                 .ThenByDescending(game => game.Game.PlaytimeMinutes)
                 .ThenBy(game => game.Game.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList(),
             GameSortMode.LargestSize => filtered
-                .OrderByDescending(game => game.IsFavorite)
+                .OrderByDescending(game => game.IsRunning)
+                .ThenByDescending(game => game.IsFavorite)
                 .ThenByDescending(game => game.Game.SizeOnDisk)
                 .ThenBy(game => game.Game.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList(),
+            GameSortMode.RecentlyPlayed => filtered
+                .OrderByDescending(game => game.IsRunning)
+                .ThenByDescending(game => game.Game.LastPlayedTimestamp)
+                .ThenBy(game => game.Game.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
             _ => filtered
-                .OrderByDescending(game => game.IsFavorite)
+                .OrderByDescending(game => game.IsRunning)
+                .ThenByDescending(game => game.IsFavorite)
                 .ThenBy(game => game.Game.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList()
         };

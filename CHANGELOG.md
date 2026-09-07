@@ -6,6 +6,8 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Novidades
 
+- Tray exibe o ícone do executável do jogo, sem usar o pôster, com ícone genérico quando indisponível.
+- Ordenação Jogados recentemente baseada em LastPlayed da Steam e no início dos processos observados; jogos em execução aparecem primeiro em todas as ordenações.
 - Ícones neutros à esquerda dos selos de login: engrenagem para Padrão, globo para Online e globo riscado para Offline.
 - Selos de login compactos (Padrão, Online ou Offline), com menu ancorado de seleção e salvamento imediato. Tooltips acompanham o tema do aplicativo e mostram a origem do modo herdado.
 - Cards de contas e jogos exibem a preferência Ao entrar (Padrão com modo herdado, Online ou Offline), com acesso direto à edição e atualização ao mudar o padrão global ou a conta associada.
@@ -18,6 +20,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Botões de cancelar e contagem ocultos após os cinco segundos; removida a mensagem de sucesso ao encerrar um jogo.
 - Removido o filtro Em execução da tela de jogos e o espaço vazio quando não há atividade; monitoramento e indicação de jogos abertos preservados.
 - Selo de preferência de login movido para o rodapé do card de jogo, abaixo das informações de instalação e fora da capa e do botão Jogar.
 - Padrão global de login alterado somente por edição manual: salvar outros ajustes ou aplicar um tema preserva o valor atual, e mudanças pelo rodapé são sincronizadas com Configurações.

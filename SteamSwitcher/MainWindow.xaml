@@ -473,13 +473,30 @@
                                 <ItemsControl ItemsSource="{Binding RunningGames}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <StackPanel Margin="0,2">
+                                            <DockPanel Margin="0,2">
+                                                <Grid Width="28" Height="28" Margin="0,0,9,0" VerticalAlignment="Center">
+                                                    <Image Source="{Binding TrayIconImage}" Stretch="Uniform" />
+                                                    <ui:SymbolIcon Symbol="Games24">
+                                                        <ui:SymbolIcon.Style>
+                                                            <Style TargetType="ui:SymbolIcon">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding TrayIconImage}" Value="{x:Null}">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </ui:SymbolIcon.Style>
+                                                    </ui:SymbolIcon>
+                                                </Grid>
+                                                <StackPanel>
                                                 <TextBlock Text="{Binding Game.Name}" FontWeight="SemiBold"
                                                     TextTrimming="CharacterEllipsis" MaxWidth="280"
                                                     Foreground="{DynamicResource AppTextPrimaryBrush}" />
                                                 <TextBlock Text="{Binding RuntimeStatus}" FontSize="10"
                                                     Foreground="{DynamicResource AppSuccessBrush}" />
-                                            </StackPanel>
+                                                </StackPanel>
+                                            </DockPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>

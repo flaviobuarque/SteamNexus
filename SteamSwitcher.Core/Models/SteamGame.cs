@@ -29,6 +29,7 @@ public class SteamGame
 
     // Stats (do localconfig.vdf)
     public int PlaytimeMinutes { get; set; }
+    public long LastPlayedTimestamp { get; set; }
     public int PlaytimeForever => PlaytimeMinutes;
     public string PlaytimeFormatted => FormatPlaytime(PlaytimeMinutes);
 
