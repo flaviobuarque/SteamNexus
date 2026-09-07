@@ -19,6 +19,10 @@ public partial class MainViewModel(
     IUpdateService updateService) : ObservableObject
 {
     public IUpdateService UpdateService { get; } = updateService;
+    public string DefaultLoginStateText => settingsService.Current.DefaultLoginStateOverride == LoginState.Offline
+        ? "Offline" : "Online";
+
+    public void RefreshDefaultLoginState() => OnPropertyChanged(nameof(DefaultLoginStateText));
     [ObservableProperty] private string _activeAccountName = string.Empty;
     [ObservableProperty] private bool _hasActiveAccount;
     [ObservableProperty] private bool _steamNotFound;
@@ -187,6 +191,7 @@ public partial class MainViewModel(
 
     public void UpdateStatusBar(string left, string right = "", bool showLoginToggle = false)
     {
+        RefreshDefaultLoginState();
         StatusBarLeft = left;
         StatusBarRight = right;
         ShowLoginToggle = showLoginToggle;
@@ -404,14 +409,15 @@ public partial class MainViewModel(
     {
         var current = settingsService.Current;
 
-        var nextState = current.DefaultLoginStateOverride == LoginState.Online
-            ? LoginState.Offline
-            : LoginState.Online;
+        // Unset defaults to Online in the switch service and in the footer.
+        var nextState = current.DefaultLoginStateOverride == LoginState.Offline
+            ? LoginState.Online
+            : LoginState.Offline;
 
         current.DefaultLoginStateOverride = nextState;
 
         await settingsService.SaveAsync(current);
 
-        StatusLoginState = nextState.ToString();
+        RefreshDefaultLoginState();
     }
 }

@@ -149,8 +149,7 @@ public partial class SettingsViewModel(
         App.ApplyTheme(settings.Theme, ResolveActiveTheme(settings));
         _original = settings;
         HasUnsavedChanges = false;
-        _mainViewModel.StatusLoginState =
-            DefaultLoginStateOverride?.ToString() ?? "Não alterar";
+        _mainViewModel.RefreshDefaultLoginState();
         RefreshStatusBar();
 
         if (!automaticUpdatesWereEnabled && settings.CheckForUpdatesAutomatically)

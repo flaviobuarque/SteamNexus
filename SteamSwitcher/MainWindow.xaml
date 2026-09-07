@@ -682,7 +682,7 @@
                                     <Style TargetType="Ellipse">
                                         <Setter Property="Fill" Value="{DynamicResource AppTextMutedBrush}" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding StatusLoginState}" Value="Online">
+                                            <DataTrigger Binding="{Binding DefaultLoginStateText}" Value="Online">
                                                 <Setter Property="Fill" Value="{DynamicResource AppSuccessBrush}" />
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -696,14 +696,14 @@
                                 VerticalAlignment="Center"
                                 Foreground="{DynamicResource AppTextSecondaryBrush}" />
                             <TextBlock
-                        Text="{Binding StatusLoginState}"
+                        Text="{Binding DefaultLoginStateText}"
                         FontSize="12"
                         VerticalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding StatusLoginState}" Value="Online">
+                                            <DataTrigger Binding="{Binding DefaultLoginStateText}" Value="Online">
                                                 <Setter Property="Foreground" Value="{DynamicResource AppSuccessBrush}" />
                                             </DataTrigger>
                                         </Style.Triggers>
