@@ -95,7 +95,7 @@
                 <TextBlock Text="Personalize a aparência com prévia antes de salvar."
                            Margin="0,5,0,0" Foreground="{DynamicResource AppTextSecondaryBrush}" />
             </StackPanel>
-            <Border Grid.Column="1" Padding="10,5" CornerRadius="7"
+            <Border Grid.Column="1" Padding="10,5" CornerRadius="7" VerticalAlignment="Top"
                     Background="{DynamicResource AppAccentSurfaceBrush}">
                 <TextBlock Text="{Binding ContrastStatus}" Foreground="{DynamicResource AppAccentBrush}"
                            FontWeight="SemiBold" />
@@ -162,6 +162,7 @@
                 </TabItem>
 
                 <TabItem Header="Fundo" IsEnabled="{Binding IsCustomTheme}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="18">
                         <TextBlock Text="Imagem de fundo" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextPrimaryBrush}" />
@@ -211,6 +212,7 @@
                                   SelectedValuePath="Value" SelectedValue="{Binding BackgroundStretch}"
                                   Margin="0,7,0,0" SelectionChanged="EditorValue_Changed" />
                     </StackPanel>
+                    </ScrollViewer>
                 </TabItem>
 
 
@@ -219,7 +221,8 @@
             <Border Grid.Column="2" Padding="20" CornerRadius="14"
                     Background="{DynamicResource AppSurfaceAltBrush}"
                     BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
-                <StackPanel VerticalAlignment="Center">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="0,0,8,0">
                     <TextBlock Text="Prévia" FontSize="18" FontWeight="SemiBold"
                                Foreground="{DynamicResource AppTextPrimaryBrush}" />
                     <TextBlock Text="Componentes reais do tema" Margin="0,4,0,18"
@@ -254,9 +257,26 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
+                    <Border Margin="0,18,0,0" Padding="12" CornerRadius="8"
+                            Background="{DynamicResource AppSurfaceBrush}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding ContrastStatus}" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                            <TextBlock Text="{Binding ContrastDetail}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                            <TextBlock Text="Verificação dos textos sobre cartões. A imagem de fundo não é avaliada."
+                                       Margin="0,6,0,0" FontSize="11" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource AppTextMutedBrush}" />
+                            <ui:Button Content="Corrigir contraste dos textos" Click="FixContrast_Click"
+                                       Margin="0,10,0,0" HorizontalAlignment="Left"
+                                       IsEnabled="{Binding IsCustomTheme}"
+                                       Visibility="{Binding HasContrastIssues, Converter={StaticResource BoolToVisibility}}" />
+                        </StackPanel>
+                    </Border>
                     <TextBlock Text="{Binding ValidationMessage}" Margin="0,14,0,0" TextWrapping="Wrap"
                                Foreground="{DynamicResource AppWarningBrush}" />
                 </StackPanel>
+                </ScrollViewer>
             </Border>
         </Grid>
 

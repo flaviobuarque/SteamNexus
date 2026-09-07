@@ -258,6 +258,7 @@ public partial class ThemeEditorViewModel : ObservableObject
     [ObservableProperty] private bool _shadowsEnabled = true;
     [ObservableProperty] private string _contrastStatus = "Contraste adequado";
     [ObservableProperty] private string _contrastDetail = string.Empty;
+    [ObservableProperty] private bool _hasContrastIssues;
     [ObservableProperty] private string _validationMessage = string.Empty;
     [ObservableProperty] private bool _isPresetReadOnly;
 
@@ -347,10 +348,11 @@ public partial class ThemeEditorViewModel : ObservableObject
     {
         var primary = CustomThemeManager.ContrastRatio(theme.TextPrimary, theme.Surface);
         var secondary = CustomThemeManager.ContrastRatio(theme.TextSecondary, theme.Surface);
-        ContrastStatus = primary >= 4.5 && secondary >= 3 ? "Contraste adequado" : "Revisar contraste";
-        ContrastDetail = $"Texto principal: {primary:F1}:1 • Texto secundário: {secondary:F1}:1. "
-            + (primary >= 4.5 ? "O texto principal atende ao contraste recomendado." :
-                "Aumente a diferença entre o texto principal e os cartões.");
+        HasContrastIssues = primary < 4.5 || secondary < 3;
+        ContrastStatus = HasContrastIssues ? "Atenção: contraste baixo" : "Contraste dos textos adequado";
+        ContrastDetail = $"Texto principal: {primary:F1}:1 (mínimo 4,5:1).\nTexto secundário: {secondary:F1}:1 (mínimo 3:1).";
+        if (HasContrastIssues)
+            ContrastDetail += "\nA correção ajusta somente os textos abaixo do mínimo, mantendo o fundo.";
     }
 
     public void LoadSelectedPreset(bool asCopy)
@@ -375,11 +377,14 @@ public partial class ThemeEditorViewModel : ObservableObject
     {
         var surface = Colors.First(item => item.Key == "Surface").Value;
         var whiteRatio = CustomThemeManager.ContrastRatio("#FFFFFF", surface);
-        var blackRatio = CustomThemeManager.ContrastRatio("#0B1220", surface);
+        var blackRatio = CustomThemeManager.ContrastRatio("#000000", surface);
         var useLightText = whiteRatio >= blackRatio;
-        Colors.First(item => item.Key == "TextPrimary").Value = useLightText ? "#FFFFFF" : "#0B1220";
-        Colors.First(item => item.Key == "TextSecondary").Value = useLightText ? "#CBD5E1" : "#334155";
-        Colors.First(item => item.Key == "TextMuted").Value = useLightText ? "#94A3B8" : "#64748B";
+        foreach (var (key, minimum) in new[] { ("TextPrimary", 4.5), ("TextSecondary", 3.0) })
+        {
+            var entry = Colors.First(item => item.Key == key);
+            if (CustomThemeManager.ContrastRatio(entry.Value, surface) < minimum)
+                entry.Value = useLightText ? "#FFFFFF" : "#000000";
+        }
     }
 
     private void Add(string label, string key, string value) => Colors.Add(new ThemeColorEntry(label, key, value));
