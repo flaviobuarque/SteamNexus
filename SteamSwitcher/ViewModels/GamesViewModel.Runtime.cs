@@ -55,6 +55,7 @@ public partial class GamesViewModel
         {
             var snapshots = await runtimeService.InspectAsync(_allGames.Select(card => card.Game).ToArray(), _runtimeCancellation.Token);
             _runtimeSnapshots = snapshots;
+            mainViewModel.IsGameRunning = snapshots.Values.Any(state => state.IsRunning || state.IsUncertain);
             SteamAccount? activeAccount = null;
             if (snapshots.Values.Any(state => state.IsRunning))
             {

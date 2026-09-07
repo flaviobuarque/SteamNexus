@@ -207,6 +207,8 @@ public partial class AccountsViewModel(
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
+        mainViewModel.PropertyChanged -= OnGameRunningChanged;
+        mainViewModel.PropertyChanged += OnGameRunningChanged;
         if (!WeakReferenceMessenger.Default.IsRegistered<DefaultLoginPreferenceChanged>(this))
             WeakReferenceMessenger.Default.Register<DefaultLoginPreferenceChanged>(this, (_, message) =>
             {
@@ -550,6 +552,12 @@ public partial class AccountsViewModel(
         }
     }
 
+    private void OnGameRunningChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.IsGameRunning))
+            foreach (var card in _accounts) card.IsGameRunning = mainViewModel.IsGameRunning;
+    }
+
     private void ApplyLiveSession(SteamAccount? active)
     {
         var changed = false;
@@ -621,6 +629,7 @@ public partial class AccountsViewModel(
 
         if (membershipChanged)
             _accounts.ReplaceAll(reconciled);
+        foreach (var card in _accounts) card.IsGameRunning = mainViewModel.IsGameRunning;
         RefreshLastUsedBadge();
     }
 
@@ -661,6 +670,8 @@ public partial class AccountsViewModel(
     {
         if (SwitchingAccount is not null) return;
         if (cardVm.IsActive) return;
+        if (!await mainViewModel.CanChangeAccountAsync()) return;
+        if (SwitchingAccount is not null) return;
 
         SwitchingAccount = cardVm;
         cardVm.IsSwitching = true;
@@ -746,6 +757,7 @@ public partial class AccountsViewModel(
     [RelayCommand]
     private async Task ForgetAccountAsync(AccountCardViewModel cardVm)
     {
+        if (!await mainViewModel.CanChangeAccountAsync()) return;
         if (cardVm.IsPendingRemoval) return;
 
         const double undoSeconds = 5;
@@ -847,6 +859,7 @@ public partial class AccountsViewModel(
     [RelayCommand]
     private async Task SetAccountLoginStateAsync(LoginPreferenceSelection selection)
     {
+        if (!await mainViewModel.CanChangeAccountAsync()) return;
         if (selection.Target is not AccountCardViewModel card) return;
         if (card.Account.LoginStateOverride == selection.State) return;
         try
@@ -874,6 +887,7 @@ public partial class AccountsViewModel(
     [RelayCommand]
     private async Task EditAccountAsync(AccountCardViewModel cardVm)
     {
+        if (!await mainViewModel.CanChangeAccountAsync()) return;
         var editVm = serviceProvider.GetRequiredService<EditAccountViewModel>();
         var dialog = new Views.Dialogs.EditAccountDialog(editVm);
         dialog.Owner = System.Windows.Application.Current.MainWindow;
@@ -904,6 +918,7 @@ public partial class AccountsViewModel(
     [RelayCommand]
     private async Task AddAccountAsync()
     {
+        if (!await mainViewModel.CanChangeAccountAsync()) return;
         snackbarService.Show(
             "Adicionar conta",
             "O Steam será aberto para login. Após entrar, a conta aparecerá automaticamente.",

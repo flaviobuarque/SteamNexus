@@ -94,6 +94,54 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+        <Style x:Key="AppCardMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="Item" Background="Transparent" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <ContentPresenter ContentSource="Icon" VerticalAlignment="Center" />
+                                <ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsHighlighted" Value="True" />
+                                    <Condition Property="IsEnabled" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Item" Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" />
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="AppCardContextMenuStyle" TargetType="ContextMenu" BasedOn="{StaticResource LoginPreferenceContextMenuStyle}">
+            <Style.Resources>
+                <Style TargetType="Separator">
+                    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Separator">
+                        <Border Height="1" Margin="8,4" Background="{DynamicResource AppBorderBrush}" />
+                    </ControlTemplate></Setter.Value></Setter>
+                </Style>
+            </Style.Resources>
+        </Style>
+        <Style x:Key="AccountRestrictedMenuItemStyle" TargetType="MenuItem" BasedOn="{StaticResource AppCardMenuItemStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsGameRunning}" Value="True"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="AccountContextMenuStyle" TargetType="ContextMenu" BasedOn="{StaticResource AppCardContextMenuStyle}">
+            <Style.Resources><Style TargetType="MenuItem" BasedOn="{StaticResource AccountRestrictedMenuItemStyle}" /></Style.Resources>
+        </Style>
+
             <Style x:Key="LoginPreferenceMenuItemStyle" TargetType="MenuItem">
                 <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
                 <Setter Property="FontSize" Value="12" />

@@ -16,8 +16,29 @@ public partial class MainViewModel(
     ISteamLocatorService locatorService,
     ISnackbarService snackbarService,
     IAppSettingsService settingsService,
-    IUpdateService updateService) : ObservableObject
+    IUpdateService updateService,
+    ISteamGameService gameService,
+    IGameRuntimeService runtimeService) : ObservableObject
 {
+    [ObservableProperty] private bool _isGameRunning;
+
+    public async Task<bool> CanChangeAccountAsync()
+    {
+        try
+        {
+            var accounts = await accountService.GetAllAccountsAsync();
+            var games = await gameService.GetInstalledGamesAsync(accounts);
+            var states = await runtimeService.InspectAsync(games);
+            IsGameRunning = states.Values.Any(state => state.IsRunning || state.IsUncertain);
+            if (!IsGameRunning) return true;
+            snackbarService.Show("Jogo em execução", "Pare o jogo para trocar de conta.", ControlAppearance.Caution, null, TimeSpan.FromSeconds(4));
+        }
+        catch
+        {
+            snackbarService.Show("Não foi possível verificar os jogos", "Tente novamente antes de trocar de conta.", ControlAppearance.Caution, null, TimeSpan.FromSeconds(4));
+        }
+        return false;
+    }
     public IUpdateService UpdateService { get; } = updateService;
     public string DefaultLoginStateText => settingsService.Current.DefaultLoginStateOverride == LoginState.Offline
         ? "Offline" : "Online";
@@ -345,6 +366,8 @@ public partial class MainViewModel(
     [RelayCommand]
     private async Task SwitchFromTrayAsync(SteamAccount account)
     {
+        if (IsSwitchingAccount || accountService.IsOperationInProgress) return;
+        if (!await CanChangeAccountAsync()) return;
         if (IsSwitchingAccount || accountService.IsOperationInProgress) return;
         snackbarService.Show(
             "Alternando conta",

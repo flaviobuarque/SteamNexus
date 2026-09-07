@@ -26,6 +26,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     [ObservableProperty] private string _avatarPath = string.Empty;
     [ObservableProperty] private ImageSource? _avatarImage;
     [ObservableProperty] private bool _isActive = account.IsActive;
+    [ObservableProperty] private bool _isGameRunning;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(LastUsageText))]
     private bool _isLastUsed;

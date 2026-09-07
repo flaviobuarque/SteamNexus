@@ -360,6 +360,7 @@ public partial class App : Application
         var accounts = await accountService.GetAccountsAsync();
         var target = accounts.FirstOrDefault(a => a.SteamId64 == steamId64);
         if (target is null) return;
+        if (!await _host.Services.GetRequiredService<MainViewModel>().CanChangeAccountAsync()) return;
 
         SteamSwitcher.Core.Models.LoginState? loginState = state?.ToLowerInvariant() switch
         {

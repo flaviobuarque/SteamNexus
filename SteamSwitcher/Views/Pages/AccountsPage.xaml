@@ -385,13 +385,17 @@
                                 </Style>
                             </Border.Style>
                             <Border.ContextMenu>
-                                <ContextMenu
+                                <ContextMenu Style="{StaticResource AccountContextMenuStyle}"
                                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                    <MenuItem Header="Pare o jogo para acessar mais opções." IsEnabled="False"
+                        Style="{StaticResource AppCardMenuItemStyle}" Foreground="{DynamicResource AppTextPrimaryBrush}"
+                        Visibility="{Binding IsGameRunning, Converter={StaticResource BoolToVisibility}}" />
+
                                     <MenuItem Header="Trocar para esta conta"
                                         Command="{Binding PlacementTarget.Tag.SwitchAccountCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                         CommandParameter="{Binding}">
                                         <MenuItem.Style>
-                                            <Style TargetType="MenuItem">
+                                            <Style TargetType="MenuItem" BasedOn="{StaticResource AccountRestrictedMenuItemStyle}">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsActive}" Value="True">
                                                         <Setter Property="Visibility" Value="Collapsed" />
@@ -403,7 +407,7 @@
                                     <MenuItem Header="Editar conta"
                                         Command="{Binding PlacementTarget.Tag.EditAccountCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                         CommandParameter="{Binding}" />
-                                    <MenuItem Header="Copiar SteamID64"
+                                    <MenuItem Header="Copiar SteamID64" Style="{StaticResource AppCardMenuItemStyle}"
                                         Command="{Binding PlacementTarget.Tag.CopySteamIdCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                         CommandParameter="{Binding}" />
                                     <MenuItem
@@ -411,7 +415,7 @@
                                             RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                         CommandParameter="{Binding}">
                                         <MenuItem.Style>
-                                            <Style TargetType="MenuItem">
+                                            <Style TargetType="MenuItem" BasedOn="{StaticResource AppCardMenuItemStyle}">
                                                 <Setter Property="Header" Value="Adicionar aos favoritos" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsFavorite}" Value="True">
@@ -421,7 +425,7 @@
                                             </Style>
                                         </MenuItem.Style>
                                     </MenuItem>
-                                    <Separator />
+                                    <Separator Visibility="{Binding IsGameRunning, Converter={StaticResource InverseBoolToVisibility}}" />
                                     <MenuItem Header="Esquecer conta"
                                         Foreground="{DynamicResource AppDangerBrush}"
                                         Command="{Binding PlacementTarget.Tag.ForgetAccountCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
