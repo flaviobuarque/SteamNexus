@@ -238,7 +238,8 @@ public partial class SettingsPage : System.Windows.Controls.Page,
         var baseTheme = settings.Theme;
         try
         {
-            var dialog = new ThemeEditorWindow(draft.BaseTheme, draft, editCustom: true) { Owner = Window.GetWindow(this) };
+            var dialog = new ThemeEditorWindow(draft.BaseTheme, draft, editCustom: true,
+                validateName: name => ViewModel.ValidateThemeName(name, id)) { Owner = Window.GetWindow(this) };
             if (dialog.ShowDialog() == true && dialog.ResultTheme is not null)
                 await ViewModel.ApplyCustomThemeAsync(dialog.ResultTheme, id);
             else App.ApplyTheme(baseTheme, original);
@@ -253,7 +254,8 @@ public partial class SettingsPage : System.Windows.Controls.Page,
 
     private async void CreateTheme_Click(object sender, RoutedEventArgs e) => await ThemeActionAsync(async () =>
     {
-        var setup = new ThemeSetupDialog(ActiveThemeCopy()) { Owner = Window.GetWindow(this) };
+        var setup = new ThemeSetupDialog(ActiveThemeCopy(),
+            validateName: name => ViewModel.ValidateThemeName(name)) { Owner = Window.GetWindow(this) };
         if (setup.ShowDialog() == true && setup.ResultTheme is not null) await EditThemeAsync(setup.ResultTheme);
     });
 
@@ -270,14 +272,16 @@ public partial class SettingsPage : System.Windows.Controls.Page,
     private async void RenameTheme_Click(object sender, RoutedEventArgs e) => await ThemeActionAsync(async () =>
     {
         if (ViewModel.AppliedCustomTheme is not { } entry) return;
-        var dialog = new ThemeSetupDialog(entry.Theme, rename: true) { Owner = Window.GetWindow(this) };
+        var dialog = new ThemeSetupDialog(entry.Theme, rename: true,
+            validateName: name => ViewModel.ValidateThemeName(name, entry.Id)) { Owner = Window.GetWindow(this) };
         if (dialog.ShowDialog() == true) await ViewModel.RenameCustomThemeAsync(dialog.ThemeName);
     });
     private async void DeleteTheme_Click(object sender, RoutedEventArgs e) => await ThemeActionAsync(async () =>
     {
         if (!ViewModel.HasAppliedCustomTheme) return;
         var dialog = new ConfirmDialog("Excluir tema", "Excluir o tema aplicado? O SteamNexus Dark será ativado. As imagens de fundo serão preservadas.", "Excluir") { Owner = Window.GetWindow(this) };
-        if (dialog.ShowDialog() == true && dialog.Confirmed) await ViewModel.DeleteCustomThemeAsync();
+        dialog.ShowDialog();
+        if (dialog.Confirmed) await ViewModel.DeleteCustomThemeAsync();
     });
     private async void ImportTheme_Click(object sender, RoutedEventArgs e) => await ThemeActionAsync(async () =>
     {

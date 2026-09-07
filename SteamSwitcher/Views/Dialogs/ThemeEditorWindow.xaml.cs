@@ -19,12 +19,14 @@ public partial class ThemeEditorWindow : Window
     private bool _accepted;
     private bool _ready;
     private string _initialDraft = string.Empty;
+    private readonly Action<string>? _validateName;
 
     public ThemeEditorViewModel ViewModel { get; }
     public CustomThemeSettings? ResultTheme { get; private set; }
 
-    public ThemeEditorWindow(AppTheme baseTheme, CustomThemeSettings? customTheme, bool editCustom = false)
+    public ThemeEditorWindow(AppTheme baseTheme, CustomThemeSettings? customTheme, bool editCustom = false, Action<string>? validateName = null)
     {
+        _validateName = validateName;
         _originalBaseTheme = baseTheme;
         _originalCustomTheme = customTheme?.Clone();
         var hasActiveCustomTheme = customTheme is { IsEnabled: true };
@@ -223,6 +225,7 @@ public partial class ThemeEditorWindow : Window
         {
             var theme = ViewModel.BuildTheme();
             CustomThemeManager.Validate(theme);
+            _validateName?.Invoke(theme.Name);
             ResultTheme = theme;
             _accepted = true;
             DialogResult = true;

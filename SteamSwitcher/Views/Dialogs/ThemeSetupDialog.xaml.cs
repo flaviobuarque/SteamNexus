@@ -9,8 +9,10 @@ public partial class ThemeSetupDialog : Window
 {
     public CustomThemeSettings? ResultTheme { get; private set; }
     public string ThemeName => NameBox.Text.Trim();
-    public ThemeSetupDialog(CustomThemeSettings current, bool rename = false)
+    private readonly Action<string>? _validateName;
+    public ThemeSetupDialog(CustomThemeSettings current, bool rename = false, Action<string>? validateName = null)
     {
+        _validateName = validateName;
         InitializeComponent();
         var copy = current.Clone();
         copy.Name = "Tema atual";
@@ -36,6 +38,8 @@ public partial class ThemeSetupDialog : Window
     private void Continue_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(ThemeName)) { Hint.Text = "Informe um nome para continuar."; NameBox.Focus(); return; }
+        try { _validateName?.Invoke(ThemeName); }
+        catch (InvalidOperationException ex) { Hint.Text = ex.Message; NameBox.Focus(); return; }
         ResultTheme = ((CustomThemeSettings)BaseChoice.SelectedItem).Clone();
         ResultTheme.Name = ThemeName;
         ResultTheme.IsEnabled = true;

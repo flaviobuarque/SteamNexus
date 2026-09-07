@@ -238,10 +238,22 @@ public partial class SettingsViewModel(
     public SavedTheme? AppliedCustomTheme => settingsService.Current.ThemeLibrary
         .FirstOrDefault(item => item.Id == settingsService.Current.ActiveCustomThemeId);
 
+    public void ValidateThemeName(string name, string? id = null)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new InvalidOperationException("Dê um nome ao tema.");
+        var normalized = name.Trim();
+        if (CustomThemeManager.BuiltInPresetNames.Append("Sistema").Any(existing =>
+                string.Equals(existing.Trim(), normalized, StringComparison.OrdinalIgnoreCase))
+            || settingsService.Current.ThemeLibrary.Any(entry => entry.Id != id &&
+                string.Equals(entry.Theme.Name.Trim(), normalized, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Já existe um tema com esse nome. Escolha outro nome.");
+    }
+
     public async Task ApplyCustomThemeAsync(CustomThemeSettings theme, string? id = null)
     {
         CustomThemeManager.Validate(theme);
-        if (string.IsNullOrWhiteSpace(theme.Name)) throw new InvalidOperationException("Dê um nome ao tema.");
+        ValidateThemeName(theme.Name, id);
+        theme.Name = theme.Name.Trim();
         theme.IsEnabled = true;
         var settings = BuildSettingsFromCurrent();
         var entry = settings.ThemeLibrary.FirstOrDefault(item => item.Id == id);
