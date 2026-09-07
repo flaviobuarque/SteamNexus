@@ -15,6 +15,13 @@
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
         <converters:PathToImageSourceConverter x:Key="PathToImageSource" />
         <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibility" />
+        <Style x:Key="GameContextMenuStyle" TargetType="ContextMenu">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding PlacementTarget.DataContext.IsRunning, RelativeSource={RelativeSource Self}}" Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="StoppedGameOnlyMenuItemStyle" TargetType="MenuItem">
             <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
             <Style.Triggers>
@@ -456,7 +463,7 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Jogados recentemente" VerticalAlignment="Center" />
+                                        <TextBlock Text="Uso Recente" VerticalAlignment="Center" />
                                         <ic:SymbolIcon Grid.Column="1" Symbol="Checkmark" FontSize="14"
                                             Foreground="{DynamicResource AppAccentBrush}"
                                             Visibility="{Binding PlacementTarget.DataContext.IsRecentlyPlayedGameSort,
@@ -581,7 +588,10 @@
                                 Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
 
                                 <Border.ContextMenu>
-                                    <ContextMenu>
+                                    <ContextMenu Style="{StaticResource GameContextMenuStyle}">
+                                        <MenuItem Header="Pare o jogo antes de usar estas opções."
+                                            IsEnabled="False"
+                                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}" />
                                         <MenuItem
                                             Command="{Binding PlacementTarget.Tag.ToggleGameFavoriteCommand,
                                                 RelativeSource={RelativeSource AncestorType=ContextMenu}}"
@@ -1002,7 +1012,10 @@
                                 </Style>
                             </Border.Style>
                             <Border.ContextMenu>
-                                <ContextMenu>
+                                <ContextMenu Style="{StaticResource GameContextMenuStyle}">
+                                    <MenuItem Header="Pare o jogo antes de usar estas opções."
+                                        IsEnabled="False"
+                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}" />
                                     <MenuItem
                                         Command="{Binding PlacementTarget.Tag.ToggleGameFavoriteCommand,
                                             RelativeSource={RelativeSource AncestorType=ContextMenu}}"

@@ -28,6 +28,8 @@ public partial class GameActionDialog : Window
         {
             CancelButton.Content = "Não";
             ContinueButton.Content = "Sim";
+            CancelButton.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
+            ContinueButton.Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary;
             ContinueButton.IsEnabled = true;
         }
         Heading.Text = running.Count > 0 ? "Trocar de jogo" : "Iniciar jogo";

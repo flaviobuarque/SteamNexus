@@ -69,7 +69,7 @@ public partial class GamesViewModel(
     {
         GameSortMode.MostPlayed => "Mais jogados",
         GameSortMode.LargestSize => "Maior tamanho",
-        GameSortMode.RecentlyPlayed => "Jogados recentemente",
+        GameSortMode.RecentlyPlayed => "Uso Recente",
         _ => "Nome: A–Z"
     };
     public bool IsAlphabeticalGameSort => GameSortMode == GameSortMode.Alphabetical;
