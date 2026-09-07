@@ -378,6 +378,7 @@ public class SteamAccountService(
             == (targetState == LoginState.Offline);
 
         return targetIsAlreadyActive
+            && ReadActiveUser() == target.SteamId32
             && persistedStateMatches
             && IsOnlySelectedSteamMainProcessRunning();
     }

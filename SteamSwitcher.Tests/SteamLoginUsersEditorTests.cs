@@ -148,6 +148,8 @@ public sealed class SteamLoginUsersEditorTests
         restored.AutoLogin.Should().BeTrue();
         restored.MostRecent.Should().BeTrue();
         restored.RememberPassword.Should().BeFalse();
+        Deserialize(output).Children.Single(a => a.Name == restoredId).Children
+            .Should().NotContain(child => child.Name.Equals("RememberPassword", StringComparison.OrdinalIgnoreCase));
     }
 
     [Theory]
@@ -178,6 +180,8 @@ public sealed class SteamLoginUsersEditorTests
         restored.RememberPassword.Should().BeFalse();
         restored.WantsOfflineMode.Should().Be(expectsOffline);
         snapshot.ActiveAccount.Should().BeSameAs(restored);
+        Deserialize(output).Children.Single().Children
+            .Should().NotContain(child => child.Name.Equals("RememberPassword", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

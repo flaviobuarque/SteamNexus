@@ -64,7 +64,6 @@ public sealed class SteamDiagnosticsService(
             ?? throw new InvalidOperationException("Não existe uma conta ativa inequívoca no VDF.");
         ct.ThrowIfCancellationRequested();
         Registry.SetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "AutoLoginUser", active.AccountName);
-        Registry.SetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "RememberPassword", 1, RegistryValueKind.DWord);
     }
 
     private async Task<SteamInstallationDiagnosticReport> BuildInstallationReportAsync(
@@ -118,9 +117,7 @@ public sealed class SteamDiagnosticsService(
         {
             var registryName = Registry.GetValue(
                 @"HKEY_CURRENT_USER\Software\Valve\Steam", "AutoLoginUser", null)?.ToString() ?? string.Empty;
-            var registryRemember = Convert.ToInt32(Registry.GetValue(
-                @"HKEY_CURRENT_USER\Software\Valve\Steam", "RememberPassword", 0)) == 1;
-            registryMatches = active is not null && registryRemember
+            registryMatches = active is not null
                 && string.Equals(registryName, active.AccountName, StringComparison.OrdinalIgnoreCase);
             items.Add(registryMatches
                 ? Success("Registro", $"Autologin configurado para @{registryName}.")
