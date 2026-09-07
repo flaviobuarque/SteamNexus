@@ -468,8 +468,6 @@
                         Visibility="{Binding HasRunningGames, Converter={StaticResource BoolToVisibility}}">
                         <MenuItem.Header>
                             <StackPanel Margin="2,4,8,4" MaxWidth="280">
-                                <TextBlock Text="Em execução" FontSize="10" Margin="0,0,0,4"
-                                    Foreground="{DynamicResource AppTextMutedBrush}" />
                                 <ItemsControl ItemsSource="{Binding RunningGames}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
