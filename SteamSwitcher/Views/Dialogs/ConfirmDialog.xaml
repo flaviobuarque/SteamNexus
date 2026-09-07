@@ -18,8 +18,8 @@
 
 	<Window.Resources>
 		<Style x:Key="DangerButtonStyle" TargetType="Button">
-			<Setter Property="Background" Value="#C0392B" />
-			<Setter Property="Foreground" Value="White" />
+			<Setter Property="Background" Value="{DynamicResource AppDangerBrush}" />
+			<Setter Property="Foreground" Value="{DynamicResource AppOnAccentTextBrush}" />
 			<Setter Property="BorderThickness" Value="0" />
 			<Setter Property="Cursor" Value="Hand" />
 			<Setter Property="Template">
@@ -30,7 +30,7 @@
 						</Border>
 						<ControlTemplate.Triggers>
 							<Trigger Property="IsMouseOver" Value="True">
-								<Setter Property="Background" Value="#A93226" />
+								<Setter Property="Background" Value="{DynamicResource AppDangerBrush}" />
 							</Trigger>
 						</ControlTemplate.Triggers>
 					</ControlTemplate>
@@ -121,8 +121,8 @@
                         Click="ConfirmButton_Click">
                         <Button.Style>
                             <Style TargetType="Button">
-                                <Setter Property="Background" Value="#1F6FEB" />
-                                <Setter Property="Foreground" Value="White" />
+                                <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AppOnAccentTextBrush}" />
                                 <Setter Property="BorderThickness" Value="0" />
                                 <Setter Property="Cursor" Value="Hand" />
                                 <Setter Property="Template">
@@ -136,7 +136,7 @@
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#1a5fd4" />
+                                                    <Setter Property="Background" Value="{DynamicResource AppAccentAltBrush}" />
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>

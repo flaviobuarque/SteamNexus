@@ -71,7 +71,8 @@ public partial class ThemeEditorWindow : Window
         };
         Closed += (_, _) =>
         {
-            if (!_accepted) App.ApplyTheme(_originalBaseTheme, _originalCustomTheme);
+            // Settings owns restoration when editing a draft; never briefly apply that draft on close.
+            if (!_accepted && !editCustom) App.ApplyTheme(_originalBaseTheme, _originalCustomTheme);
         };
     }
 

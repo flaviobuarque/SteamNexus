@@ -27,13 +27,13 @@ public partial class ConfirmDialog : Window
         if (kind == DialogKind.Danger)
         {
             DialogIcon.Symbol = Symbol.Warning;
-            DialogIcon.Foreground = new SolidColorBrush(Color.FromRgb(0xE3, 0x3B, 0x3B));
+            DialogIcon.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "AppDangerBrush");
             ConfirmButton.Style = (Style)FindResource("DangerButtonStyle"); // veja abaixo
         }
         else
         {
             DialogIcon.Symbol = Symbol.QuestionCircle;
-            DialogIcon.Foreground = new SolidColorBrush(Color.FromRgb(0x1F, 0x6F, 0xEB));
+            DialogIcon.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "AppAccentBrush");
         }
 
         Loaded += (_, _) =>
