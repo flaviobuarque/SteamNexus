@@ -49,6 +49,7 @@ public partial class ThemeEditorWindow : Window
         CustomThemeManager.Validate(initialPreview);
 
         InitializeComponent();
+        SteamSwitcher.Helpers.DialogChrome.Apply(this);
         DataContext = ViewModel;
         _previewTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(180) };
         _previewTimer.Tick += (_, _) =>

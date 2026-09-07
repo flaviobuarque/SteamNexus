@@ -38,6 +38,13 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private HwndSource? _windowSource;
     private bool _globalHotkeyRegistered;
+    private bool _globalHotkeySuspended;
+    public void SetGlobalHotkeySuspended(bool suspended)
+    {
+        _globalHotkeySuspended = suspended;
+        RegisterGlobalHotkey(_settingsService.Current.IsGlobalHotkeyEnabled
+            ? _settingsService.Current.GlobalHotkey : null);
+    }
     private bool _initialized;
 
     public MainWindow(
@@ -319,7 +326,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
         UnregisterGlobalHotkey();
 
-        if (hotkey?.IsValid != true)
+        if (_globalHotkeySuspended || hotkey?.IsValid != true)
             return;
 
         var handle = new WindowInteropHelper(this).Handle;
@@ -356,7 +363,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
         if (message == WmHotkey && wParam.ToInt32() == GlobalHotkeyId)
         {
-            _viewModel.ToggleWindowCommand.Execute(null);
+            if (!_globalHotkeySuspended) _viewModel.ToggleWindowCommand.Execute(null);
             handled = true;
         }
 

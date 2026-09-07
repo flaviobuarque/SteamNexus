@@ -85,6 +85,8 @@ public partial class SettingsPage : System.Windows.Controls.Page,
             return;
 
         ViewModel.IsCapturingHotkey = true;
+        var mainWindow = Window.GetWindow(this) as MainWindow;
+        mainWindow?.SetGlobalHotkeySuspended(true);
 
         try
         {
@@ -102,6 +104,7 @@ public partial class SettingsPage : System.Windows.Controls.Page,
         finally
         {
             ViewModel.IsCapturingHotkey = false;
+            mainWindow?.SetGlobalHotkeySuspended(false);
         }
     }
 

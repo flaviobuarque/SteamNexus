@@ -18,6 +18,7 @@ public partial class HotkeyCaptureDialog : Window
     public HotkeyCaptureDialog()
     {
         InitializeComponent();
+        SteamSwitcher.Helpers.DialogChrome.Apply(this);
 
         Loaded += (_, _) =>
         {

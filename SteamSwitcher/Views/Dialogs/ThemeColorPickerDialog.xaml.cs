@@ -27,6 +27,7 @@ public partial class ThemeColorPickerDialog : Window
     public ThemeColorPickerDialog(string initialColor)
     {
         InitializeComponent();
+        SteamSwitcher.Helpers.DialogChrome.Apply(this);
         SelectedColor = Normalize(initialColor) ?? "#000000";
         SetFromColor((Color)ColorConverter.ConvertFromString(SelectedColor)!);
         BuildPalette();
