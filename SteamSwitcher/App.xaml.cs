@@ -43,6 +43,7 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         SteamSwitcher.Helpers.ScrollViewerAssist.Register();
+        SteamSwitcher.Helpers.ClickableCursorAssist.Register();
         base.OnStartup(e);
 
         _host = Host.CreateDefaultBuilder()
