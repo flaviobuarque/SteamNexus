@@ -4,6 +4,8 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.26] - 2026-09-07
+
 ### Correções
 
 - Janela de atualização com rolagem somente nas novidades; cabeçalho e ações permanecem visíveis.
