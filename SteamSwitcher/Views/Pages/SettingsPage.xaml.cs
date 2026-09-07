@@ -230,8 +230,12 @@ public partial class SettingsPage : System.Windows.Controls.Page,
     private async Task EditThemeAsync(SteamSwitcher.Core.Models.CustomThemeSettings draft, string? id = null)
     {
         draft.IsEnabled = true;
-        var original = ActiveThemeCopy();
-        var baseTheme = ViewModel.SettingsSnapshot.Theme;
+        var settings = ViewModel.SettingsSnapshot;
+        var original = !string.IsNullOrEmpty(settings.ActiveThemePresetName)
+            ? SteamSwitcher.Services.Themes.CustomThemeManager.CreateBuiltInPreset(settings.ActiveThemePresetName)
+            : settings.CustomTheme?.Clone();
+        if (original is not null && !string.IsNullOrEmpty(settings.ActiveThemePresetName)) original.IsEnabled = true;
+        var baseTheme = settings.Theme;
         try
         {
             var dialog = new ThemeEditorWindow(draft.BaseTheme, draft, editCustom: true) { Owner = Window.GetWindow(this) };

@@ -17,8 +17,7 @@ public sealed class SteamAccountSwitchPolicyTests
         var refreshed = new SteamSwitcher.Core.Models.SteamAccount
             { SteamId64 = cached.SteamId64, AccountName = "test", InstallationId = cached.InstallationId, RememberPassword = persistedValue };
         var resolve = () => SteamAccountSwitchPolicy.ResolveRememberedAccount([refreshed], cached.UniqueKey);
-        if (persistedValue) resolve().Should().BeSameAs(refreshed);
-        else resolve.Should().Throw<InvalidOperationException>();
+        resolve().Should().BeSameAs(refreshed);
     }
 
     [Theory]
@@ -27,15 +26,14 @@ public sealed class SteamAccountSwitchPolicyTests
     [InlineData(null, false)]
     [InlineData("2", false)]
     [InlineData("true", false)]
-    public void SwitchRequiresExactlyOneInPersistedPasswordField(string? value, bool allowed)
+    public void SwitchAcceptsExistingAccountWithoutMutatingSnapshot(string? value, bool allowed)
     {
         var field = value is null ? "" : $"\"RememberPassword\" \"{value}\"";
         using var input = new MemoryStream(Encoding.UTF8.GetBytes(
             "\"users\" { \"76561198000000001\" { \"AccountName\" \"test\" " + field + " } }"));
         var account = SteamAccountSnapshotParser.Parse(input).Accounts.Single();
         var check = () => SteamAccountSwitchPolicy.RequireRememberedAccount(account);
-        if (allowed) check.Should().NotThrow();
-        else check.Should().Throw<InvalidOperationException>().WithMessage("*RememberPassword=1*");
+        check.Should().NotThrow();
         account.RememberPassword.Should().Be(allowed);
     }
 
@@ -43,6 +41,6 @@ public sealed class SteamAccountSwitchPolicyTests
     public void MissingAccountCannotBeRecoveredForAutomaticSwitch()
     {
         var check = () => SteamAccountSwitchPolicy.RequireRememberedAccount(null);
-        check.Should().Throw<InvalidOperationException>().WithMessage("*RememberPassword=1*");
+        check.Should().Throw<InvalidOperationException>().WithMessage("*loginusers.vdf*");
     }
 }

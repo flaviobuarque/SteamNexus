@@ -59,7 +59,8 @@ public sealed class SteamLoginUsersEditorTests
         {
             user.Children.Select(child => child.Name).Should().Contain(
                 ["MostRecent", "AutoLogin", "WantsOfflineMode", "SkipOfflineModeWarning"]);
-            user.Children.Should().NotContain(child => child.Name.Equals("RememberPassword", StringComparison.OrdinalIgnoreCase));
+            if (user.Name == SecondId) Value(user, "RememberPassword").Should().Be("1");
+            else user.Children.Should().NotContain(child => child.Name.Equals("RememberPassword", StringComparison.OrdinalIgnoreCase));
         }
     }
 
@@ -147,9 +148,9 @@ public sealed class SteamLoginUsersEditorTests
         restored.AccountName.Should().Be("restored_login");
         restored.AutoLogin.Should().BeTrue();
         restored.MostRecent.Should().BeTrue();
-        restored.RememberPassword.Should().BeFalse();
+        restored.RememberPassword.Should().BeTrue();
         Deserialize(output).Children.Single(a => a.Name == restoredId).Children
-            .Should().NotContain(child => child.Name.Equals("RememberPassword", StringComparison.OrdinalIgnoreCase));
+            .Should().Contain(child => child.Name.Equals("RememberPassword", StringComparison.OrdinalIgnoreCase));
     }
 
     [Theory]
@@ -177,11 +178,11 @@ public sealed class SteamLoginUsersEditorTests
         restored.AccountName.Should().Be("restored_login");
         restored.AutoLogin.Should().BeTrue();
         restored.MostRecent.Should().BeTrue();
-        restored.RememberPassword.Should().BeFalse();
+        restored.RememberPassword.Should().BeTrue();
         restored.WantsOfflineMode.Should().Be(expectsOffline);
         snapshot.ActiveAccount.Should().BeSameAs(restored);
         Deserialize(output).Children.Single().Children
-            .Should().NotContain(child => child.Name.Equals("RememberPassword", StringComparison.OrdinalIgnoreCase));
+            .Should().Contain(child => child.Name.Equals("RememberPassword", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -202,12 +203,12 @@ public sealed class SteamLoginUsersEditorTests
     [InlineData("0", SecondId)]
     [InlineData("1", FirstId)]
     [InlineData("1", SecondId)]
-    public void Rewrite_PreservesPasswordPreferenceForEveryAccount(string value, string target)
+    public void Rewrite_EnablesTargetAndPreservesOtherPasswordPreferences(string value, string target)
     {
         var source = CreateVdf().Replace("\"RememberPassword\" \"1\"", $"\"rememberpassword\" \"{value}\"");
         using var output = Rewrite(source, target, LoginState.Offline);
         foreach (var user in Deserialize(output).Children)
-            Value(user, "RememberPassword").Should().Be(value);
+            Value(user, "RememberPassword").Should().Be(user.Name == target ? "1" : value);
     }
 
     private static MemoryStream Rewrite(string source, string target, LoginState state)

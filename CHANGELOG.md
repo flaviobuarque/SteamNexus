@@ -4,12 +4,19 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+### Melhorias
+
+- Biblioteca local de temas personalizados, com migração do tema existente, criação guiada, importação e ações de editar, duplicar, renomear, compartilhar e excluir.
+- Temas oficiais identificados no seletor; edição disponível apenas para temas pessoais.
+- Seletores Online/Offline acompanham o tema, logo do cabeçalho neutra e ícone explícito da janela na barra de tarefas.
+- Indicador de atenção no diagnóstico da barra lateral, atualizado automaticamente quando há instalações com avisos ou problemas.
+- Editor focado em aparência (incluindo cor da borda) e fundo, sem compartilhamento interno; cancelar confirma descarte e abrir o editor não aplica prévia automaticamente.
+- Contas com lembrar senha desativado são aceitas; ao utilizá-las, a troca ativa RememberPassword somente na conta escolhida, usando o backup existente.
+
 ## [1.0.24] - 2026-09-07
 
 ### Correções
 
-- Editor focado em aparência (incluindo cor da borda) e fundo, sem compartilhamento interno; cancelar confirma descarte e abrir o editor não aplica prévia automaticamente.
-- Contas com lembrar senha desativado são aceitas; ao utilizá-las, a troca ativa RememberPassword somente na conta escolhida, usando o backup existente.
 - Corrigido o bloqueio ao clicar em Jogar após corrigir a opção de lembrar senha no diagnóstico. A abertura agora consulta os dados atualizados da conta.
 - A preferência é conferida novamente antes de iniciar o jogo, evitando usar informações antigas da tela.
 - Mensagem de conta indisponível atualizada para orientar quem já utilizou a correção no diagnóstico.
