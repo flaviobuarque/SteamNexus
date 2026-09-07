@@ -6,7 +6,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Novidades
 
-- Diagnóstico de contas com RememberPassword=0 por instalação, com lista limitada e rolagem para corrigir selecionadas ou todas. Ação manual exige Steam fechada, preserva os demais campos e cria backup antes da gravação.
+- Diagnóstico de contas com RememberPassword=0 por instalação, com lista limitada e rolagem para corrigir selecionadas ou todas. Ação manual fecha a Steam após contagem cancelável, preserva os demais campos e cria backup antes da gravação.
 - Selo Última Usada abaixo da data da conta, na grade e lista, exibido somente quando não há uma conta ativa; utiliza a última sessão observada ou a data registrada pela Steam.
 - Tray exibe o ícone do executável do jogo, sem usar o pôster, com ícone genérico quando indisponível.
 - Ordenação Jogados recentemente baseada em LastPlayed da Steam e no início dos processos observados; jogos em execução aparecem primeiro em todas as ordenações.
@@ -22,6 +22,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Correção de lembrar senha anuncia o fechamento automático da Steam após 5 segundos, com cancelamento antes da ação; bloqueia jogos em execução e aguarda o encerramento sem forçar processos.
 - Hover da lista de jogos aplicado apenas ao card com cores do tema, sem o realce externo padrão do ListBox; destaque de jogo ativo preservado.
 - Scrollbar da lista de jogos alinhada à borda direita, com espaçamento aplicado somente ao conteúdo. Temas oficiais e personalizados usam sua cor de destaque na scrollbar, incluindo hover e arraste.
 - Lista de jogos com margens externas explícitas no topo e nas laterais; miniaturas exibem o pôster completo, sem recorte lateral.

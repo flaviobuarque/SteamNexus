@@ -8,7 +8,9 @@ using ValveKeyValue;
 namespace SteamSwitcher.Core.Services;
 
 public sealed class SteamDiagnosticsService(
-    ISteamInstallationService installationService) : ISteamDiagnosticsService
+    ISteamInstallationService installationService,
+    ISteamGameService gameService,
+    IGameRuntimeService runtimeService) : ISteamDiagnosticsService
 {
     private readonly SemaphoreSlim _rememberRepairGate = new(1, 1);
 
@@ -30,11 +32,16 @@ public sealed class SteamDiagnosticsService(
         try
         {
             var installation = RequireInstallation(installationId);
-            EnsureSteamClosed();
             var path = installation.LoginUsersPath;
             var original = await File.ReadAllBytesAsync(path, ct);
             var eligible = FindUnremembered(original).Select(account => account.SteamId64).ToHashSet(StringComparer.Ordinal);
             var selected = steamIds.Where(eligible.Contains).ToHashSet(StringComparer.Ordinal);
+            if (selected.Count == 0) return 0;
+            await CloseSteamForRepairAsync(ct);
+            // Steam may flush its preferences on exit. Always edit the final file.
+            original = await File.ReadAllBytesAsync(path, ct);
+            eligible = FindUnremembered(original).Select(account => account.SteamId64).ToHashSet(StringComparer.Ordinal);
+            selected.IntersectWith(eligible);
             if (selected.Count == 0) return 0;
             var encoding = new UTF8Encoding(false, true);
             var content = encoding.GetString(original);
@@ -68,13 +75,48 @@ public sealed class SteamDiagnosticsService(
         }
     }
 
+    private async Task CloseSteamForRepairAsync(CancellationToken ct)
+    {
+        var games = await gameService.GetInstalledGamesAsync([], ct);
+        var states = await runtimeService.InspectAsync(games, ct);
+        if (states.Values.Any(state => state.IsRunning || state.IsUncertain))
+            throw new InvalidOperationException("Pare o jogo antes de corrigir. A Steam não foi fechada.");
+
+        var processes = Process.GetProcessesByName("steam");
+        try
+        {
+            var paths = processes.Select(TryGetPath).ToArray();
+            if (paths.Any(string.IsNullOrWhiteSpace))
+                throw new InvalidOperationException("Não foi possível identificar a Steam com segurança. A correção foi cancelada.");
+            foreach (var path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                ct.ThrowIfCancellationRequested();
+                using var request = Process.Start(new ProcessStartInfo(path, "-shutdown")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                });
+            }
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            while (DateTime.UtcNow < deadline)
+            {
+                var remaining = Process.GetProcessesByName("steam");
+                try { if (remaining.Length == 0) return; }
+                finally { foreach (var process in remaining) process.Dispose(); }
+                await Task.Delay(500, ct);
+            }
+            throw new InvalidOperationException("A Steam não concluiu o encerramento. Nenhum arquivo foi alterado; tente novamente após verificar os avisos da Steam.");
+        }
+        finally { foreach (var process in processes) process.Dispose(); }
+    }
+
     private static void EnsureSteamClosed()
     {
         var processes = Process.GetProcessesByName("steam");
         try
         {
             if (processes.Length > 0)
-                throw new InvalidOperationException("Feche a Steam antes de corrigir. Nenhum jogo ou conta será encerrado automaticamente.");
+                throw new InvalidOperationException("A Steam foi reaberta durante a correção. Nenhum arquivo foi alterado; tente novamente.");
         }
         finally { foreach (var process in processes) process.Dispose(); }
     }
