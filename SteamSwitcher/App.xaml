@@ -15,6 +15,40 @@
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
 
+            <Style TargetType="{x:Type RadioButton}">
+                <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type RadioButton}">
+                            <Border x:Name="Root" Background="Transparent" Padding="2">
+                                <StackPanel Orientation="Horizontal">
+                                    <Grid Width="20" Height="20">
+                                        <Ellipse x:Name="Ring" Stroke="{DynamicResource AppBorderBrush}" StrokeThickness="2" />
+                                        <Ellipse x:Name="Dot" Margin="5" Fill="{DynamicResource AppAccentBrush}" Visibility="Collapsed" />
+                                    </Grid>
+                                    <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True" />
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Dot" Property="Visibility" Value="Visible" />
+                                    <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource AppAccentBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource AppAccentBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource AppTextPrimaryBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Root" Property="Opacity" Value="0.5" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
             <Style TargetType="{x:Type ToolTip}">
                 <Style.Resources>
                     <Style TargetType="TextBlock">
