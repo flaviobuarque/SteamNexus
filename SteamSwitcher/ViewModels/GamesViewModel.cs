@@ -133,6 +133,8 @@ public partial class GamesViewModel(
     (int)Math.Ceiling(_filteredGames.Count / (double)GamesPerPage));
 
     public bool CanGoPreviousPage => CurrentPage > 1;
+    public bool HasMultiplePages => TotalPages > 1;
+    public string CompactPageText => $"{CurrentPage} de {TotalPages}";
     public bool CanGoNextPage => CurrentPage < TotalPages;
 
     public string PageText =>
@@ -1118,6 +1120,8 @@ public partial class GamesViewModel(
         OnPropertyChanged(nameof(CanGoPreviousPage));
         OnPropertyChanged(nameof(CanGoNextPage));
         OnPropertyChanged(nameof(PageText));
+        OnPropertyChanged(nameof(HasMultiplePages));
+        OnPropertyChanged(nameof(CompactPageText));
 
         RefreshStatusBar();
 

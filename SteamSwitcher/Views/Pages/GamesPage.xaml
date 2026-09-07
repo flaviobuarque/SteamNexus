@@ -1223,38 +1223,6 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <Border
-    HorizontalAlignment="Center"
-    VerticalAlignment="Bottom"
-    Margin="0,0,0,16"
-    Padding="10,6"
-    Background="{DynamicResource AppSurfaceBrush}"
-    BorderBrush="{DynamicResource AppBorderBrush}"
-    BorderThickness="1"
-    CornerRadius="8"
-    Visibility="{Binding HasFilteredGames, Converter={StaticResource BoolToVisibility}}">
-
-                <StackPanel Orientation="Horizontal">
-                    <ui:Button
-                        Content="Anterior"
-                        Padding="10,5"
-                        Command="{Binding PreviousPageCommand}"
-                        Visibility="{Binding CanGoPreviousPage, Converter={StaticResource BoolToVisibility}}" />
-
-                    <TextBlock
-                        Text="{Binding PageText}"
-                        Margin="12,0"
-                        VerticalAlignment="Center"
-                        Foreground="{DynamicResource AppTextSecondaryBrush}" />
-
-                    <ui:Button
-                        Content="Próxima"
-                        Padding="10,5"
-                        Command="{Binding NextPageCommand}"
-                        Visibility="{Binding CanGoNextPage, Converter={StaticResource BoolToVisibility}}" />
-                </StackPanel>
-            </Border>
-
             <Grid Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}">
                 <local:BusyRing Width="48" Height="48" />
             </Grid>

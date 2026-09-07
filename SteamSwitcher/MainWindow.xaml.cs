@@ -67,6 +67,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         InitializeComponent();
         DataContext = _viewModel;
         TrayRunningGamesItem.DataContext = _gamesViewModel;
+        GamePagination.DataContext = _gamesViewModel;
         TrayRunningGamesSeparator.DataContext = _gamesViewModel;
         ApplyFeatureVisibility();
 

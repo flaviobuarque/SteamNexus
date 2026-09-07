@@ -4,6 +4,13 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.27] - 2026-09-07
+
+### Correções
+
+- Paginação dos jogos integrada ao rodapé, sem encobrir os cards e seus dados.
+- Indicador de página oculto quando há somente uma página; navegação compacta quando houver mais.
+
 ## [1.0.26] - 2026-09-07
 
 ### Correções

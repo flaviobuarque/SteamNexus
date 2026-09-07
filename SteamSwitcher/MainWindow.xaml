@@ -646,6 +646,33 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <Border>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ActivePage}" Value="Games">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel x:Name="GamePagination" Orientation="Horizontal" Margin="0,0,12,0"
+                                    Visibility="{Binding HasMultiplePages, Converter={StaticResource BoolToVisibility}}">
+                            <Button Width="26" Height="24" Padding="0" ToolTip="Página anterior"
+                                    AutomationProperties.Name="Página anterior" Command="{Binding PreviousPageCommand}"
+                                    IsEnabled="{Binding CanGoPreviousPage}">
+                                <TextBlock Text="‹"/>
+                            </Button>
+                            <TextBlock Text="{Binding CompactPageText}" Margin="8,0" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppTextMutedBrush}" FontSize="11"/>
+                            <Button Width="26" Height="24" Padding="0" ToolTip="Próxima página"
+                                    AutomationProperties.Name="Próxima página" Command="{Binding NextPageCommand}"
+                                    IsEnabled="{Binding CanGoNextPage}">
+                                <TextBlock Text="›"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
                     <TextBlock
                         Text="{Binding StatusBarRight}"
                         FontSize="12"
