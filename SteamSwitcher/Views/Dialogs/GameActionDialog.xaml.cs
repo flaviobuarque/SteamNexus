@@ -9,6 +9,7 @@ public partial class GameActionDialog : Window
 {
     private readonly Func<Task<bool>> _operation;
     private readonly GamesViewModel _viewModel;
+    private readonly bool _requiresConfirmation;
     private readonly CancellationTokenSource _countdownCancellation = new();
     private bool _countdownStarted;
     private bool _operationStarted;
@@ -22,6 +23,13 @@ public partial class GameActionDialog : Window
         InitializeComponent();
         _operation = operation;
         _viewModel = viewModel;
+        _requiresConfirmation = running.Count > 0;
+        if (_requiresConfirmation)
+        {
+            CancelButton.Content = "Não";
+            ContinueButton.Content = "Sim";
+            ContinueButton.IsEnabled = true;
+        }
         Heading.Text = running.Count > 0 ? "Trocar de jogo" : "Iniciar jogo";
         SourceGames.ItemsSource = running;
         SourceHeading.Visibility = WarningText.Visibility = running.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -48,13 +56,16 @@ public partial class GameActionDialog : Window
                 Top = Owner.Top;
             }
             CancelButton.Focus();
-            await StartCountdownAsync();
+            if (_requiresConfirmation)
+                _viewModel.GameOperationMessage = "Tem certeza de que deseja encerrar o jogo atual e abrir o jogo selecionado?";
+            else
+                await StartCountdownAsync();
         };
     }
 
     private async Task StartCountdownAsync()
     {
-        if (_countdownStarted || _closed) return;
+        if (_requiresConfirmation || _countdownStarted || _closed) return;
         _countdownStarted = true;
         var ct = _countdownCancellation.Token;
         ContinueButton.IsEnabled = false;
@@ -77,7 +88,7 @@ public partial class GameActionDialog : Window
         if (_busy || _closed || _operationStarted) return;
         _operationStarted = true;
         _busy = true;
-        _viewModel.GameOperationMessage = "Preparando a abertura. A contagem terminou; aguarde a conclusão desta etapa.";
+        _viewModel.GameOperationMessage = "Preparando a abertura. Aguarde a conclusão desta etapa.";
         ContinueButton.IsEnabled = CancelButton.IsEnabled = false;
         ContinueButton.Visibility = CancelButton.Visibility = Visibility.Collapsed;
         ProgressRing.Visibility = Visibility.Visible;
@@ -99,5 +110,10 @@ public partial class GameActionDialog : Window
     private void Cancel_Click(object sender, RoutedEventArgs e)
     {
         if (!_busy) Close();
+    }
+
+    private async void Continue_Click(object sender, RoutedEventArgs e)
+    {
+        if (_requiresConfirmation) await ExecuteAsync();
     }
 }
