@@ -32,6 +32,15 @@ public class AppSettingsService(ILogger<AppSettingsService> logger) : IAppSettin
             Current = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions) ?? new();
             Current.KnownSteamInstallPaths ??= [];
             Current.SteamInstallationNames ??= new(StringComparer.OrdinalIgnoreCase);
+            Current.ThemeLibrary ??= [];
+            if (Current.ThemeLibrary.Count == 0 && Current.CustomTheme is not null)
+            {
+                var migrated = new SavedTheme { Theme = Current.CustomTheme.Clone() };
+                Current.ThemeLibrary.Add(migrated);
+                if (Current.CustomTheme.IsEnabled && string.IsNullOrEmpty(Current.ActiveThemePresetName))
+                    Current.ActiveCustomThemeId = migrated.Id;
+                await SaveAsync(Current);
+            }
         }
         catch (Exception ex)
         {

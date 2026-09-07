@@ -15,6 +15,8 @@ public class AppSettings
     public bool CheckForUpdatesAutomatically { get; set; } = true;
     public string? ActiveThemePresetName { get; set; }
     public CustomThemeSettings? CustomTheme { get; set; }
+    public List<SavedTheme> ThemeLibrary { get; set; } = [];
+    public string? ActiveCustomThemeId { get; set; }
 
     // Comportamento após troca de conta
     public PostSwitchBehavior AfterAccountSwitch { get; set; } = PostSwitchBehavior.KeepOpen;

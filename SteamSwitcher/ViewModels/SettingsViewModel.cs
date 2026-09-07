@@ -655,6 +655,8 @@ public partial class SettingsViewModel(
             CheckForUpdatesAutomatically = CheckForUpdatesAutomatically,
             ActiveThemePresetName = current.ActiveThemePresetName,
             CustomTheme = current.CustomTheme?.Clone(),
+            ThemeLibrary = current.ThemeLibrary.Select(theme => theme.Clone()).ToList(),
+            ActiveCustomThemeId = current.ActiveCustomThemeId,
             SteamApiKey = FeatureFlags.SteamWebApiKey
                 ? (string.IsNullOrWhiteSpace(SteamApiKey) ? null : SteamApiKey)
                 : null,
