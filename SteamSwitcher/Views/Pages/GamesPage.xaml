@@ -673,12 +673,11 @@
                                         Margin="0,174,8,0" HorizontalAlignment="Right" VerticalAlignment="Top"
                                         Panel.ZIndex="23" ToolTip="Opções do jogo" AutomationProperties.Name="Opções do jogo"
                                         Click="GameOptionsButton_Click" />
-                                    <Button Content="{Binding LoginPreferenceText}" ToolTip="{Binding LoginPreferenceTooltip}"
-                                        Command="{Binding DataContext.ChangeGameLoginStateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                        CommandParameter="{Binding}" FontSize="9" Padding="5,3"
-                                        Margin="3,78,3,0" HorizontalAlignment="Center" VerticalAlignment="Top" Panel.ZIndex="24"
-                                        Background="{DynamicResource AppChromeBrush}" Foreground="{DynamicResource AppAccentBrush}"
-                                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" />
+                                    <Button Content="{Binding LoginPreferenceText}"
+                                        local:LoginPreferenceMenu.Command="{Binding DataContext.SetGameLoginStateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        local:LoginPreferenceMenu.State="{Binding LoginPreferenceValue}"
+                                        local:LoginPreferenceMenu.InheritedText="{Binding LoginPreferenceInheritedText}"
+                                        Margin="3,78,3,0" HorizontalAlignment="Center" VerticalAlignment="Top" Panel.ZIndex="24" />
                                     <Button Style="{StaticResource GameFavoriteIconButtonStyle}"
                                         Margin="0,8,8,0" HorizontalAlignment="Right" VerticalAlignment="Top"
                                         Panel.ZIndex="20" ToolTip="Favoritar jogo"
@@ -1056,11 +1055,11 @@
                                         TextTrimming="CharacterEllipsis" ToolTip="{Binding Game.Name}" />
                                     <TextBlock Text="{Binding RuntimeStatus}" FontSize="10"
                                         Foreground="{DynamicResource AppSuccessBrush}" Margin="0,3,0,0" />
-                                    <Button Content="{Binding LoginPreferenceText}" ToolTip="{Binding LoginPreferenceTooltip}"
-                                        Command="{Binding DataContext.ChangeGameLoginStateCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                        CommandParameter="{Binding}" FontSize="10" Padding="5,2" Margin="0,3,0,0" HorizontalAlignment="Left"
-                                        Background="{DynamicResource AppAccentSurfaceBrush}" Foreground="{DynamicResource AppAccentBrush}"
-                                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" />
+                                    <Button Content="{Binding LoginPreferenceText}"
+                                        local:LoginPreferenceMenu.Command="{Binding DataContext.SetGameLoginStateCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                        local:LoginPreferenceMenu.State="{Binding LoginPreferenceValue}"
+                                        local:LoginPreferenceMenu.InheritedText="{Binding LoginPreferenceInheritedText}"
+                                        Margin="0,3,0,0" HorizontalAlignment="Left" />
                                     <TextBlock Text="{Binding InstallationName}" FontSize="10"
                                         Foreground="{DynamicResource AppAccentBrush}" Margin="0,2,0,0"
                                         ToolTip="{Binding InstallationRootPath}" TextTrimming="CharacterEllipsis" />

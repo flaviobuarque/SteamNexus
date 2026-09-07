@@ -10,14 +10,16 @@ public partial class GameCardViewModel : ObservableObject
     private LoginState? _globalLoginPreference;
     public string LoginPreferenceText => Helpers.LoginPreferencePresentation.Label(Game.LoginStateOverride,
         Game.OwnerAccount?.LoginStateOverride ?? _globalLoginPreference);
-    public string LoginPreferenceTooltip => Game.LoginStateOverride.HasValue
-        ? "Preferência deste jogo. A sessão já ativa pode ser reutilizada; isto não é o status atual da Steam. Clique para alterar."
-        : $"Herdado {(Game.OwnerAccount?.LoginStateOverride.HasValue == true ? "da conta" : "do padrão global")}: {Helpers.LoginPreferencePresentation.StateName(Game.OwnerAccount?.LoginStateOverride ?? _globalLoginPreference)}. Clique para alterar somente este jogo.";
+    public LoginState? LoginPreferenceValue => Game.LoginStateOverride;
+    public string LoginPreferenceInheritedText => $"{(Game.OwnerAccount?.LoginStateOverride.HasValue == true ? "Da conta" : "Padrão global")}: {Helpers.LoginPreferencePresentation.StateName(Game.OwnerAccount?.LoginStateOverride ?? _globalLoginPreference)}";
+    public string LoginPreferenceTooltip => $"{(Game.LoginStateOverride.HasValue ? LoginPreferenceText : LoginPreferenceInheritedText)} · Clique para alterar";
     public void RefreshLoginPreference(LoginState? globalPreference)
     {
         _globalLoginPreference = globalPreference;
         OnPropertyChanged(nameof(LoginPreferenceText));
         OnPropertyChanged(nameof(LoginPreferenceTooltip));
+        OnPropertyChanged(nameof(LoginPreferenceValue));
+        OnPropertyChanged(nameof(LoginPreferenceInheritedText));
     }
 
     [ObservableProperty] private string _coverPath = string.Empty;

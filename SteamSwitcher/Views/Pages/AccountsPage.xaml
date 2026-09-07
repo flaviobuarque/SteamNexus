@@ -300,7 +300,7 @@
                             </Grid.LayoutTransform>
                             <local:AccountGridCard
                                 DataContext="{Binding}"
-                                LoginPreferenceCommand="{Binding DataContext.ChangeAccountLoginStateCommand,
+                                LoginPreferenceCommand="{Binding DataContext.SetAccountLoginStateCommand,
                                     RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                 SwitchCommand="{Binding DataContext.SwitchAccountCommand,
                                     RelativeSource={RelativeSource AncestorType=ItemsControl}}"
@@ -454,11 +454,11 @@
                                         TextTrimming="CharacterEllipsis" />
                                     <TextBlock Text="{Binding AccountName, StringFormat=@{0}}" FontSize="11"
                                         Foreground="{DynamicResource AppTextMutedBrush}" />
-                                    <Button Content="{Binding LoginPreferenceText}" ToolTip="{Binding LoginPreferenceTooltip}"
-                                        Command="{Binding DataContext.ChangeAccountLoginStateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                        CommandParameter="{Binding}" FontSize="10" Padding="5,2" Margin="0,3,0,0" HorizontalAlignment="Left"
-                                        Background="{DynamicResource AppAccentSurfaceBrush}" Foreground="{DynamicResource AppAccentBrush}"
-                                        BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" />
+                                    <Button Content="{Binding LoginPreferenceText}"
+                                        local:LoginPreferenceMenu.Command="{Binding DataContext.SetAccountLoginStateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        local:LoginPreferenceMenu.State="{Binding LoginPreferenceValue}"
+                                        local:LoginPreferenceMenu.InheritedText="{Binding LoginPreferenceInheritedText}"
+                                        Margin="0,3,0,0" HorizontalAlignment="Left" />
                                     <TextBlock Text="Conta arquivada · será recuperada ao entrar" FontSize="10"
                                         Margin="0,2,0,0" Foreground="{DynamicResource AppWarningBrush}"
                                         Visibility="{Binding IsArchived, Converter={StaticResource BoolToVisibility}}" />

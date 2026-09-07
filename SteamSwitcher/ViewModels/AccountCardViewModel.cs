@@ -11,14 +11,16 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     public SteamAccount Account { get; } = account;
     private LoginState? _globalLoginPreference;
     public string LoginPreferenceText => Helpers.LoginPreferencePresentation.Label(Account.LoginStateOverride, _globalLoginPreference);
-    public string LoginPreferenceTooltip => Account.LoginStateOverride.HasValue
-        ? "Preferência desta conta ao entrar. Não é o status da sessão atual. Clique para alterar."
-        : $"Herdado do padrão global: {Helpers.LoginPreferencePresentation.StateName(_globalLoginPreference)}. Clique para alterar somente esta conta.";
+    public LoginState? LoginPreferenceValue => Account.LoginStateOverride;
+    public string LoginPreferenceInheritedText => $"Padrão global: {Helpers.LoginPreferencePresentation.StateName(_globalLoginPreference)}";
+    public string LoginPreferenceTooltip => $"{(Account.LoginStateOverride.HasValue ? LoginPreferenceText : LoginPreferenceInheritedText)} · Clique para alterar";
     public void RefreshLoginPreference(LoginState? globalPreference)
     {
         _globalLoginPreference = globalPreference;
         OnPropertyChanged(nameof(LoginPreferenceText));
         OnPropertyChanged(nameof(LoginPreferenceTooltip));
+        OnPropertyChanged(nameof(LoginPreferenceValue));
+        OnPropertyChanged(nameof(LoginPreferenceInheritedText));
     }
 
     [ObservableProperty] private string _avatarPath = string.Empty;

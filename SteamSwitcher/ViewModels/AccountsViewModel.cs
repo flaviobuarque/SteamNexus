@@ -819,6 +819,16 @@ public partial class AccountsViewModel(
             Owner = Application.Current.MainWindow
         };
         if (dialog.ShowDialog() != true) return;
+        await SetAccountLoginStateAsync(new(card, dialog.SelectedLoginState));
+    }
+
+    [RelayCommand]
+    private async Task SetAccountLoginStateAsync(LoginPreferenceSelection selection)
+    {
+        if (selection.Target is not AccountCardViewModel card) return;
+        if (card.Account.LoginStateOverride == selection.State) return;
+        try
+        {
         var existing = await overrideService.GetOverrideAsync(card.UniqueKey)
             ?? await overrideService.GetOverrideAsync(card.SteamId64);
         var preference = new AccountOverride
@@ -826,12 +836,17 @@ public partial class AccountsViewModel(
             CustomDisplayName = existing is null ? card.Account.CustomDisplayName : existing.CustomDisplayName,
             CustomAvatarPath = existing is null ? card.Account.CustomAvatarPath : existing.CustomAvatarPath,
             IsFavorite = existing?.IsFavorite ?? card.Account.IsFavorite,
-            LoginStateOverride = dialog.SelectedLoginState
+            LoginStateOverride = selection.State
         };
         await overrideService.SaveOverrideAsync(card.UniqueKey, preference);
-        card.Account.LoginStateOverride = dialog.SelectedLoginState;
+        card.Account.LoginStateOverride = selection.State;
         card.RefreshLoginPreference(settingsService.Current.DefaultLoginStateOverride);
-        WeakReferenceMessenger.Default.Send(new AccountLoginPreferenceChanged(card.UniqueKey, dialog.SelectedLoginState));
+        WeakReferenceMessenger.Default.Send(new AccountLoginPreferenceChanged(card.UniqueKey, selection.State));
+        }
+        catch (Exception ex)
+        {
+            snackbarService.Show("Não foi possível salvar", ex.Message, ControlAppearance.Danger, null, TimeSpan.FromSeconds(5));
+        }
     }
 
     [RelayCommand]

@@ -60,7 +60,9 @@ public partial class GamesViewModel(
     [ObservableProperty] private ObservableCollection<AccountCardViewModel> _visibleFilterAccounts = [];
     [ObservableProperty] private string _filterAccountSearchText = string.Empty;
     [ObservableProperty] private bool _isAccountFilterOpen;
-    [ObservableProperty] private bool _isGameLaunchInProgress;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SetGameLoginStateCommand))]
+    private bool _isGameLaunchInProgress;
 
     public GameSortMode GameSortMode => settingsService.Current.GameSortMode;
     public string GameSortLabel => GameSortMode switch
@@ -707,15 +709,27 @@ public partial class GamesViewModel(
         if (dialog.ShowDialog() != true)
             return;
 
-        await gameService.SetGameLoginStateAsync(cardVm.Game.UniqueKey, dialog.SelectedLoginState);
-        cardVm.Game.LoginStateOverride = dialog.SelectedLoginState;
+        await SetGameLoginStateAsync(new(cardVm, dialog.SelectedLoginState));
+    }
+
+    private bool CanSetGameLoginState(LoginPreferenceSelection? selection) =>
+        selection?.Target is GameCardViewModel card && !IsGameLaunchInProgress && !card.IsBusy;
+
+    [RelayCommand(CanExecute = nameof(CanSetGameLoginState))]
+    private async Task SetGameLoginStateAsync(LoginPreferenceSelection selection)
+    {
+        if (selection.Target is not GameCardViewModel cardVm || IsGameLaunchInProgress || cardVm.IsBusy) return;
+        if (cardVm.Game.LoginStateOverride == selection.State) return;
+        try
+        {
+        await gameService.SetGameLoginStateAsync(cardVm.Game.UniqueKey, selection.State);
+        cardVm.Game.LoginStateOverride = selection.State;
         cardVm.RefreshLoginPreference(settingsService.Current.DefaultLoginStateOverride);
-        snackbarService.Show(
-            "Status ao entrar atualizado",
-            dialog.SelectedLoginState?.ToString() ?? "Usando o status padrão da conta.",
-            ControlAppearance.Success,
-            null,
-            TimeSpan.FromSeconds(3));
+        }
+        catch (Exception ex)
+        {
+            snackbarService.Show("Não foi possível salvar", ex.Message, ControlAppearance.Danger, null, TimeSpan.FromSeconds(5));
+        }
     }
 
     private async Task<string?> FetchSteamGridDbCoverAsync(

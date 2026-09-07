@@ -6,6 +6,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Novidades
 
+- Selos de login compactos (Padrão, Online ou Offline), com menu ancorado de seleção e salvamento imediato. Tooltips acompanham o tema do aplicativo e mostram a origem do modo herdado.
 - Cards de contas e jogos exibem a preferência Ao entrar (Padrão com modo herdado, Online ou Offline), com acesso direto à edição e atualização ao mudar o padrão global ou a conta associada.
 - Contagem regressiva de cinco segundos ao iniciar jogos, com cancelamento antes de encerrar jogos ou trocar a conta.
 - Tela de jogos com monitoramento de execução, faixa de jogos abertos, filtro e ações Ver jogo e Parar.
