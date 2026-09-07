@@ -15,19 +15,41 @@
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
         <converters:PathToImageSourceConverter x:Key="PathToImageSource" />
         <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibility" />
-        <Style x:Key="GameContextMenuStyle" TargetType="ContextMenu">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding PlacementTarget.DataContext.IsRunning, RelativeSource={RelativeSource Self}}" Value="True">
-                    <Setter Property="IsEnabled" Value="False" />
-                </DataTrigger>
-            </Style.Triggers>
+        <Style x:Key="GameMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="Item" Background="Transparent" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <ContentPresenter ContentSource="Icon" VerticalAlignment="Center" />
+                                <ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsHighlighted" Value="True" />
+                                    <Condition Property="IsEnabled" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Item" Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" />
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
-        <Style x:Key="StoppedGameOnlyMenuItemStyle" TargetType="MenuItem">
+        <Style x:Key="StoppedGameOnlyMenuItemStyle" TargetType="MenuItem" BasedOn="{StaticResource GameMenuItemStyle}">
             <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsRunning}" Value="True">
                     <Setter Property="IsEnabled" Value="False" />
-                    <Setter Property="ToolTip" Value="Pare o jogo antes de alterar a conta ou desinstalar." />
+                    <Setter Property="ToolTip" Value="Pare o jogo antes de usar estas opções." />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding RuntimeUncertain}" Value="True">
                     <Setter Property="IsEnabled" Value="False" />
@@ -38,6 +60,20 @@
                     <Setter Property="ToolTip" Value="Aguarde a operação atual terminar." />
                 </DataTrigger>
             </Style.Triggers>
+        </Style>
+        <Style x:Key="GameContextMenuStyle" TargetType="ContextMenu" BasedOn="{StaticResource LoginPreferenceContextMenuStyle}">
+            <Style.Resources>
+                <Style TargetType="MenuItem" BasedOn="{StaticResource StoppedGameOnlyMenuItemStyle}" />
+                <Style TargetType="Separator">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Separator">
+                                <Border Height="1" Margin="8,4" Background="{DynamicResource AppBorderBrush}" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Style.Resources>
         </Style>
         <Style x:Key="GameFavoriteIconButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="30" />
@@ -590,6 +626,7 @@
                                 <Border.ContextMenu>
                                     <ContextMenu Style="{StaticResource GameContextMenuStyle}">
                                         <MenuItem Header="Pare o jogo antes de usar estas opções."
+                                            Style="{StaticResource GameMenuItemStyle}" Foreground="{DynamicResource AppTextPrimaryBrush}"
                                             IsEnabled="False"
                                             Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}" />
                                         <MenuItem
@@ -597,7 +634,7 @@
                                                 RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                             CommandParameter="{Binding}">
                                             <MenuItem.Style>
-                                                <Style TargetType="MenuItem">
+                                                <Style TargetType="MenuItem" BasedOn="{StaticResource StoppedGameOnlyMenuItemStyle}">
                                                     <Setter Property="Header" Value="Adicionar aos favoritos" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsFavorite}" Value="True">
@@ -1014,6 +1051,7 @@
                             <Border.ContextMenu>
                                 <ContextMenu Style="{StaticResource GameContextMenuStyle}">
                                     <MenuItem Header="Pare o jogo antes de usar estas opções."
+                                        Style="{StaticResource GameMenuItemStyle}" Foreground="{DynamicResource AppTextPrimaryBrush}"
                                         IsEnabled="False"
                                         Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}" />
                                     <MenuItem
@@ -1021,7 +1059,7 @@
                                             RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                         CommandParameter="{Binding}">
                                         <MenuItem.Style>
-                                            <Style TargetType="MenuItem">
+                                            <Style TargetType="MenuItem" BasedOn="{StaticResource StoppedGameOnlyMenuItemStyle}">
                                                 <Setter Property="Header" Value="Adicionar aos favoritos" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsFavorite}" Value="True">

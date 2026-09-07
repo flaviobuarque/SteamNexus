@@ -20,6 +20,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Menus dos jogos seguem o tema do aplicativo, preservando ícones e contraste; durante a execução, somente as ações ficam desabilitadas e o aviso permanece legível.
 - Botões da troca de jogo centralizados, com Não como ação principal e padrão e Sim como secundária.
 - Todas as opções do menu de contexto do jogo bloqueadas durante a execução, com aviso para parar o jogo antes; ordenação renomeada para Uso Recente.
 - Conta do jogo em execução identificada pela sessão ativa da mesma instalação Steam, inclusive para jogos já abertos; leituras temporariamente indisponíveis preservam a última conta identificada.
