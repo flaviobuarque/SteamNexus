@@ -21,6 +21,7 @@ public interface IUpdateService : INotifyPropertyChanged
     bool CanCheckForUpdates { get; }
 
     Task CheckForUpdatesAsync(CancellationToken ct = default);
+    Task LoadReleaseNotesAsync(CancellationToken ct = default);
     Task DownloadUpdateAsync(CancellationToken ct = default);
     void ApplyUpdateAndRestart();
 }

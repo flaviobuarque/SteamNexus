@@ -107,6 +107,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = "v${{ steps.version.outputs.version }}"
+          $changelog = Get-Content -Raw CHANGELOG.md
+          $versionPattern = [regex]::Escape("${{ steps.version.outputs.version }}")
+          $entry = [regex]::Match($changelog, "(?ms)^## \[$versionPattern\][^\r\n]*\r?\n(.*?)(?=^## |\z)")
+          if ($entry.Success) {
+            $entry.Groups[1].Value.Trim() | Set-Content release-notes.md -Encoding utf8
+            gh release edit "$tag" --repo "${{ github.repository }}" --notes-file release-notes.md
+            if ($LASTEXITCODE -ne 0) { throw 'Falha ao publicar notas da versão' }
+            exit 0
+          }
           $generated = gh api `
             --method POST `
             "/repos/${{ github.repository }}/releases/generate-notes" `

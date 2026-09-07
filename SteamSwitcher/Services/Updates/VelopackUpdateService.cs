@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
+using System.Net.Http;
 using Velopack;
 using Velopack.Sources;
 
@@ -12,7 +13,8 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
     private readonly UpdateManager? _manager;
     private readonly SemaphoreSlim _operationGate = new(1, 1);
     private UpdateInfo? _pendingUpdate;
-    private static readonly HttpClient ReleaseNotesClient = new();
+    private static readonly HttpClient ReleaseNotesClient = new() { Timeout = TimeSpan.FromSeconds(10) };
+    private string _notesVersion = string.Empty;
 
     [ObservableProperty] private string _availableVersion = string.Empty;
     [ObservableProperty] private string _statusText;
@@ -106,11 +108,11 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
             }
 
             AvailableVersion = _pendingUpdate.TargetFullRelease.Version.ToString();
-            ReleaseNotes = await GetReleaseNotesAsync(AvailableVersion, ct);
             IsUpdateAvailable = true;
             IsUpdateReady = false;
             DownloadProgress = 0;
             StatusText = $"Versão {AvailableVersion} disponível";
+            await LoadReleaseNotesAsync(ct);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -262,5 +264,16 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
         {
             return "Não foi possível carregar as novidades agora.";
         }
+    }
+
+    public async Task LoadReleaseNotesAsync(CancellationToken ct = default)
+    {
+        var version = AvailableVersion;
+        if (string.IsNullOrWhiteSpace(version) || _notesVersion == version) return;
+        var notes = await GetReleaseNotesAsync(version, ct);
+        if (AvailableVersion != version) return;
+        ReleaseNotes = notes;
+        if (!notes.StartsWith("Não foi possível") && !notes.StartsWith("As novidades"))
+            _notesVersion = version;
     }
 }

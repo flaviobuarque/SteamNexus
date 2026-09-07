@@ -176,7 +176,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         if (!updateService.IsUpdateAvailable || updateService.IsDownloading)
             return;
 
+        await updateService.LoadReleaseNotesAsync();
         var dialog = new UpdatePromptDialog(
+            updateService.CurrentVersion,
             updateService.AvailableVersion,
             updateService.ReleaseNotes,
             updateService.IsUpdateReady)

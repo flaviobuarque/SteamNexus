@@ -14,11 +14,11 @@
     ShowInTaskbar="False">
 
     <Border Background="{DynamicResource AppDialogBackdropBrush}">
-        <Border Width="500" Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center"
+        <Border x:Name="DialogCard" Width="560" Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center"
                 Background="{DynamicResource AppChromeBrush}"
                 BorderBrush="{DynamicResource AppBorderStrongBrush}"
                 BorderThickness="1" CornerRadius="16">
-            <StackPanel>
+            <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -46,10 +46,10 @@
                 <Border MaxHeight="160" Padding="12" CornerRadius="10"
                         Background="{DynamicResource AppSurfaceBrush}"
                         BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <TextBlock x:Name="ReleaseNotesText" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                    </ScrollViewer>
+                    <FlowDocumentScrollViewer x:Name="ReleaseNotesViewer" IsToolBarVisible="False"
+                        VerticalScrollBarVisibility="Auto" Foreground="{DynamicResource AppTextPrimaryBrush}">
+                        <FlowDocument PagePadding="0" FontSize="13" />
+                    </FlowDocumentScrollViewer>
                 </Border>
 
                 <Border Margin="0,12,0,0" Padding="14,11" CornerRadius="10"
@@ -89,7 +89,7 @@
                         </StackPanel>
                     </ui:Button>
                 </StackPanel>
-            </StackPanel>
+            </StackPanel></ScrollViewer>
         </Border>
     </Border>
 </Window>

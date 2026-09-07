@@ -2,6 +2,21 @@
 
 Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
+## [1.0.18] - 2026-09-07
+
+### Novidades
+
+- Notas da atualização exibidas no aplicativo, com versões instalada e disponível.
+- Opção independente de status ao entrar por jogo, separada da conta e da capa.
+- Aviso de recurso em beta junto ao editor de tema personalizado.
+
+### Correções
+
+- Preservação de RememberPassword ao alternar contas.
+- Restauração da janela do tray ao abrir novamente o executável.
+- Atualização automática da sessão Steam nos cartões, rodapé e tray.
+
+
 ## [1.0.9] - 2026-08-26
 
 ### Adicionado
