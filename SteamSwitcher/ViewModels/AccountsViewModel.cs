@@ -58,7 +58,7 @@ public partial class AccountsViewModel(
     };
     public Size AccountGridItemSize => new(
         Math.Ceiling(188 * AccountCardScale),
-        Math.Ceiling(250 * AccountCardScale));
+        Math.Ceiling(274 * AccountCardScale));
     public WpfToolkit.Controls.SpacingMode AccountGridSpacingMode =>
         WpfToolkit.Controls.SpacingMode.None;
 
@@ -565,7 +565,25 @@ public partial class AccountsViewModel(
                 mainViewModel.ApplyActiveAccount(card.Account, card.AvatarPath);
             }
         }
+        RefreshLastUsedBadge();
         if (changed) _accountsView?.Refresh();
+    }
+
+    private string? _lastUsedAccountKey;
+
+    private void RefreshLastUsedBadge(bool rememberActive = true)
+    {
+        var active = _accounts.FirstOrDefault(card => card.IsActive);
+        if (active is not null && rememberActive)
+            _lastUsedAccountKey = active.UniqueKey;
+
+        var lastUsed = _accounts.FirstOrDefault(card => card.UniqueKey == _lastUsedAccountKey)
+            ?? _accounts.Where(card => card.Timestamp > 0)
+                .OrderByDescending(card => card.Timestamp)
+                .ThenByDescending(card => card.Account.MostRecent)
+                .FirstOrDefault();
+        foreach (var card in _accounts)
+            card.IsLastUsed = active is null && card == lastUsed;
     }
 
     private void ApplyAccountsIncrementally(IReadOnlyList<SteamAccount> incoming)
@@ -603,6 +621,7 @@ public partial class AccountsViewModel(
 
         if (membershipChanged)
             _accounts.ReplaceAll(reconciled);
+        RefreshLastUsedBadge();
     }
 
     private async Task LoadAvatarIfNeededAsync(
@@ -657,6 +676,7 @@ public partial class AccountsViewModel(
 
         cardVm.IsActive = true;
         cardVm.Account.IsActive = true;
+        RefreshLastUsedBadge(rememberActive: false);
         AccountsView.Refresh();
 
         try
@@ -684,6 +704,7 @@ public partial class AccountsViewModel(
 
             mainViewModel.NotifyAccountSwitchFinished();
             mainViewModel.ApplyActiveAccount(cardVm.Account, cardVm.AvatarPath);
+            RefreshLastUsedBadge();
 
             snackbarService.Show(
                 "Conta alternada",
@@ -703,6 +724,7 @@ public partial class AccountsViewModel(
             // Reverte UI
             cardVm.IsActive = false;
             if (previousActive is not null) previousActive.IsActive = true;
+            RefreshLastUsedBadge();
             AccountsView.Refresh();
             mainViewModel.NotifyAccountSwitchFinished(success: false);
             watchdogService.EndSwitch();

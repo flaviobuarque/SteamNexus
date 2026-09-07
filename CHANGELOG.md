@@ -6,6 +6,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Novidades
 
+- Selo Última Usada abaixo da data da conta, na grade e lista, exibido somente quando não há uma conta ativa; utiliza a última sessão observada ou a data registrada pela Steam.
 - Tray exibe o ícone do executável do jogo, sem usar o pôster, com ícone genérico quando indisponível.
 - Ordenação Jogados recentemente baseada em LastPlayed da Steam e no início dos processos observados; jogos em execução aparecem primeiro em todas as ordenações.
 - Ícones neutros à esquerda dos selos de login: engrenagem para Padrão, globo para Online e globo riscado para Offline.

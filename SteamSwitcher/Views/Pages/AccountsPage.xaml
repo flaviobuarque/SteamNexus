@@ -471,6 +471,11 @@
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding LastLoginFormatted}" FontSize="11"
                                         Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                    <Border Padding="7,2" Margin="0,5,0,0" CornerRadius="5" HorizontalAlignment="Left"
+                                        Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                                        Visibility="{Binding IsLastUsed, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock Text="Última Usada" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                    </Border>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
