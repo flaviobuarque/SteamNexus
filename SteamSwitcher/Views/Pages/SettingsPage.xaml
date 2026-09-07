@@ -191,8 +191,12 @@
                                            Margin="0,3,18,0" FontSize="12" Foreground="{DynamicResource AppTextMutedBrush}"/>
                             </StackPanel>
                             <ComboBox Grid.Column="1" ItemsSource="{Binding ThemeOptions}"
-                                      SelectedItem="{Binding SelectedThemeName}"
-                                      SelectionChanged="ThemeSelection_Changed"/>
+                                      SelectedValue="{Binding SelectedThemeName}" SelectedValuePath="Key"
+                                      SelectionChanged="ThemeSelection_Changed">
+ <ComboBox.ItemTemplate><DataTemplate><Grid MinWidth="200"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+ <TextBlock Text="{Binding Name}" Margin="0,0,12,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+ <Border Grid.Column="1" Padding="6,2" CornerRadius="4" Background="{DynamicResource AppAccentSurfaceBrush}"><TextBlock Text="{Binding Badge}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/></Border>
+ </Grid></DataTemplate></ComboBox.ItemTemplate></ComboBox>
                         </Grid>
                     </Border>
                     <Border Style="{StaticResource TileLastStyle}">
@@ -203,13 +207,25 @@
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="Tema personalizado" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                                <TextBlock Text="Crie uma aparência própria ou edite o tema personalizado salvo."
+                                <TextBlock Text="Crie e organize seus temas. Os oficiais são preservados."
                                            Margin="0,3,16,0" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource AppTextMutedBrush}"/>
                                 <TextBlock Text="BETA — A personalização de temas está em fase de testes."
                                            Margin="0,6,16,0" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource AppWarningBrush}"/>
                             </StackPanel>
-                            <ui:Button Grid.Column="2" Content="Criar ou editar" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
-                                       Padding="14,8" Click="OpenThemeEditor_Click"/>
+                            <StackPanel Grid.Column="2">
+ <WrapPanel HorizontalAlignment="Right">
+ <ui:Button Content="Criar tema" Click="CreateTheme_Click" Appearance="Primary" Margin="0,0,6,6"/>
+ <ui:Button Content="Importar" Click="ImportTheme_Click" Margin="0,0,0,6"/>
+ </WrapPanel>
+ <WrapPanel HorizontalAlignment="Right" Visibility="{Binding HasAppliedCustomTheme, Converter={StaticResource BoolToVisibility}}">
+ <ui:Button Content="Editar" Click="OpenThemeEditor_Click" Margin="0,0,6,6"/>
+ <ui:Button Content="⋯" ToolTip="Ações do tema personalizado" Click="ThemeActions_Click">
+ <ui:Button.ContextMenu><ContextMenu Style="{StaticResource AppCardContextMenuStyle}">
+ <ContextMenu.Resources><Style TargetType="MenuItem" BasedOn="{StaticResource AppCardMenuItemStyle}"/></ContextMenu.Resources>
+ <MenuItem Header="Duplicar" Click="DuplicateTheme_Click"/><MenuItem Header="Renomear" Click="RenameTheme_Click"/>
+ <MenuItem Header="Compartilhar" Click="ShareTheme_Click"/><MenuItem Header="Excluir" Click="DeleteTheme_Click"/>
+ </ContextMenu></ui:Button.ContextMenu></ui:Button>
+ </WrapPanel></StackPanel>
                         </Grid>
                     </Border>
                 </StackPanel>

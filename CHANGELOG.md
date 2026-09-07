@@ -33,6 +33,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Novidades
 
+- Seletor identifica temas oficiais e pessoais; personalizados podem ser editados, duplicados, renomeados, compartilhados e excluídos sem substituir outros temas.
 - Criação guiada de temas com escolha da base, amostra de cores e nome antes de personalizar uma cópia.
 - Biblioteca local de temas com identificadores próprios e migração do personalizado existente, preservando a aparência atual.
 - Diagnóstico de contas com RememberPassword=0 por instalação, com lista limitada e rolagem para corrigir selecionadas ou todas. Ação manual fecha a Steam após contagem cancelável, preserva os demais campos e cria backup antes da gravação.

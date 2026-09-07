@@ -51,7 +51,7 @@ public partial class SettingsViewModel(
     [ObservableProperty] private bool _isCleaningOldAccounts;
     [ObservableProperty] private ObservableCollection<SteamInstallation> _steamInstallations = [];
     [ObservableProperty] private SteamInstallation? _selectedSteamInstallation;
-    [ObservableProperty] private ObservableCollection<string> _themeOptions = [];
+    [ObservableProperty] private ObservableCollection<ThemeOption> _themeOptions = [];
     [ObservableProperty] private string _selectedThemeName = "Sistema";
 
     private readonly HashSet<Key> _pressedHotkeyKeys = [];
@@ -233,94 +233,100 @@ public partial class SettingsViewModel(
             TimeSpan.FromSeconds(3));
     }
 
-    public async Task ApplyCustomThemeAsync(CustomThemeSettings theme)
+    public bool HasAppliedCustomTheme => settingsService.Current.ActiveCustomThemeId is not null
+        && settingsService.Current.CustomTheme is { IsEnabled: true };
+    public SavedTheme? AppliedCustomTheme => settingsService.Current.ThemeLibrary
+        .FirstOrDefault(item => item.Id == settingsService.Current.ActiveCustomThemeId);
+
+    public async Task ApplyCustomThemeAsync(CustomThemeSettings theme, string? id = null)
     {
+        CustomThemeManager.Validate(theme);
+        if (string.IsNullOrWhiteSpace(theme.Name)) throw new InvalidOperationException("Dê um nome ao tema.");
         theme.IsEnabled = true;
-        Theme = theme.BaseTheme;
         var settings = BuildSettingsFromCurrent();
-        settings.Theme = theme.BaseTheme;
-        if (CustomThemeManager.BuiltInPresetNames.Contains(theme.Name))
+        var entry = settings.ThemeLibrary.FirstOrDefault(item => item.Id == id);
+        if (entry is null) { entry = new SavedTheme(); settings.ThemeLibrary.Add(entry); }
+        entry.Theme = theme.Clone();
+        settings.ActiveCustomThemeId = entry.Id;
+        settings.ActiveThemePresetName = null;
+        settings.CustomTheme = theme.Clone();
+        settings.Theme = Theme = theme.BaseTheme;
+        await SaveThemeSettingsAsync(settings);
+    }
+
+    public async Task RenameCustomThemeAsync(string name)
+    {
+        if (AppliedCustomTheme is not { } current) return;
+        var copy = current.Theme.Clone();
+        copy.Name = name.Trim();
+        await ApplyCustomThemeAsync(copy, current.Id);
+    }
+
+    public async Task DeleteCustomThemeAsync()
+    {
+        var settings = BuildSettingsFromCurrent();
+        settings.ThemeLibrary.RemoveAll(item => item.Id == settings.ActiveCustomThemeId);
+        settings.ActiveCustomThemeId = null;
+        settings.CustomTheme = null;
+        settings.ActiveThemePresetName = "SteamNexus Dark";
+        settings.Theme = Theme = AppTheme.Dark;
+        await SaveThemeSettingsAsync(settings);
+    }
+
+    private async Task SaveThemeSettingsAsync(AppSettings settings)
+    {
+        await settingsService.SaveAsync(settings);
+        App.ApplyTheme(settings.Theme, ResolveActiveTheme(settings));
+        _original = settings;
+        RefreshThemeOptions(settings);
+        CheckDirty();
+        RefreshStatusBar();
+    }
+
+    public async Task ApplySelectedThemeAsync(string? key)
+    {
+        if (_initializing || string.IsNullOrWhiteSpace(key) || key == CurrentThemeName(settingsService.Current)) return;
+        var settings = BuildSettingsFromCurrent();
+        if (key.StartsWith("custom:", StringComparison.Ordinal))
         {
-            settings.ActiveThemePresetName = theme.Name;
-            if (settings.CustomTheme is not null) settings.CustomTheme.IsEnabled = false;
+            var entry = settings.ThemeLibrary.FirstOrDefault(item => item.Id == key[7..]);
+            if (entry is null) return;
+            settings.ActiveCustomThemeId = entry.Id;
+            settings.ActiveThemePresetName = null;
+            settings.CustomTheme = entry.Theme.Clone();
+            settings.CustomTheme.IsEnabled = true;
+            settings.Theme = Theme = entry.Theme.BaseTheme;
         }
         else
         {
-            settings.ActiveThemePresetName = null;
-            settings.CustomTheme = theme.Clone();
-        }
-        await settingsService.SaveAsync(settings);
-        App.ApplyTheme(theme.BaseTheme, theme);
-        _original = settings;
-        RefreshThemeOptions(settings);
-        CheckDirty();
-        RefreshStatusBar();
-        snackbarService.Show("Tema aplicado", theme.Name, ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
-    }
-
-    public async Task ApplySelectedThemeAsync(string? themeName)
-    {
-        if (_initializing || string.IsNullOrWhiteSpace(themeName)) return;
-        var current = settingsService.Current;
-        var currentName = CurrentThemeName(current);
-        if (string.Equals(themeName, currentName, StringComparison.Ordinal)) return;
-
-        var settings = BuildSettingsFromCurrent();
-        if (themeName == "Sistema")
-        {
-            settings.Theme = Theme = AppTheme.System;
-            settings.ActiveThemePresetName = null;
+            if (key != "Sistema" && !CustomThemeManager.BuiltInPresetNames.Contains(key)) return;
+            settings.ActiveCustomThemeId = null;
             if (settings.CustomTheme is not null) settings.CustomTheme.IsEnabled = false;
-            App.ApplyTheme(AppTheme.System);
+            settings.ActiveThemePresetName = key == "Sistema" ? null : key;
+            settings.Theme = Theme = key == "Sistema" ? AppTheme.System : CustomThemeManager.CreateBuiltInPreset(key).BaseTheme;
         }
-        else if (CustomThemeManager.BuiltInPresetNames.Contains(themeName))
-        {
-            var preset = CustomThemeManager.CreateBuiltInPreset(themeName);
-            preset.IsEnabled = true;
-            settings.Theme = Theme = preset.BaseTheme;
-            settings.ActiveThemePresetName = themeName;
-            if (settings.CustomTheme is not null) settings.CustomTheme.IsEnabled = false;
-            App.ApplyTheme(preset.BaseTheme, preset);
-        }
-        else if (settings.CustomTheme is not null && settings.CustomTheme.Name == themeName)
-        {
-            settings.CustomTheme.IsEnabled = true;
-            settings.ActiveThemePresetName = null;
-            settings.Theme = Theme = settings.CustomTheme.BaseTheme;
-            App.ApplyTheme(settings.Theme, settings.CustomTheme);
-        }
-        else return;
-
-        await settingsService.SaveAsync(settings);
-        _original = settings;
-        RefreshThemeOptions(settings);
-        CheckDirty();
-        RefreshStatusBar();
+        await SaveThemeSettingsAsync(settings);
     }
 
     private void RefreshThemeOptions(AppSettings settings)
     {
         var wasInitializing = _initializing;
         _initializing = true;
-        var options = new List<string> { "Sistema" };
-        options.AddRange(CustomThemeManager.BuiltInPresetNames);
-        if (settings.CustomTheme is not null
-            && !CustomThemeManager.BuiltInPresetNames.Contains(settings.CustomTheme.Name))
-            options.Add(settings.CustomTheme.Name);
-        ThemeOptions = new ObservableCollection<string>(options.Distinct());
+        var options = new List<ThemeOption> { new("Sistema", "Sistema", "Automático") };
+        options.AddRange(CustomThemeManager.BuiltInPresetNames.Select(name => new ThemeOption(name, name, "Oficial")));
+        options.AddRange(settings.ThemeLibrary.Select(item => new ThemeOption("custom:" + item.Id, item.Theme.Name, "Pessoal")));
+        ThemeOptions = new ObservableCollection<ThemeOption>(options);
         SelectedThemeName = CurrentThemeName(settings);
+        OnPropertyChanged(nameof(HasAppliedCustomTheme));
         _initializing = wasInitializing;
     }
 
     private static string CurrentThemeName(AppSettings settings)
     {
-        if (!string.IsNullOrWhiteSpace(settings.ActiveThemePresetName))
-            return settings.ActiveThemePresetName;
-        if (settings.CustomTheme is { IsEnabled: true })
-            return settings.CustomTheme.Name;
-        return settings.Theme == AppTheme.System
-            ? "Sistema"
-            : settings.Theme == AppTheme.Light ? "SteamNexus Light" : "SteamNexus Dark";
+        if (!string.IsNullOrEmpty(settings.ActiveThemePresetName)) return settings.ActiveThemePresetName;
+        if (settings.ActiveCustomThemeId is not null && settings.CustomTheme is { IsEnabled: true })
+            return "custom:" + settings.ActiveCustomThemeId;
+        return settings.Theme == AppTheme.System ? "Sistema" : settings.Theme == AppTheme.Light ? "SteamNexus Light" : "SteamNexus Dark";
     }
 
     private static CustomThemeSettings? ResolveActiveTheme(AppSettings settings)
@@ -815,3 +821,6 @@ public partial class SettingsViewModel(
     [RelayCommand]
     private void Undo() => Initialize();
 }
+
+
+public sealed record ThemeOption(string Key, string Name, string Badge);

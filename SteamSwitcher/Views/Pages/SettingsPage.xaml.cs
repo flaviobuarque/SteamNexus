@@ -208,21 +208,86 @@ public partial class SettingsPage : System.Windows.Controls.Page,
             (DangerNavButton, DangerSection)
         ];
 
-    private async void OpenThemeEditor_Click(object sender, RoutedEventArgs e)
+    private SteamSwitcher.Core.Models.CustomThemeSettings ActiveThemeCopy()
     {
         var settings = ViewModel.SettingsSnapshot;
-        var activeTheme = !string.IsNullOrWhiteSpace(settings.ActiveThemePresetName)
+        return !string.IsNullOrEmpty(settings.ActiveThemePresetName)
             ? SteamSwitcher.Services.Themes.CustomThemeManager.CreateBuiltInPreset(settings.ActiveThemePresetName)
-            : settings.CustomTheme;
-        if (activeTheme is not null && !string.IsNullOrWhiteSpace(settings.ActiveThemePresetName))
-            activeTheme.IsEnabled = true;
-        var dialog = new ThemeEditorWindow(settings.Theme, activeTheme)
-        {
-            Owner = Window.GetWindow(this),
-        };
-        if (dialog.ShowDialog() == true && dialog.ResultTheme is not null)
-            await ViewModel.ApplyCustomThemeAsync(dialog.ResultTheme);
+            : settings.CustomTheme is { IsEnabled: true } ? settings.CustomTheme.Clone()
+            : settings.Theme == SteamSwitcher.Core.Models.AppTheme.Light
+                ? SteamSwitcher.Core.Models.CustomThemeSettings.CreateLight() : SteamSwitcher.Core.Models.CustomThemeSettings.CreateDark();
     }
+
+    private async Task ThemeActionAsync(Func<Task> action)
+    {
+        try { await action(); }
+        catch (Exception ex)
+        {
+            new ConfirmDialog("Não foi possível concluir", ex.Message, "Entendi") { Owner = Window.GetWindow(this) }.ShowDialog();
+        }
+    }
+
+    private async Task EditThemeAsync(SteamSwitcher.Core.Models.CustomThemeSettings draft, string? id = null)
+    {
+        draft.IsEnabled = true;
+        var original = ActiveThemeCopy();
+        var baseTheme = ViewModel.SettingsSnapshot.Theme;
+        try
+        {
+            var dialog = new ThemeEditorWindow(draft.BaseTheme, draft, editCustom: true) { Owner = Window.GetWindow(this) };
+            if (dialog.ShowDialog() == true && dialog.ResultTheme is not null)
+                await ViewModel.ApplyCustomThemeAsync(dialog.ResultTheme, id);
+            else App.ApplyTheme(baseTheme, original);
+        }
+        catch { App.ApplyTheme(baseTheme, original); throw; }
+    }
+
+    private async void OpenThemeEditor_Click(object sender, RoutedEventArgs e) => await ThemeActionAsync(async () =>
+    {
+        if (ViewModel.AppliedCustomTheme is { } entry) await EditThemeAsync(entry.Theme.Clone(), entry.Id);
+    });
+
+    private async void CreateTheme_Click(object sender, RoutedEventArgs e) => await ThemeActionAsync(async () =>
+    {
+        var setup = new ThemeSetupDialog(ActiveThemeCopy()) { Owner = Window.GetWindow(this) };
+        if (setup.ShowDialog() == true && setup.ResultTheme is not null) await EditThemeAsync(setup.ResultTheme);
+    });
+
+    private void ThemeActions_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.ContextMenu is { } menu) { menu.PlacementTarget = element; menu.IsOpen = true; }
+    }
+    private async void DuplicateTheme_Click(object sender, RoutedEventArgs e) => await ThemeActionAsync(async () =>
+    {
+        if (ViewModel.AppliedCustomTheme is not { } entry) return;
+        var copy = entry.Theme.Clone(); copy.Name += " — cópia";
+        await EditThemeAsync(copy);
+    });
+    private async void RenameTheme_Click(object sender, RoutedEventArgs e) => await ThemeActionAsync(async () =>
+    {
+        if (ViewModel.AppliedCustomTheme is not { } entry) return;
+        var dialog = new ThemeSetupDialog(entry.Theme, rename: true) { Owner = Window.GetWindow(this) };
+        if (dialog.ShowDialog() == true) await ViewModel.RenameCustomThemeAsync(dialog.ThemeName);
+    });
+    private async void DeleteTheme_Click(object sender, RoutedEventArgs e) => await ThemeActionAsync(async () =>
+    {
+        if (!ViewModel.HasAppliedCustomTheme) return;
+        var dialog = new ConfirmDialog("Excluir tema", "Excluir o tema aplicado? O SteamNexus Dark será ativado. As imagens de fundo serão preservadas.", "Excluir") { Owner = Window.GetWindow(this) };
+        if (dialog.ShowDialog() == true && dialog.Confirmed) await ViewModel.DeleteCustomThemeAsync();
+    });
+    private async void ImportTheme_Click(object sender, RoutedEventArgs e) => await ThemeActionAsync(async () =>
+    {
+        var picker = new Microsoft.Win32.OpenFileDialog { Filter = "Tema SteamNexus|*.steamnexus-theme;*.json", CheckFileExists = true };
+        if (picker.ShowDialog() != true) return;
+        var imported = await SteamSwitcher.Services.Themes.CustomThemeManager.ImportAsync(picker.FileName);
+        await EditThemeAsync(imported);
+    });
+    private async void ShareTheme_Click(object sender, RoutedEventArgs e) => await ThemeActionAsync(async () =>
+    {
+        if (ViewModel.AppliedCustomTheme is not { } entry) return;
+        var picker = new Microsoft.Win32.SaveFileDialog { Filter = "Tema SteamNexus|*.steamnexus-theme", FileName = "tema-steamnexus.steamnexus-theme" };
+        if (picker.ShowDialog() == true) await SteamSwitcher.Services.Themes.CustomThemeManager.ExportAsync(entry.Theme, picker.FileName);
+    });
 
     private async void ThemeSelection_Changed(object sender, SelectionChangedEventArgs e)
     {
