@@ -282,6 +282,17 @@ public partial class ThemeEditorViewModel : ObservableObject
         _ => "Visual original do SteamNexus, com tons escuros e destaques em azul.",
     };
 
+    public Brush BackgroundOverlayBrush
+    {
+        get
+        {
+            try { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(BackgroundOverlay)!); }
+            catch { return Brushes.Transparent; }
+        }
+    }
+
+    partial void OnBackgroundOverlayChanged(string value) => OnPropertyChanged(nameof(BackgroundOverlayBrush));
+
     public string BackgroundImageDisplay => string.IsNullOrWhiteSpace(BackgroundImagePath)
         ? "Nenhuma imagem selecionada"
         : BackgroundImagePath;
