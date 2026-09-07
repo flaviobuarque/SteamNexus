@@ -128,7 +128,7 @@ public class SteamAccountService(
                     useAsync: true);
                 var snapshot = SteamAccountSnapshotParser.Parse(stream);
                 var activeId = installation.Id == activeInstallationId
-                    ? snapshot.Accounts.FirstOrDefault(a => a.SteamId32 == activeUser)?.SteamId64
+                    ? SteamSessionResolver.Resolve(snapshot, activeUser)?.SteamId64
                     : null;
 
                 foreach (var account in snapshot.Accounts)
@@ -356,7 +356,7 @@ public class SteamAccountService(
             == (targetState == LoginState.Offline);
 
         return targetIsAlreadyActive
-            && ReadActiveUser() == target.SteamId32
+            && SteamSessionResolver.Resolve(snapshot, ReadActiveUser())?.SteamId64 == target.SteamId64
             && persistedStateMatches
             && IsOnlySelectedSteamMainProcessRunning();
     }
@@ -385,10 +385,10 @@ public class SteamAccountService(
             var id = FindRunningInstallationId(installations);
             var installation = installations.FirstOrDefault(i => i.Id == id);
             var user = ReadActiveUser();
-            if (installation is null || user is null || !File.Exists(installation.LoginUsersPath)) return null;
+            if (installation is null || !File.Exists(installation.LoginUsersPath)) return null;
             using var stream = new FileStream(installation.LoginUsersPath, FileMode.Open,
                 FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            var active = SteamAccountSnapshotParser.Parse(stream).Accounts.FirstOrDefault(a => a.SteamId32 == user);
+            var active = SteamSessionResolver.Resolve(SteamAccountSnapshotParser.Parse(stream), user);
             if (active is null) return null;
             active.InstallationId = installation.Id;
             active.InstallationName = installation.DisplayName;

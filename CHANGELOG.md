@@ -2,6 +2,12 @@
 
 Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
+## [Unreleased]
+
+### Correções
+
+- Conta offline reconhecida nos cartões e no tray quando a Steam mantém ActiveUser=0 no Registro.
+
 ## [1.0.18] - 2026-09-07
 
 ### Novidades
