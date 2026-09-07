@@ -44,6 +44,9 @@ public partial class App : Application
     {
         SteamSwitcher.Helpers.ScrollViewerAssist.Register();
         SteamSwitcher.Helpers.ClickableCursorAssist.Register();
+        Window.IconProperty.OverrideMetadata(typeof(Window), new FrameworkPropertyMetadata(
+            System.Windows.Media.Imaging.BitmapFrame.Create(
+                new Uri("pack://application:,,,/Assets/icon.ico"))));
         base.OnStartup(e);
 
         _host = Host.CreateDefaultBuilder()

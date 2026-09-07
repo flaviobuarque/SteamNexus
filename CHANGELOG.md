@@ -4,6 +4,11 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+### Correções
+
+- Janela de atualização com rolagem somente nas novidades; cabeçalho e ações permanecem visíveis.
+- Ícone padrão nas janelas do aplicativo e ícone explícito no pacote do instalador e atualizador.
+
 ## [1.0.25] - 2026-09-07
 
 ### Contas e aviso da atualização

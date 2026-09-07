@@ -45,7 +45,8 @@ public partial class UpdatePromptDialog : Window
             if (Owner is null) return;
             Width = Owner.ActualWidth;
             Height = Owner.ActualHeight;
-            DialogCard.MaxHeight = Math.Max(250, Height - 24);
+            DialogCard.Width = Math.Min(620, Math.Max(320, Width - 24));
+            DialogCard.Height = Math.Min(620, Math.Max(360, Height - 24));
             Left = Owner.Left;
             Top = Owner.Top;
         };

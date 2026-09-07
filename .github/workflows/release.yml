@@ -98,6 +98,7 @@ jobs:
             --packTitle SteamNexus `
             --packAuthors "Flávio Buarque" `
             --mainExe SteamSwitcher.exe `
+            --icon SteamSwitcher/Assets/icon.ico `
             --outputDir Releases
 
       - name: Publicar release
