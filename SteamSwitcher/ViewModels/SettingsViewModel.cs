@@ -59,12 +59,18 @@ public partial class SettingsViewModel(
     private HotkeyDefinition? _pendingHotkey;
 
     private AppSettings _original = new();
+    private LoginState? _loadedDefaultLoginPreference;
+    private bool _defaultLoginPreferenceEdited;
     public Func<string, string, string, string, bool>? ConfirmFunc { get; set; }
 
     partial void OnThemeChanged(AppTheme value) => CheckDirty();
     partial void OnAfterAccountSwitchChanged(PostSwitchBehavior value) => CheckDirty();
     partial void OnAfterGameLaunchChanged(PostSwitchBehavior value) => CheckDirty();
-    partial void OnDefaultLoginStateOverrideChanged(LoginState? value) => CheckDirty();
+    partial void OnDefaultLoginStateOverrideChanged(LoginState? value)
+    {
+        if (!_initializing) _defaultLoginPreferenceEdited = value != _loadedDefaultLoginPreference;
+        CheckDirty();
+    }
     partial void OnStartSilentChanged(bool value) => CheckDirty();
     partial void OnStartAsAdminChanged(bool value) => CheckDirty();
     partial void OnStartWithWindowsChanged(bool value) => CheckDirty();
@@ -87,7 +93,7 @@ public partial class SettingsViewModel(
             Theme != _original.Theme ||
             AfterAccountSwitch != _original.AfterAccountSwitch ||
             AfterGameLaunch != _original.AfterGameLaunch ||
-            DefaultLoginStateOverride != _original.DefaultLoginStateOverride ||
+            _defaultLoginPreferenceEdited ||
             StartSilent != _original.StartSilent ||
             StartAsAdmin != _original.StartAsAdmin ||
             CheckForUpdatesAutomatically != _original.CheckForUpdatesAutomatically ||
@@ -101,6 +107,9 @@ public partial class SettingsViewModel(
 
     public void Initialize()
     {
+        if (!WeakReferenceMessenger.Default.IsRegistered<DefaultLoginPreferenceChanged>(this))
+            WeakReferenceMessenger.Default.Register<DefaultLoginPreferenceChanged>(this, (recipient, message) =>
+                ((SettingsViewModel)recipient).ReceiveDefaultLoginPreference(message.State));
         _initializing = true;
         var s = settingsService.Current;
         _original = s;
@@ -109,6 +118,8 @@ public partial class SettingsViewModel(
         AfterAccountSwitch = s.AfterAccountSwitch;
         AfterGameLaunch = s.AfterGameLaunch;
         DefaultLoginStateOverride = s.DefaultLoginStateOverride;
+        _loadedDefaultLoginPreference = s.DefaultLoginStateOverride;
+        _defaultLoginPreferenceEdited = false;
         StartSilent = s.StartSilent;
         StartAsAdmin = s.StartAsAdmin;
         CheckForUpdatesAutomatically = s.CheckForUpdatesAutomatically;
@@ -127,6 +138,7 @@ public partial class SettingsViewModel(
 
     public void RefreshStatusBar()
     {
+        if (_mainViewModel.ActivePage != "Settings") return;
         var left = HasUnsavedChanges
             ? "Configurações com alterações não salvas"
             : "Configurações salvas";
@@ -139,7 +151,7 @@ public partial class SettingsViewModel(
     {
         var hadKey = string.IsNullOrWhiteSpace(_original.SteamGridDbApiKey);
         var automaticUpdatesWereEnabled = _original.CheckForUpdatesAutomatically;
-        var settings = BuildSettingsFromCurrent();
+        var settings = BuildSettingsFromCurrent(saveLoginPreference: true);
         await settingsService.SaveAsync(settings);
         _mainViewModel.ApplyGlobalHotkey(
             settings.IsGlobalHotkeyEnabled && settings.GlobalHotkey?.IsValid == true
@@ -148,6 +160,7 @@ public partial class SettingsViewModel(
         systemService.SetStartWithWindows(StartWithWindows);
         App.ApplyTheme(settings.Theme, ResolveActiveTheme(settings));
         _original = settings;
+        AcceptSavedLoginPreference(settings);
         HasUnsavedChanges = false;
         _mainViewModel.RefreshDefaultLoginState();
         RefreshStatusBar();
@@ -176,7 +189,7 @@ public partial class SettingsViewModel(
         await settingsService.SaveAsync(settings);
         App.ApplyTheme(theme);
         _original = settings;
-        HasUnsavedChanges = false;
+        CheckDirty();
     }
 
     public bool ConfirmNavigateAway()
@@ -240,7 +253,7 @@ public partial class SettingsViewModel(
         App.ApplyTheme(theme.BaseTheme, theme);
         _original = settings;
         RefreshThemeOptions(settings);
-        HasUnsavedChanges = false;
+        CheckDirty();
         RefreshStatusBar();
         snackbarService.Show("Tema aplicado", theme.Name, ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
     }
@@ -281,7 +294,7 @@ public partial class SettingsViewModel(
         await settingsService.SaveAsync(settings);
         _original = settings;
         RefreshThemeOptions(settings);
-        HasUnsavedChanges = false;
+        CheckDirty();
         RefreshStatusBar();
     }
 
@@ -610,7 +623,26 @@ public partial class SettingsViewModel(
         }
     }
 
-    private AppSettings BuildSettingsFromCurrent()
+    private void ReceiveDefaultLoginPreference(LoginState? value)
+    {
+        if (_defaultLoginPreferenceEdited) return;
+        _initializing = true;
+        DefaultLoginStateOverride = value;
+        _loadedDefaultLoginPreference = value;
+        _initializing = false;
+        CheckDirty();
+    }
+
+    private void AcceptSavedLoginPreference(AppSettings settings)
+    {
+        _initializing = true;
+        DefaultLoginStateOverride = settings.DefaultLoginStateOverride;
+        _loadedDefaultLoginPreference = settings.DefaultLoginStateOverride;
+        _defaultLoginPreferenceEdited = false;
+        _initializing = false;
+    }
+
+    private AppSettings BuildSettingsFromCurrent(bool saveLoginPreference = false)
     {
         var current = settingsService.Current;
         return new AppSettings
@@ -624,7 +656,8 @@ public partial class SettingsViewModel(
             GameGridDensityPercent = current.GameGridDensityPercent,
             AfterAccountSwitch = AfterAccountSwitch,
             AfterGameLaunch = AfterGameLaunch,
-            DefaultLoginStateOverride = DefaultLoginStateOverride,
+            DefaultLoginStateOverride = saveLoginPreference && _defaultLoginPreferenceEdited
+                ? DefaultLoginStateOverride : current.DefaultLoginStateOverride,
             StartSilent = StartSilent,
             StartAsAdmin = StartAsAdmin,
             CheckForUpdatesAutomatically = CheckForUpdatesAutomatically,

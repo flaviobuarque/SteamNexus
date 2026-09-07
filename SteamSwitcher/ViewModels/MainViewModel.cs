@@ -22,7 +22,17 @@ public partial class MainViewModel(
     public string DefaultLoginStateText => settingsService.Current.DefaultLoginStateOverride == LoginState.Offline
         ? "Offline" : "Online";
 
-    public void RefreshDefaultLoginState() => OnPropertyChanged(nameof(DefaultLoginStateText));
+    private LoginState? _lastDefaultLoginPreference;
+    private bool _defaultLoginPreferenceReported;
+    public void RefreshDefaultLoginState()
+    {
+        OnPropertyChanged(nameof(DefaultLoginStateText));
+        var value = settingsService.Current.DefaultLoginStateOverride;
+        if (_defaultLoginPreferenceReported && _lastDefaultLoginPreference == value) return;
+        _defaultLoginPreferenceReported = true;
+        _lastDefaultLoginPreference = value;
+        WeakReferenceMessenger.Default.Send(new DefaultLoginPreferenceChanged(value));
+    }
     [ObservableProperty] private string _activeAccountName = string.Empty;
     [ObservableProperty] private bool _hasActiveAccount;
     [ObservableProperty] private bool _steamNotFound;

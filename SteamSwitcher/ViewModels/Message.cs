@@ -7,3 +7,5 @@ public record SteamInstallationChanged;
 public record AccountGridDensityChanged;
 public record GameGridDensityChanged;
 public record NavigateToSettingsRequested;
+public record DefaultLoginPreferenceChanged(SteamSwitcher.Core.Models.LoginState? State);
+public record AccountLoginPreferenceChanged(string AccountKey, SteamSwitcher.Core.Models.LoginState? State);
