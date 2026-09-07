@@ -110,34 +110,9 @@
             </Grid.ColumnDefinitions>
 
             <TabControl Background="Transparent" BorderBrush="{DynamicResource AppBorderBrush}">
-                <TabItem Header="Cores">
+                <TabItem Header="Aparência">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="16">
-                            <StackPanel Visibility="{Binding IsPresetReadOnly, Converter={StaticResource BoolToVisibility}}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <TextBlock Text="Escolha um tema" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                    <Border Grid.Column="1" Padding="8,3" CornerRadius="6"
-                                            Background="{DynamicResource AppAccentSurfaceBrush}">
-                                        <TextBlock Text="Tema oficial" FontSize="11" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource AppAccentBrush}" />
-                                    </Border>
-                                </Grid>
-                                <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}"
-                                          Margin="0,7,0,0" SelectionChanged="Preset_SelectionChanged" />
-                                <TextBlock Text="{Binding PresetDescription}" Margin="0,8,0,14" TextWrapping="Wrap"
-                                           Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
-                                    <ui:Button Content="Usar este tema" Style="{StaticResource ThemeEditorAccentButtonStyle}"
-                                               Margin="0,0,8,0" Click="Apply_Click" />
-                                    <ui:Button Content="Personalizar uma cópia" Appearance="Secondary"
-                                               Margin="0,0,8,0" Click="ApplyPreset_Click" />
-                                    <ui:Button Content="Criar tema" Appearance="Secondary"
-                                               Click="CreateTheme_Click" />
-                                </StackPanel>
-                            </StackPanel>
-
                             <Border Margin="0,0,0,18" Padding="14" CornerRadius="10"
                                     Background="{DynamicResource AppSurfaceAltBrush}"
                                     Visibility="{Binding IsPresetReadOnly, Converter={StaticResource InverseBoolToVisibility}}">
@@ -155,8 +130,7 @@
                                     <TextBlock Text="Nome" Margin="0,12,0,0" FontWeight="SemiBold"
                                                Foreground="{DynamicResource AppTextPrimaryBrush}" />
                                     <TextBox Text="{Binding ThemeName, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,10" />
-                                    <ui:Button Content="Escolher outro tema" Appearance="Secondary"
-                                               HorizontalAlignment="Left" Click="BackToPresets_Click" />
+                                    
                                 </StackPanel>
                             </Border>
                             <ItemsControl ItemsSource="{Binding Colors}" IsEnabled="{Binding IsCustomTheme}">
@@ -239,24 +213,7 @@
                     </StackPanel>
                 </TabItem>
 
-                <TabItem Header="Compartilhar">
-                    <StackPanel Margin="18">
-                        <TextBlock Text="Importar e exportar" FontSize="17" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                        <TextBlock Text="Compartilhe as configurações visuais em um arquivo .steamnexus-theme."
-                                   Margin="0,5,0,16" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                        <ui:Button Content="Importar tema" Click="ImportTheme_Click" Margin="0,0,0,8" />
-                        <ui:Button Content="Exportar tema" Appearance="Secondary" Click="ExportTheme_Click" />
-                        <Border Margin="0,22,0,0" Padding="13" CornerRadius="9"
-                                Background="{DynamicResource AppSurfaceAltBrush}">
-                            <TextBlock Text="{Binding ContrastDetail}" TextWrapping="Wrap"
-                                       Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                        </Border>
-                        <ui:Button Content="Corrigir contraste automaticamente" Appearance="Secondary"
-                                   Margin="0,10,0,0" Click="FixContrast_Click" />
-                    </StackPanel>
-                </TabItem>
+
             </TabControl>
 
             <Border Grid.Column="2" Padding="20" CornerRadius="14"
@@ -311,7 +268,7 @@
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <ui:Button Content="Cancelar" Appearance="Secondary" Width="110" Click="Cancel_Click" Margin="0,0,10,0" />
-                <ui:Button Content="Salvar tema" Style="{StaticResource ThemeEditorAccentButtonStyle}" Width="130" Click="Apply_Click"
+                <ui:Button Content="Salvar e aplicar" Style="{StaticResource ThemeEditorAccentButtonStyle}" Width="150" Click="Apply_Click"
                            Visibility="{Binding IsPresetReadOnly, Converter={StaticResource InverseBoolToVisibility}}" />
             </StackPanel>
         </Grid>

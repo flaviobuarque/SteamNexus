@@ -8,6 +8,7 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ### Correções
 
+- Editor focado em aparência (incluindo cor da borda) e fundo, sem compartilhamento interno; cancelar confirma descarte e abrir o editor não aplica prévia automaticamente.
 - Contas com lembrar senha desativado são aceitas; ao utilizá-las, a troca ativa RememberPassword somente na conta escolhida, usando o backup existente.
 - Corrigido o bloqueio ao clicar em Jogar após corrigir a opção de lembrar senha no diagnóstico. A abertura agora consulta os dados atualizados da conta.
 - A preferência é conferida novamente antes de iniciar o jogo, evitando usar informações antigas da tela.

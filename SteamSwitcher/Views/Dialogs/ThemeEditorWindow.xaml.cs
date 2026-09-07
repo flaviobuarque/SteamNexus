@@ -18,6 +18,7 @@ public partial class ThemeEditorWindow : Window
     private readonly DispatcherTimer _previewTimer;
     private bool _accepted;
     private bool _ready;
+    private string _initialDraft = string.Empty;
 
     public ThemeEditorViewModel ViewModel { get; }
     public CustomThemeSettings? ResultTheme { get; private set; }
@@ -44,7 +45,6 @@ public partial class ThemeEditorWindow : Window
         // Aplique a prévia antes de carregar o XAML para não preservar o accent anterior.
         var initialPreview = ViewModel.BuildTheme();
         CustomThemeManager.Validate(initialPreview);
-        App.ApplyTheme(initialPreview.BaseTheme, initialPreview);
 
         InitializeComponent();
         DataContext = ViewModel;
@@ -55,7 +55,20 @@ public partial class ThemeEditorWindow : Window
             PreviewTheme();
         };
         _ready = true;
-        PreviewTheme();
+        _initialDraft = System.Text.Json.JsonSerializer.Serialize(ViewModel.BuildTheme());
+        ViewModel.UpdateContrast(initialPreview);
+        Closing += (_, e) =>
+        {
+            _previewTimer.Stop();
+            if (_accepted) return;
+            bool changed;
+            try { changed = _initialDraft != System.Text.Json.JsonSerializer.Serialize(ViewModel.BuildTheme()); }
+            catch { changed = true; }
+            if (!changed) return;
+            var confirm = new ConfirmDialog("Descartar alterações?", "O tema salvo será preservado.", "Descartar", "Continuar editando") { Owner = this };
+            confirm.ShowDialog();
+            e.Cancel = !confirm.Confirmed;
+        };
         Closed += (_, _) =>
         {
             if (!_accepted) App.ApplyTheme(_originalBaseTheme, _originalCustomTheme);
