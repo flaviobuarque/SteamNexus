@@ -684,8 +684,8 @@ public partial class GamesViewModel(
         if (dialog.ShowDialog() != true)
             return;
 
-        cardVm.Game.LoginStateOverride = dialog.SelectedLoginState;
         await gameService.SetGameLoginStateAsync(cardVm.Game.UniqueKey, dialog.SelectedLoginState);
+        cardVm.Game.LoginStateOverride = dialog.SelectedLoginState;
         snackbarService.Show(
             "Status ao entrar atualizado",
             dialog.SelectedLoginState?.ToString() ?? "Usando o status padrão da conta.",

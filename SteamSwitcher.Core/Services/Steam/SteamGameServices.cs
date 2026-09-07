@@ -143,7 +143,8 @@ public class SteamGameService(
                 account.UniqueKey,
                 StringComparison.Ordinal);
 
-            if (!accountAlreadyActive)
+            var stateAlreadyApplied = activeAccount?.WantsOfflineMode == (state == LoginState.Offline);
+            if (!accountAlreadyActive || !stateAlreadyApplied)
             {
                 // Troca de conta primeiro (passando o estado resolvido).
                 await accountService.SwitchAccountAsync(account, state, ct);
