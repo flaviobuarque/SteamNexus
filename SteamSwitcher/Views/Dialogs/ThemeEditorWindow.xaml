@@ -221,8 +221,13 @@
             <Border Grid.Column="2" Padding="20" CornerRadius="14"
                     Background="{DynamicResource AppSurfaceAltBrush}"
                     BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="0,0,8,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0,0,8,8">
                     <TextBlock Text="Prévia" FontSize="18" FontWeight="SemiBold"
                                Foreground="{DynamicResource AppTextPrimaryBrush}" />
                     <TextBlock Text="Componentes reais do tema" Margin="0,4,0,18"
@@ -257,6 +262,9 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <StackPanel Grid.Row="1">
                     <Border Margin="0,18,0,0" Padding="12" CornerRadius="8"
                             Background="{DynamicResource AppSurfaceBrush}">
                         <StackPanel>
@@ -275,8 +283,8 @@
                     </Border>
                     <TextBlock Text="{Binding ValidationMessage}" Margin="0,14,0,0" TextWrapping="Wrap"
                                Foreground="{DynamicResource AppWarningBrush}" />
-                </StackPanel>
-                </ScrollViewer>
+                    </StackPanel>
+                </Grid>
             </Border>
         </Grid>
 
