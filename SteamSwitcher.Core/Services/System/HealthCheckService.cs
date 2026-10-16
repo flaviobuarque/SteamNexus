@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
+using SteamSwitcher.Core.Helpers;
 using SteamSwitcher.Core.Models;
 
 namespace SteamSwitcher.Core.Services;
@@ -18,7 +19,7 @@ public class HealthCheckService : IHealthCheckService
     {
         _settingsService = settingsService;
         _logger = logger;
-        _http = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        _http = httpClient ?? HttpClientDefaults.CreateClient(TimeSpan.FromSeconds(10));
     }
 
     public async Task<AccountHealth> CheckAccountAsync(

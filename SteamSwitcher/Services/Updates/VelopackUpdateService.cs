@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using System.Net.Http;
+using SteamSwitcher.Core.Helpers;
 using Velopack;
 using Velopack.Sources;
 
@@ -13,7 +14,7 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
     private readonly UpdateManager? _manager;
     private readonly SemaphoreSlim _operationGate = new(1, 1);
     private UpdateInfo? _pendingUpdate;
-    private static readonly HttpClient ReleaseNotesClient = new() { Timeout = TimeSpan.FromSeconds(10) };
+    private static readonly HttpClient ReleaseNotesClient = HttpClientDefaults.CreateClient(TimeSpan.FromSeconds(10));
     private string _notesVersion = string.Empty;
 
     [ObservableProperty] private string _availableVersion = string.Empty;

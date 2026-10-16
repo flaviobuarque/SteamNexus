@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
+using SteamSwitcher.Core.Helpers;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
 using SteamSwitcher.Helpers;
@@ -195,10 +196,7 @@ public partial class AccountsViewModel(
     private CancellationTokenSource? _avatarLoadCts;
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private readonly SemaphoreSlim _avatarLoadGate = new(4, 4);
-    private static readonly HttpClient AvatarHttp = new()
-    {
-        Timeout = TimeSpan.FromSeconds(5)
-    };
+    private static readonly HttpClient AvatarHttp = HttpClientDefaults.CreateClient(TimeSpan.FromSeconds(5));
 
     private static readonly System.Text.RegularExpressions.Regex AvatarUrlRegex =
         new(@"<avatarFull><!\[CDATA\[(.+?)\]\]></avatarFull>",

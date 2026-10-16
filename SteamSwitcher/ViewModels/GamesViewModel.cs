@@ -44,10 +44,7 @@ public partial class GamesViewModel(
     private readonly LatestAsyncOperation _libraryRefreshDebounce = new();
     private Dictionary<string, string> _savedOwners = new(StringComparer.Ordinal);
     private HashSet<string> _favoriteGameIds = new(StringComparer.Ordinal);
-    private static readonly HttpClient FilterAvatarHttp = new()
-    {
-        Timeout = TimeSpan.FromSeconds(5)
-    };
+    private static readonly HttpClient FilterAvatarHttp = HttpClientDefaults.CreateClient(TimeSpan.FromSeconds(5));
     private static readonly System.Text.RegularExpressions.Regex AvatarUrlRegex =
         new(@"<avatarFull><!\[CDATA\[(.+?)\]\]></avatarFull>",
             System.Text.RegularExpressions.RegexOptions.Compiled);
@@ -640,10 +637,7 @@ public partial class GamesViewModel(
         }
     }
 
-    private static readonly System.Net.Http.HttpClient _http = new()
-    {
-        Timeout = TimeSpan.FromSeconds(10)
-    };
+    private static readonly HttpClient _http = HttpClientDefaults.CreateClient(TimeSpan.FromSeconds(10));
 
     [RelayCommand]
     private async Task ChangeGameAccountAsync(GameCardViewModel cardVm)
