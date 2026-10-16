@@ -177,6 +177,7 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
             DownloadSpeedText = "Download concluído";
             IsUpdateReady = true;
             StatusText = $"Versão {AvailableVersion} pronta para instalar";
+            Core.Services.ActivityJournal.Shared.Record(Core.Services.ActivityKind.UpdateReady);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -186,6 +187,7 @@ public partial class VelopackUpdateService : ObservableObject, IUpdateService
         {
             ErrorText = ex.Message;
             StatusText = "Não foi possível baixar a atualização";
+            Core.Services.ActivityJournal.Shared.Record(Core.Services.ActivityKind.UpdateFailed);
         }
         finally
         {

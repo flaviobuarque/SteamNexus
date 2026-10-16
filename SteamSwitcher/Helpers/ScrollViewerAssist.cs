@@ -8,8 +8,11 @@ namespace SteamSwitcher.Helpers;
 
 public static class ScrollViewerAssist
 {
+    private static bool _registered;
     public static void Register()
     {
+        if (_registered) return;
+        _registered = true;
         EventManager.RegisterClassHandler(
             typeof(UIElement),
             UIElement.PreviewMouseWheelEvent,
@@ -24,7 +27,16 @@ public static class ScrollViewerAssist
         var scrollViewer = FindScrollViewer(source);
         if (scrollViewer == null) return;
 
-        scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta);
+        // Logical panels interpret offsets as items, not pixels. Let WPF handle
+        // these natively (including the user's wheel-line setting).
+        if (scrollViewer.CanContentScroll) return;
+        if (e.Delta == 0) return;
+        if (SystemParameters.WheelScrollLines == -1)
+        {
+            if (e.Delta > 0) scrollViewer.PageUp(); else scrollViewer.PageDown();
+        }
+        else scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset
+            - e.Delta / 120d * SystemParameters.WheelScrollLines * 16);
         e.Handled = true;
     }
 

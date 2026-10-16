@@ -195,6 +195,8 @@ public partial class MainViewModel(
 
     public void NotifyAccountSwitchStarted(SteamAccount target, string targetAvatarPath)
     {
+        _switchSourceLabel = _displayedAccount is null ? "Sem conta ativa identificada" : AccountActivityLabel(_displayedAccount);
+        _switchTargetLabel = AccountActivityLabel(target);
         _previousSwitchAccount = _displayedAccount;
         _previousSwitchAvatar = ActiveAccountAvatarPath;
         _switchPresentation.Begin(target);
@@ -205,6 +207,9 @@ public partial class MainViewModel(
 
     public void NotifyAccountSwitchFinished(bool success = true)
     {
+        if (IsSwitchingAccount)
+            ActivityJournal.Shared.Record(success ? ActivityKind.AccountSwitched : ActivityKind.AccountSwitchFailed,
+                _switchSourceLabel, _switchTargetLabel);
         if (success) _switchPresentation.Complete();
         else
         {
@@ -214,6 +219,10 @@ public partial class MainViewModel(
         }
         IsSwitchingAccount = false;
     }
+
+    private string? _switchSourceLabel;
+    private string? _switchTargetLabel;
+    private static string AccountActivityLabel(SteamAccount account) => $"{account.DisplayName} (@{account.AccountName})";
 
     public string ToggleWindowText => IsWindowVisible ? "Ocultar" : "Exibir";
 

@@ -1,0 +1,24 @@
+<Window x:Class="SteamSwitcher.Views.Dialogs.MonitoringDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Medições do monitoramento" Width="520" Height="330" MinWidth="360" MinHeight="280"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{DynamicResource AppBackgroundBrush}" Foreground="{DynamicResource AppTextPrimaryBrush}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+        <TextBlock Text="Desempenho nesta sessão" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,16" />
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <Border Padding="14" CornerRadius="8" Background="{DynamicResource AppSurfaceBrush}" BorderThickness="1" BorderBrush="{DynamicResource AppBorderBrush}">
+                    <TextBlock x:Name="Metrics" TextWrapping="Wrap" LineHeight="23" />
+                </Border>
+                <TextBlock Text="P95: 95% das leituras terminaram em até esse tempo. As medições reiniciam ao abrir o app e não representam o uso total de CPU."
+                           Margin="0,12,0,12" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource AppTextMutedBrush}" />
+            </StackPanel>
+        </ScrollViewer>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Atualizar" Click="Refresh_Click" Style="{StaticResource NexusActionButton}" Margin="0,0,8,0" />
+            <Button Content="Fechar" IsCancel="True" Style="{StaticResource NexusPrimaryButton}" />
+        </StackPanel>
+    </Grid>
+</Window>

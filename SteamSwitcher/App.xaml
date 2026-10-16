@@ -1,4 +1,4 @@
-﻿<Application
+<Application
     x:Class="SteamSwitcher.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -13,6 +13,7 @@
                 <ResourceDictionary Source="Themes/Dark.xaml" />
                 <ui:ThemesDictionary Theme="Dark" />
                 <ui:ControlsDictionary />
+                <ResourceDictionary Source="Themes/InteractionStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <Style TargetType="{x:Type RadioButton}">
@@ -243,6 +244,7 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="ui:Button">
                             <Border x:Name="PrimaryButtonBorder"
+                                    TextElement.Foreground="{TemplateBinding Foreground}"
                                     Padding="{TemplateBinding Padding}"
                                     Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
@@ -455,6 +457,12 @@
 
             <Style TargetType="Frame">
                 <Setter Property="NavigationUIVisibility" Value="Hidden" />
+                <!-- The navigation host can receive restored focus, but must not
+                     draw a focus ring around the entire page. Child controls
+                     retain their own keyboard focus visuals. -->
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="BorderBrush" Value="Transparent" />
             </Style>
 
             <!-- Converters -->

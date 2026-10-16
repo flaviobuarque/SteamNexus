@@ -56,12 +56,14 @@
 
                 <Button
                     Content="Cancelar"
+                    Style="{StaticResource NexusActionButton}"
                     MinWidth="100"
                     Margin="0,0,10,0"
                     IsCancel="True" />
 
                 <Button
                     x:Name="ConfirmButton"
+                    Style="{StaticResource NexusPrimaryButton}"
                     Content="Usar atalho"
                     MinWidth="120"
                     IsEnabled="False"

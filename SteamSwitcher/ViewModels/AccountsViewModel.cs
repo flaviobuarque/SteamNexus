@@ -28,6 +28,7 @@ public partial class AccountsViewModel(
     MainViewModel mainViewModel) : ObservableObject
 {
     private readonly RangeObservableCollection<AccountCardViewModel> _accounts = [];
+    public IReadOnlyList<AccountCardViewModel> QuickSearchAccounts => _accounts.ToArray();
     private ICollectionView? _accountsView;
 
     [ObservableProperty] private bool _isLoading;

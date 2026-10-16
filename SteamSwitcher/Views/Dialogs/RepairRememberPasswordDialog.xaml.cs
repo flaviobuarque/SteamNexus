@@ -16,6 +16,7 @@ public partial class RepairRememberPasswordDialog : Window
 
     private readonly ISteamDiagnosticsService _service;
     private readonly string _installationId;
+    private readonly string _installationName;
     private readonly AccountSelection[] _accounts;
     private bool _busy;
     private CancellationTokenSource? _countdown;
@@ -26,6 +27,7 @@ public partial class RepairRememberPasswordDialog : Window
         InitializeComponent();
         _service = service;
         _installationId = report.InstallationId;
+        _installationName = report.InstallationName;
         _accounts = report.AccountsWithoutRememberPassword.Select(account => new AccountSelection(account)).ToArray();
         foreach (var account in _accounts) account.PropertyChanged += (_, _) => UpdateSelection();
         AccountList.ItemsSource = _accounts;
@@ -83,6 +85,8 @@ public partial class RepairRememberPasswordDialog : Window
             Feedback.SetResourceReference(TextBlock.ForegroundProperty, "AppTextSecondaryBrush");
             RepairProgress.IsIndeterminate = true;
             RepairedCount = await _service.RepairRememberPasswordAsync(_installationId, ids);
+            ActivityJournal.Shared.Record(ActivityKind.PreferenceRepaired, operation: $"Lembrar senha (RememberPassword) — {RepairedCount} conta(s) atualizada(s)",
+                installation: _installationName, accounts: _accounts.Where(a => ids.Contains(a.Account.SteamId64)).Select(a => $"{a.Account.DisplayName} (@{a.Account.AccountName})").ToArray());
             _busy = false;
             DialogResult = true;
         }
@@ -90,6 +94,8 @@ public partial class RepairRememberPasswordDialog : Window
         catch (Exception ex)
         {
             Feedback.Text = ex.Message;
+            ActivityJournal.Shared.Record(ActivityKind.RepairFailed, operation: "Lembrar senha (RememberPassword)",
+                installation: _installationName, accounts: _accounts.Where(a => ids.Contains(a.Account.SteamId64)).Select(a => $"{a.Account.DisplayName} (@{a.Account.AccountName})").ToArray());
             Feedback.SetResourceReference(TextBlock.ForegroundProperty, "AppDangerBrush");
         }
         finally

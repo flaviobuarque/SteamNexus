@@ -1,12 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 using SteamSwitcher.Core.Models;
 using System.Text.Json;
+using SteamSwitcher.Core.Helpers;
 
 namespace SteamSwitcher.Core.Services;
 
-public class AppSettingsService(ILogger<AppSettingsService> logger) : IAppSettingsService
+public class AppSettingsService(ILogger<AppSettingsService> logger, string? settingsPath = null) : IAppSettingsService
 {
-    private static readonly string _settingsPath = Path.Combine(
+    private readonly string _settingsPath = settingsPath ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SteamSwitcher", "settings.json");
 
@@ -20,16 +21,13 @@ public class AppSettingsService(ILogger<AppSettingsService> logger) : IAppSettin
 
     public async Task LoadAsync()
     {
-        if (!File.Exists(_settingsPath))
-        {
-            Current = new AppSettings();
-            return;
-        }
-
         try
         {
-            var json = await File.ReadAllTextAsync(_settingsPath);
-            Current = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions) ?? new();
+            Current = await RecoverableJsonFile.ReadAsync<AppSettings>(_settingsPath, _jsonOptions, () =>
+            {
+                logger.LogWarning("Settings recovered from the last valid backup");
+                ActivityJournal.Shared.Record(ActivityKind.SettingsRecovered);
+            }) ?? new();
             Current.KnownSteamInstallPaths ??= [];
             Current.SteamInstallationNames ??= new(StringComparer.OrdinalIgnoreCase);
             Current.ThemeLibrary ??= [];
@@ -51,9 +49,7 @@ public class AppSettingsService(ILogger<AppSettingsService> logger) : IAppSettin
 
     public async Task SaveAsync(AppSettings settings)
     {
+        await RecoverableJsonFile.WriteAsync(_settingsPath, settings, _jsonOptions);
         Current = settings;
-        Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
-        var json = JsonSerializer.Serialize(settings, _jsonOptions);
-        await File.WriteAllTextAsync(_settingsPath, json);
     }
 }

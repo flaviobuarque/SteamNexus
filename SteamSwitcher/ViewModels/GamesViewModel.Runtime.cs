@@ -31,12 +31,19 @@ public partial class GamesViewModel
 
     private async Task MonitorGamesAsync(CancellationToken ct)
     {
+        var idleCycles = 0;
         while (!ct.IsCancellationRequested)
         {
             try
             {
                 await RefreshRuntimeAsync();
-                await Task.Delay(2000, ct);
+                var running = _runtimeSnapshots.Values.Any(state => state.IsRunning || state.IsUncertain);
+                var pending = IsGameLaunchInProgress || HasPendingUninstall || mainViewModel.IsSwitchingAccount;
+                idleCycles = running || pending ? 0 : Math.Min(idleCycles + 1, 3);
+                var delay = Core.Helpers.RuntimePollingPolicy.DelayMilliseconds(
+                    mainViewModel.IsWindowVisible, running, pending, idleCycles);
+                Core.Helpers.RuntimeMonitorMetrics.Shared.SetDelay(delay);
+                await Task.Delay(delay, ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { break; }
             catch (Exception ex)
@@ -51,6 +58,8 @@ public partial class GamesViewModel
     private async Task RefreshRuntimeAsync()
     {
         await _runtimeRefreshGate.WaitAsync(_runtimeCancellation.Token);
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var succeeded = false;
         try
         {
             var snapshots = await runtimeService.InspectAsync(_allGames.Select(card => card.Game).ToArray(), _runtimeCancellation.Token);
@@ -137,8 +146,13 @@ public partial class GamesViewModel
                 }
             }
             OnPropertyChanged(nameof(HasPendingUninstall));
+            succeeded = true;
         }
-        finally { _runtimeRefreshGate.Release(); }
+        finally
+        {
+            Core.Helpers.RuntimeMonitorMetrics.Shared.Record(stopwatch.Elapsed.TotalMilliseconds, succeeded);
+            _runtimeRefreshGate.Release();
+        }
     }
 
     private bool ConfirmGameAction(string title, string message, string action)

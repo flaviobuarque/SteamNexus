@@ -10,6 +10,14 @@ public partial class GamesPage : Page,
     Wpf.Ui.Abstractions.Controls.INavigableView<GamesViewModel>
 {
     public GamesViewModel ViewModel { get; }
+    private readonly Helpers.PageScrollMemory _scrollMemory = new();
+    private bool _navigationCaptured;
+    public void ResetNavigationPosition() => _scrollMemory.Reset(this);
+    public void CaptureNavigationState()
+    {
+        _scrollMemory.Capture(this);
+        _navigationCaptured = true;
+    }
 
     public GamesPage(GamesViewModel viewModel)
     {
@@ -22,6 +30,7 @@ public partial class GamesPage : Page,
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
+        _navigationCaptured = false;
         WeakReferenceMessenger.Default.Unregister<GameGridDensityChanged>(this);
         WeakReferenceMessenger.Default.Register<GameGridDensityChanged>(
             this,
@@ -30,10 +39,14 @@ public partial class GamesPage : Page,
         await ViewModel.InitializeAsync();
 
         ViewModel.RefreshStatusBar();
+        await _scrollMemory.RestoreAsync(this);
     }
 
     private void Page_Unloaded(object sender, RoutedEventArgs e)
-        => WeakReferenceMessenger.Default.Unregister<GameGridDensityChanged>(this);
+    {
+        if (!_navigationCaptured) _scrollMemory.Capture(this);
+        WeakReferenceMessenger.Default.Unregister<GameGridDensityChanged>(this);
+    }
 
     private void GameSortButton_Click(object sender, RoutedEventArgs e)
     {

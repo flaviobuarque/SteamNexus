@@ -28,7 +28,7 @@ public partial class ConfirmDialog : Window
         {
             DialogIcon.Symbol = Symbol.Warning;
             DialogIcon.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "AppDangerBrush");
-            ConfirmButton.Style = (Style)FindResource("DangerButtonStyle"); // veja abaixo
+            ConfirmButton.Style = (Style)FindResource("NexusDangerButton");
         }
         else
         {
@@ -44,6 +44,8 @@ public partial class ConfirmDialog : Window
                 Height = Owner.ActualHeight;
                 Left = Owner.Left;
                 Top = Owner.Top;
+                DialogCard.MaxHeight = Math.Max(180, Owner.ActualHeight - 32);
+                DialogCard.Width = Math.Min(440, Math.Max(280, Owner.ActualWidth - 32));
             }
         };
     }

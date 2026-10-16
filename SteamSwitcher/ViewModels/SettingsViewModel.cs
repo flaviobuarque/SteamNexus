@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using SteamSwitcher.Core;
@@ -524,6 +524,26 @@ public partial class SettingsViewModel(
                 : ControlAppearance.Danger,
             null,
             TimeSpan.FromSeconds(4));
+    }
+
+    [RelayCommand]
+    private void PreviewUpdateDialog()
+    {
+        var sampleNotes = "### Novidades\n"
+            + "- **Histórico Seguro:** Seus horários de login não são mais perdidos se a Steam fechar ou deslogar.\n"
+            + "- **Sessões do App:** Identificação visual de contas alternadas diretamente pelo SteamNexus.\n\n"
+            + "### Melhorias\n"
+            + "- **Desempenho:** Menor consumo de memória nativa ao carregar e comprimir capas de jogos.\n"
+            + "- **Filtros Ágeis:** Busca de contas mais rápida em bibliotecas extensas.\n\n"
+            + "### Correções\n"
+            + "- **Estabilidade:** Eliminadas falhas de concorrência ao alternar entre perfis rapidamente.\n"
+            + "- **Verificação de Bans:** Corrigida exibição de status quando não há conexão com a internet.";
+
+        var dialog = new Views.Dialogs.UpdatePromptDialog("1.0.28", "1.0.29", sampleNotes, isReady: false)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        dialog.ShowDialog();
     }
 
     [RelayCommand]

@@ -72,6 +72,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         ApplyFeatureVisibility();
 
         Loaded += OnLoaded;
+        PreviewKeyDown += QuickSearchKeyDown;
         Closing += OnClosing;
 
         IsVisibleChanged += (_, e) =>
@@ -169,14 +170,18 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         }
     }
 
-    private void NavigateTo(Type pageType, string activeKey)
+    private bool NavigateTo(Type pageType, string activeKey)
     {
-        if (!CanNavigateAway()) return;
+        if (!CanNavigateAway()) return false;
         var page = _pageProvider.GetPage(pageType);
-        if (page is null) return;
-        MainFrame.Navigate(page);
+        if (page is null) return false;
+        // Capture before Frame detaches the visual tree and resets viewport layout.
+        if (MainFrame.Content is AccountsPage accounts) accounts.CaptureNavigationState();
+        if (MainFrame.Content is GamesPage games) games.CaptureNavigationState();
+        if (!MainFrame.Navigate(page)) return false;
         _viewModel.ActivePage = activeKey;
         RefreshPageStatus(page, activeKey);
+        return true;
     }
 
     private void RefreshPageStatus(object page, string activeKey)
@@ -200,6 +205,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
                 break;
             case AboutPage:
                 _viewModel.UpdateStatusBar("Sobre o SteamNexus", "Projeto independente");
+                break;
+            case ActivityPage:
+                _viewModel.UpdateStatusBar("Atividade recente", "Últimas 200 operações · Histórico local");
                 break;
             default:
                 _viewModel.UpdateStatusBar(string.Empty);

@@ -56,6 +56,7 @@ public partial class DiagnosticsViewModel(
         }
         catch (Exception ex)
         {
+            ActivityJournal.Shared.Record(ActivityKind.RepairFailed, targetAccount: item.Report.ActiveAccountName, operation: "Preparar correção de lembrar senha", installation: item.Report.InstallationName);
             snackbarService.Show("Não foi possível corrigir", ex.Message,
                 ControlAppearance.Danger, null, TimeSpan.FromSeconds(5));
         }
@@ -98,12 +99,14 @@ public partial class DiagnosticsViewModel(
         try
         {
             await diagnosticsService.DisableAccountChooserAsync(item.Report.InstallationId);
+            ActivityJournal.Shared.Record(ActivityKind.PreferenceRepaired, targetAccount: "Configuração da instalação (todas as contas)", operation: "Desativar seletor obrigatório de contas", installation: item.Report.InstallationName);
             snackbarService.Show("Seletor corrigido", $"Corrigido em {item.Report.InstallationName}.",
                 ControlAppearance.Success, null, TimeSpan.FromSeconds(4));
             await RefreshAsync();
         }
         catch (Exception ex)
         {
+            ActivityJournal.Shared.Record(ActivityKind.RepairFailed, targetAccount: "Configuração da instalação (todas as contas)", operation: "Desativar seletor obrigatório de contas", installation: item.Report.InstallationName);
             snackbarService.Show("Não foi possível corrigir", ex.Message,
                 ControlAppearance.Danger, null, TimeSpan.FromSeconds(5));
         }
@@ -137,12 +140,14 @@ public partial class DiagnosticsViewModel(
         try
         {
             await diagnosticsService.RepairRegistryAsync(item.Report.InstallationId);
+            ActivityJournal.Shared.Record(ActivityKind.PreferenceRepaired, targetAccount: item.Report.ActiveAccountName, operation: "Corrigir autologin no registro", installation: item.Report.InstallationName);
             snackbarService.Show("Registro corrigido", "O autologin corresponde à conta ativa.",
                 ControlAppearance.Success, null, TimeSpan.FromSeconds(4));
             await RefreshAsync();
         }
         catch (Exception ex)
         {
+            ActivityJournal.Shared.Record(ActivityKind.RepairFailed, targetAccount: item.Report.ActiveAccountName, operation: "Corrigir autologin no registro", installation: item.Report.InstallationName);
             snackbarService.Show("Não foi possível corrigir", ex.Message,
                 ControlAppearance.Danger, null, TimeSpan.FromSeconds(5));
         }

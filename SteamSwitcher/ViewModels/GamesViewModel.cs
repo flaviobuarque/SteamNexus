@@ -26,6 +26,7 @@ public partial class GamesViewModel(
     IAccountOverrideService accountOverrideService) : ObservableObject, IDisposable
 {
     private IReadOnlyList<GameCardViewModel> _allGames = [];
+    public IReadOnlyList<GameCardViewModel> QuickSearchGames => _allGames;
     private IReadOnlyList<GameCardViewModel> _filteredGames = [];
     private const int GamesPerPage = 60;
     private IReadOnlyList<SteamAccount> _allAccounts = [];
@@ -1332,6 +1333,8 @@ public partial class GamesViewModel(
                 } while (DateTime.UtcNow < deadline);
                 if (!cardVm.IsRunning || cardVm.RuntimeUncertain)
                     throw new InvalidOperationException("A abertura foi solicitada, mas a execução não foi confirmada. Verifique a Steam: pode haver atualização, Steam Guard ou um launcher aguardando sua ação.");
+                ActivityJournal.Shared.Record(ActivityKind.GameStarted,
+                    targetAccount: $"{account.DisplayName} (@{account.AccountName})", subject: cardVm.Game.Name);
                 GameOperationMessage = string.Empty;
                 return true;
             }
@@ -1354,6 +1357,7 @@ public partial class GamesViewModel(
         catch (Exception ex)
         {
             GameOperationMessage = ex.Message;
+            ActivityJournal.Shared.Record(ActivityKind.GameLaunchFailed);
             snackbarService.Show(
                 "Erro",
                 ex.Message,

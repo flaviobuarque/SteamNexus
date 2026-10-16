@@ -4,6 +4,26 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.29] - 2026-10-16
+
+### Novidades
+
+- **Janela de Atualização:** Novo layout com destaques estruturados por categorias, leitura limpa e ícones dedicados para cada tipo de mudança.
+- **Pré-visualização de Atualizações:** Opção nas configurações e via linha de comando para pré-visualizar a janela de atualização antes da instalação.
+- **Histórico e Atividades:** Painel de atividades da sessão com registro ordenado de trocas de conta, inicialização de jogos e reparos.
+- **Busca Rápida:** Atalho de busca (Ctrl+K) na janela principal para localizar rapidamente contas e jogos instalados.
+
+### Melhorias
+
+- **Navegação Contínua:** Reutilização de páginas durante a alternância, preservando filtros e posições de rolagem.
+- **Persistência Confiável:** Gravação atômica das configurações com suporte a recuperação automática por cópia de segurança.
+- **Monitoramento Otimizado:** Ciclo de monitoramento adaptativo de processos em segundo plano para menor consumo de recursos.
+
+### Correções
+
+- **Contraste de Temas:** Ajustado o cálculo dinâmico de contraste de texto e ícones em botões de destaque, garantindo legibilidade perfeita nos temas escuros e no tema Roxo Neon.
+- **Diálogos de Confirmação:** Estilização unificada e correção no foco de janelas modais e captura de atalhos.
+
 ## [1.0.28] - 2026-09-07
 
 ### Correções

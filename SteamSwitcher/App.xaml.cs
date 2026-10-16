@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SteamSwitcher.Core;
@@ -42,6 +42,7 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        SteamSwitcher.Core.Services.ActivityJournal.InitializePersistent();
         SteamSwitcher.Helpers.ScrollViewerAssist.Register();
         SteamSwitcher.Helpers.ClickableCursorAssist.Register();
         SteamSwitcher.Helpers.WindowIconAssist.Register();
@@ -102,6 +103,24 @@ public partial class App : Application
             settingsService.Current.ActiveThemePresetName = null;
             await settingsService.SaveAsync(settingsService.Current);
             ApplyTheme(settingsService.Current.Theme);
+        }
+
+        if (e.Args.Contains("--preview-update"))
+        {
+            var sampleNotes = "### Novidades\n"
+                + "- **Histórico Seguro:** Seus horários de login não são mais perdidos se a Steam fechar ou deslogar.\n"
+                + "- **Sessões do App:** Identificação visual de contas alternadas diretamente pelo SteamNexus.\n\n"
+                + "### Melhorias\n"
+                + "- **Desempenho:** Menor consumo de memória nativa ao carregar e comprimir capas de jogos.\n"
+                + "- **Filtros Ágeis:** Busca de contas mais rápida em bibliotecas extensas.\n\n"
+                + "### Correções\n"
+                + "- **Estabilidade:** Eliminadas falhas de concorrência ao alternar entre perfis rapidamente.\n"
+                + "- **Verificação de Bans:** Corrigida exibição de status quando não há conexão com a internet.";
+
+            var testDialog = new Views.Dialogs.UpdatePromptDialog("1.0.28", "1.0.29", sampleNotes, isReady: false);
+            testDialog.ShowDialog();
+            Shutdown();
+            return;
         }
 
         // Gate all entry paths (including minimized/CLI startup) before showing the main window.
@@ -325,8 +344,9 @@ public partial class App : Application
         // Windows e Pages
         services.AddSingleton<MainWindow>();
         services.AddSingleton<OnboardingWindow>();
-        services.AddTransient<AccountsPage>();
-        services.AddTransient<GamesPage>();
+        services.AddSingleton<AccountsPage>();
+        services.AddSingleton<GamesPage>();
+        services.AddSingleton<ActivityPage>();
         services.AddTransient<SettingsPage>();
         services.AddTransient<DiagnosticsPage>();
         services.AddTransient<AboutPage>();

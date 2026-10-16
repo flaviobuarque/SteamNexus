@@ -54,6 +54,7 @@
                         VerticalScrollBarVisibility="Auto" Foreground="{DynamicResource AppTextPrimaryBrush}">
                         <FlowDocument PagePadding="0" FontFamily="Segoe UI" FontSize="13"
                                       TextAlignment="Left" LineHeight="20"
+                                      ColumnWidth="999999"
                                       Foreground="{DynamicResource AppTextPrimaryBrush}" />
                     </FlowDocumentScrollViewer>
                 </Border>
@@ -71,8 +72,8 @@
                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                Padding="16,10" Click="InstallButton_Click">
                         <StackPanel Orientation="Horizontal">
-                            <ic:SymbolIcon Symbol="ArrowSync" FontSize="16" Margin="0,0,8,0" />
-                            <TextBlock x:Name="InstallButtonText" Text="Baixar e instalar agora" />
+                            <ic:SymbolIcon Symbol="ArrowSync" FontSize="16" Margin="0,0,8,0" Foreground="{DynamicResource AppOnAccentTextBrush}" />
+                            <TextBlock x:Name="InstallButtonText" Text="Baixar e instalar agora" Foreground="{DynamicResource AppOnAccentTextBrush}" />
                         </StackPanel>
                     </ui:Button>
 

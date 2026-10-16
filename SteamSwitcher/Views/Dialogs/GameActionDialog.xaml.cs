@@ -95,7 +95,11 @@ public partial class GameActionDialog : Window
         ContinueButton.Visibility = CancelButton.Visibility = Visibility.Collapsed;
         ProgressRing.Visibility = Visibility.Visible;
         try { Completed = await _operation(); }
-        catch (Exception ex) { _viewModel.GameOperationMessage = ex.Message; }
+        catch (Exception ex)
+        {
+            _viewModel.GameOperationMessage = ex.Message;
+            Core.Services.ActivityJournal.Shared.Record(Core.Services.ActivityKind.GameLaunchFailed);
+        }
         finally
         {
             _busy = false;

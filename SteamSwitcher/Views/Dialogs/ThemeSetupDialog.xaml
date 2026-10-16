@@ -17,7 +17,7 @@
    <TextBlock x:Name="Hint" Text="Uma nova cópia será criada. O tema original será preservado." TextWrapping="Wrap" Margin="0,12,0,16" Foreground="{DynamicResource AppTextMutedBrush}" />
    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
     <ui:Button Content="Cancelar" IsCancel="True" Click="Cancel_Click" Margin="0,0,8,0"/>
-    <ui:Button x:Name="ContinueButton" Content="Personalizar" Appearance="Primary" Click="Continue_Click" />
+    <ui:Button x:Name="ContinueButton" Content="Personalizar" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}" Click="Continue_Click" />
    </StackPanel>
   </StackPanel>
  </Border>

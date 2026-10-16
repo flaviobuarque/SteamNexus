@@ -34,9 +34,7 @@ public static class CustomThemeManager
         ApplyAccent(theme);
 
         var resources = new ResourceDictionary();
-        var onAccent = ContrastRatio("#FFFFFF", theme.Accent) >= ContrastRatio("#0B1220", theme.Accent)
-            ? Colors.White
-            : ParseColor("#0B1220");
+        var onAccent = GetOnAccentColor(theme.Accent);
         AddBrush(resources, "AppBackgroundBrush", theme.Background);
         AddBrush(resources, "AppChromeBrush", theme.Chrome);
         AddBrush(resources, "AppSurfaceBrush", theme.Surface);
@@ -202,6 +200,20 @@ public static class CustomThemeManager
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SteamSwitcher", "Themes", "Assets");
 
+    public static Color GetOnAccentColor(string accentHex)
+    {
+        var accent = ParseColor(accentHex);
+        return GetOnAccentColor(accent);
+    }
+
+    public static Color GetOnAccentColor(Color accent)
+    {
+        // Standard perceived brightness formula (W3C / YIQ)
+        // Values < 150 require bright/white text, >= 150 require dark text.
+        var brightness = ((accent.R * 299) + (accent.G * 587) + (accent.B * 114)) / 1000.0;
+        return brightness >= 150 ? ParseColor("#0B1220") : Colors.White;
+    }
+
     public static double ContrastRatio(string foreground, string background)
     {
         var light = RelativeLuminance(ParseColor(foreground));
@@ -236,9 +248,7 @@ public static class CustomThemeManager
         var accent = ParseColor(theme.Accent);
         var accentAlt = ParseColor(theme.AccentAlt);
         var accentSurface = ParseColor(theme.AccentSurface);
-        var onAccent = ContrastRatio("#FFFFFF", theme.Accent) >= ContrastRatio("#0B1220", theme.Accent)
-            ? Colors.White
-            : ParseColor("#0B1220");
+        var onAccent = GetOnAccentColor(theme.Accent);
 
         resources["SystemAccentColor"] = accent;
         resources["ApplicationAccentColor"] = accent;

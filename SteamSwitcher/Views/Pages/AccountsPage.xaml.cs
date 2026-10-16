@@ -10,8 +10,15 @@ public partial class AccountsPage : Page,
     Wpf.Ui.Abstractions.Controls.INavigableView<AccountsViewModel>
 {
     public AccountsViewModel ViewModel { get; }
+    private readonly Helpers.PageScrollMemory _scrollMemory = new();
+    private bool _navigationCaptured;
+    public void ResetNavigationPosition() => _scrollMemory.Reset(this);
+    public void CaptureNavigationState()
+    {
+        _scrollMemory.Capture(this);
+        _navigationCaptured = true;
+    }
 
-    private bool _initialized;
     private bool _messengerRegistered;
 
     public AccountsPage(AccountsViewModel viewModel)
@@ -26,6 +33,7 @@ public partial class AccountsPage : Page,
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
+        _navigationCaptured = false;
         if (!_messengerRegistered)
         {
             WeakReferenceMessenger.Default.Register<CacheCleared>(
@@ -55,17 +63,17 @@ public partial class AccountsPage : Page,
             _messengerRegistered = true;
         }
 
-        if (!_initialized)
-        {
-            await ViewModel.InitializeAsync();
-            _initialized = true;
-        }
+        // Refresh external Steam changes made while this cached page was hidden.
+        // The view model updates cards incrementally and retains its filter state.
+        await ViewModel.InitializeAsync();
 
         ViewModel.RefreshStatusBar();
+        await _scrollMemory.RestoreAsync(this);
     }
 
     private void Page_Unloaded(object sender, RoutedEventArgs e)
     {
+        if (!_navigationCaptured) _scrollMemory.Capture(this);
         WeakReferenceMessenger.Default.Unregister<CacheCleared>(this);
         WeakReferenceMessenger.Default.Unregister<SteamInstallationChanged>(this);
         WeakReferenceMessenger.Default.Unregister<AccountGridDensityChanged>(this);

@@ -29,6 +29,20 @@ public sealed class CustomThemeManagerTests
         CustomThemeManager.ContrastRatio("#FFFFFF", "#000000").Should().BeApproximately(21, 0.01);
     }
 
+    [Theory]
+    [InlineData("#A855F7", 255, 255, 255)] // Purple (Roxo neon) -> White
+    [InlineData("#408EE3", 255, 255, 255)] // Blue (Dark default) -> White
+    [InlineData("#2563EB", 255, 255, 255)] // Blue (Light default) -> White
+    [InlineData("#FFFF00", 11, 18, 32)]    // Yellow -> Dark #0B1220
+    [InlineData("#FFFFFF", 11, 18, 32)]    // White -> Dark #0B1220
+    public void GetOnAccentColor_ReturnsExpectedContrastColor(string accentHex, byte expectedR, byte expectedG, byte expectedB)
+    {
+        var color = CustomThemeManager.GetOnAccentColor(accentHex);
+        color.R.Should().Be(expectedR);
+        color.G.Should().Be(expectedG);
+        color.B.Should().Be(expectedB);
+    }
+
     [Fact]
     public async Task ThemePackage_RoundTripsManifestAndBackground()
     {

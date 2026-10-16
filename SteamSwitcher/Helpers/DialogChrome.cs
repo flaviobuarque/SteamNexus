@@ -2,6 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shell;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace SteamSwitcher.Helpers;
 
@@ -27,8 +30,9 @@ internal static class DialogChrome
             VerticalAlignment = VerticalAlignment.Center, FontSize = 12 };
         title.SetResourceReference(TextBlock.ForegroundProperty, "AppTextSecondaryBrush");
         header.Children.Add(title);
-        var close = new Wpf.Ui.Controls.Button { Content = "×", Width = 36, Height = 28,
+        var close = new Button { Content = "×", Width = 36, Height = 28, MinHeight = 28,
             Padding = new Thickness(0), ToolTip = "Fechar", Cursor = Cursors.Hand };
+        close.SetResourceReference(FrameworkElement.StyleProperty, "NexusActionButton");
         close.SetResourceReference(Control.BackgroundProperty, "AppChromeBrush");
         close.SetResourceReference(Control.ForegroundProperty, "AppTextPrimaryBrush");
         System.Windows.Automation.AutomationProperties.SetName(close, "Fechar");
@@ -49,5 +53,35 @@ internal static class DialogChrome
         frame.SetResourceReference(Border.BorderBrushProperty, "AppBorderBrush");
         frame.SetResourceReference(Border.BackgroundProperty, "AppBackgroundBrush");
         window.Content = frame;
+        // Constrain to the current monitor's work area; keep the existing resize policy.
+        window.SourceInitialized += (_, _) =>
+        {
+            var work = GetWorkArea(window);
+            window.MaxWidth = Math.Max(320, work.Width);
+            window.MaxHeight = Math.Max(240, work.Height);
+            window.MinWidth = Math.Min(window.MinWidth, window.MaxWidth);
+            window.MinHeight = Math.Min(window.MinHeight, window.MaxHeight);
+            if (!double.IsNaN(window.Width)) window.Width = Math.Min(window.Width, window.MaxWidth);
+            if (!double.IsNaN(window.Height)) window.Height = Math.Min(window.Height, window.MaxHeight);
+        };
     }
+
+    private static Rect GetWorkArea(Window window)
+    {
+        var monitor = MonitorFromWindow(new WindowInteropHelper(window.Owner ?? window).Handle, 2);
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (!GetMonitorInfo(monitor, ref info)) return SystemParameters.WorkArea;
+        var dpi = VisualTreeHelper.GetDpi(window);
+        return new Rect(0, 0, (info.Work.Right - info.Work.Left) / dpi.DpiScaleX,
+            (info.Work.Bottom - info.Work.Top) / dpi.DpiScaleY);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect { public int Left, Top, Right, Bottom; }
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo { public int Size; public NativeRect Monitor, Work; public int Flags; }
+    [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr window, uint flags);
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
 }
