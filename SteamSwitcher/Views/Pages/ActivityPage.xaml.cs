@@ -1,9 +1,10 @@
 using SteamSwitcher.Core.Helpers;
 using SteamSwitcher.Core.Services;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Threading;
-using System.Collections.ObjectModel;
 
 namespace SteamSwitcher.Views.Pages;
 
@@ -35,13 +36,13 @@ public partial class ActivityPage : Page
             i % 2 == 0 ? "C: · Principal" : "D: · Secundária"))
             .ToArray();
     }
+
     public ActivityPage()
     {
         InitializeComponent();
         Entries.ItemsSource = _visible;
         _ready = true;
         PeriodPicker.SetBounds(null);
-        ApplyFilters();
         PeriodPicker.PeriodChanged += (_, _) => ApplyFilters();
 #if DEBUG
         PreviewToggle.Visibility = Visibility.Visible;
@@ -55,6 +56,7 @@ public partial class ActivityPage : Page
         };
         Unloaded += (_, _) => { _refreshTimer.Stop(); _scrollMemory.Capture(this); };
     }
+
     private void Refresh(bool accept = false)
     {
         var entries = _previewEnabled ? _previewEntries : ActivityJournal.Shared.Snapshot();
@@ -64,11 +66,20 @@ public partial class ActivityPage : Page
             {
                 _displayedEntries = entries;
                 PeriodPicker.SetBounds(entries.Count == 0 ? null : entries.Min(entry => entry.Timestamp.LocalDateTime));
+                UpdateKpis();
                 ApplyFilters();
                 NewActivity.Visibility = Visibility.Collapsed;
             }
-            else NewActivity.Visibility = Visibility.Visible;
+            else
+            {
+                NewActivity.Visibility = Visibility.Visible;
+            }
         }
+        else
+        {
+            UpdateKpis();
+        }
+
         StorageNotice.Text = _previewEnabled
             ? "DEMONSTRAÇÃO · 200 registros fictícios. Seu histórico real está preservado."
             : ActivityJournal.Shared.StorageError
@@ -76,21 +87,72 @@ public partial class ActivityPage : Page
         ClearButton.IsEnabled = !_previewEnabled && entries.Count > 0;
         PreviewToggle.Content = _previewEnabled ? "Sair da prévia" : "Prévia com 200 registros";
     }
+
+    private void UpdateKpis()
+    {
+        var total = _displayedEntries.Count;
+        var switches = _displayedEntries.Count(e => e.Kind is ActivityKind.AccountSwitched or ActivityKind.AccountSwitchFailed);
+        var games = _displayedEntries.Count(e => e.Kind is ActivityKind.GameStarted or ActivityKind.GameLaunchFailed);
+        var attention = _displayedEntries.Count(e => e.NeedsAttention);
+
+        KpiTotalText.Text = total.ToString();
+        KpiSwitchesText.Text = switches.ToString();
+        KpiGamesText.Text = games.ToString();
+        KpiAttentionText.Text = attention.ToString();
+
+        if (attention > 0)
+        {
+            KpiAttentionText.Foreground = (Brush)FindResource("AppDangerBrush");
+            KpiAttentionIcon.Foreground = (Brush)FindResource("AppDangerBrush");
+            KpiAttentionIconBorder.Background = (Brush)FindResource("AppDangerSurfaceBrush");
+            KpiAttentionCard.BorderBrush = (Brush)FindResource("AppDangerBrush");
+        }
+        else
+        {
+            KpiAttentionText.Foreground = (Brush)FindResource("AppTextPrimaryBrush");
+            KpiAttentionIcon.Foreground = (Brush)FindResource("AppTextMutedBrush");
+            KpiAttentionIconBorder.Background = (Brush)FindResource("AppSurfaceAltBrush");
+            KpiAttentionCard.BorderBrush = (Brush)FindResource("AppBorderBrush");
+        }
+    }
+
     private void Refresh_Click(object sender, RoutedEventArgs e) { Refresh(true); ApplyFilters(); }
+
     private void FilterChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (_ready && !_resetting) ApplyFilters();
     }
+
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_ready && !_resetting) ApplyFilters();
+    }
+
     private void ApplyFilters()
     {
-        ClearFiltersButton.Visibility = PeriodPicker.Start.HasValue || TypeFilter.SelectedIndex > 0 ? Visibility.Visible : Visibility.Collapsed;
-        _filtered = ActivityFilter.Apply(_displayedEntries, PeriodPicker.Start, PeriodPicker.End, TypeFilter.SelectedIndex);
+        var hasSearch = !string.IsNullOrWhiteSpace(SearchBox.Text);
+        var hasPeriod = PeriodPicker.Start.HasValue;
+        var hasType = TypeFilter.SelectedIndex > 0;
+        ClearFiltersButton.Visibility = (hasPeriod || hasType || hasSearch) ? Visibility.Visible : Visibility.Collapsed;
+
+        _filtered = ActivityFilter.Apply(_displayedEntries, PeriodPicker.Start, PeriodPicker.End, TypeFilter.SelectedIndex, SearchBox.Text);
         _visible.Clear();
         AddBatch();
         ListScroll?.ScrollToTop();
-        Empty.Text = _filtered.Length == 0 ? "Nenhum registro encontrado. Ajuste as datas ou limpe os filtros." : "";
-        Empty.Visibility = _filtered.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        var isEmpty = _filtered.Length == 0;
+        EmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
+        Entries.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
+        if (isEmpty)
+        {
+            Empty.Text = _displayedEntries.Count == 0
+                ? "Nenhuma operação registrada ainda."
+                : "Nenhum registro encontrado.";
+        }
+
+        ExportButton.IsEnabled = _filtered.Length > 0;
     }
+
     private void AddBatch()
     {
         if (_loading) return;
@@ -104,23 +166,98 @@ public partial class ActivityPage : Page
         }
         finally { _loading = false; }
     }
+
     private void LoadMore_Click(object sender, RoutedEventArgs e) => AddBatch();
     private void Top_Click(object sender, RoutedEventArgs e) => ListScroll?.ScrollToTop();
+
     private void Entries_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
         if (!_ready || e.OriginalSource is not ScrollViewer scroll) return;
         TopButton.Visibility = scroll.VerticalOffset > 200 ? Visibility.Visible : Visibility.Collapsed;
-        // Only user movement, never extent changes caused by appending a batch.
         if (e.VerticalChange > 0 && e.ExtentHeightChange == 0 && scroll.ScrollableHeight - scroll.VerticalOffset < 120) AddBatch();
     }
+
     private void ClearFilters_Click(object sender, RoutedEventArgs e)
     {
         _resetting = true;
         PeriodPicker.Clear();
         TypeFilter.SelectedIndex = 0;
+        SearchBox.Text = string.Empty;
         _resetting = false;
         ApplyFilters();
     }
+
+    private void KpiTotal_Click(object sender, RoutedEventArgs e)
+    {
+        _resetting = true;
+        PeriodPicker.Clear();
+        TypeFilter.SelectedIndex = 0;
+        SearchBox.Text = string.Empty;
+        _resetting = false;
+        ApplyFilters();
+    }
+
+    private void KpiSwitches_Click(object sender, RoutedEventArgs e)
+    {
+        TypeFilter.SelectedIndex = 1;
+    }
+
+    private void KpiGames_Click(object sender, RoutedEventArgs e)
+    {
+        TypeFilter.SelectedIndex = 2;
+    }
+
+    private void KpiAttention_Click(object sender, RoutedEventArgs e)
+    {
+        TypeFilter.SelectedIndex = 6;
+    }
+
+    private void Export_Click(object sender, RoutedEventArgs e)
+    {
+        if (_filtered.Length == 0) return;
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"# Histórico de Atividades - SteamSwitcher ({DateTime.Now:dd/MM/yyyy HH:mm:ss})");
+        sb.AppendLine($"# Total de registros: {_filtered.Length}");
+        sb.AppendLine(new string('-', 60));
+        foreach (var entry in _filtered)
+        {
+            sb.AppendLine($"[{entry.TimeText}] [{entry.CategoryName}] {entry.Title} ({(entry.NeedsAttention ? "FALHA" : "OK")})");
+            if (!string.IsNullOrWhiteSpace(entry.Detail))
+            {
+                sb.AppendLine($"  {entry.Detail.Replace("\n", "\n  ")}");
+            }
+            sb.AppendLine();
+        }
+        try
+        {
+            Clipboard.SetText(sb.ToString());
+            ExportStatusText.Text = "Copiado para a área de transferência!";
+            ExportStatusText.Visibility = Visibility.Visible;
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            timer.Tick += (_, _) => { ExportStatusText.Visibility = Visibility.Collapsed; timer.Stop(); };
+            timer.Start();
+        }
+        catch { }
+    }
+
+    private void CopyEntry_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: ActivityEntry entry })
+        {
+            try
+            {
+                var text = $"[{entry.TimeText}] [{entry.CategoryName}] {entry.Title}\n{entry.Detail}";
+                Clipboard.SetText(text);
+                ExportStatusText.Text = "Registro copiado!";
+                ExportStatusText.Visibility = Visibility.Visible;
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                timer.Tick += (_, _) => { ExportStatusText.Visibility = Visibility.Collapsed; timer.Stop(); };
+                timer.Start();
+            }
+            catch { }
+        }
+    }
+
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
         if (_previewEnabled) return;
@@ -131,8 +268,10 @@ public partial class ActivityPage : Page
         ActivityJournal.Shared.Clear();
         Refresh(true);
     }
+
     private void Monitoring_Click(object sender, RoutedEventArgs e)
         => new Dialogs.MonitoringDialog { Owner = Window.GetWindow(this) }.ShowDialog();
+
     private void Preview_Click(object sender, RoutedEventArgs e)
     {
 #if DEBUG

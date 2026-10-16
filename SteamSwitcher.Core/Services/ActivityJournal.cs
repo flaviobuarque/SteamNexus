@@ -15,6 +15,66 @@ public sealed record ActivityEntry(DateTimeOffset Timestamp, ActivityKind Kind,
     public bool NeedsAttention => Kind is ActivityKind.AccountSwitchFailed or ActivityKind.GameLaunchFailed
         or ActivityKind.RepairFailed or ActivityKind.UpdateFailed;
     public string TimeText => Timestamp.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss");
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string RelativeTime
+    {
+        get
+        {
+            var local = Timestamp.ToLocalTime();
+            var diff = DateTime.Now - local.DateTime;
+            if (diff.TotalSeconds < 60 && diff.TotalSeconds >= 0) return "Agora mesmo";
+            if (diff.TotalMinutes < 60 && diff.TotalMinutes >= 0)
+            {
+                var m = Math.Max(1, (int)diff.TotalMinutes);
+                return m == 1 ? "1 min atrás" : $"{m} min atrás";
+            }
+            if (local.Date == DateTime.Today) return $"Hoje às {local:HH:mm}";
+            if (local.Date == DateTime.Today.AddDays(-1)) return $"Ontem às {local:HH:mm}";
+            if (diff.TotalDays < 7 && diff.TotalDays >= 0)
+            {
+                var d = (int)diff.TotalDays;
+                return d == 1 ? "1 dia atrás" : $"{d} dias atrás";
+            }
+            return local.ToString("dd/MM/yyyy HH:mm");
+        }
+    }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string CategoryName => Kind switch
+    {
+        ActivityKind.AccountSwitched or ActivityKind.AccountSwitchFailed => "Troca de Conta",
+        ActivityKind.GameStarted or ActivityKind.GameLaunchFailed => "Jogo",
+        ActivityKind.PreferenceRepaired or ActivityKind.RepairFailed => "Correção",
+        ActivityKind.UpdateReady or ActivityKind.UpdateFailed => "Atualização",
+        ActivityKind.SettingsRecovered => "Configurações",
+        _ => "Geral"
+    };
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string StatusName => NeedsAttention ? "Falha" : "Sucesso";
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool HasTransition => Kind is ActivityKind.AccountSwitched or ActivityKind.AccountSwitchFailed
+        && (!string.IsNullOrWhiteSpace(SourceAccount) || !string.IsNullOrWhiteSpace(TargetAccount));
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string TransitionSummary => $"{SourceAccount ?? "Conta anterior"}  ➔  {TargetAccount ?? "Destino"}";
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool HasSubject => !string.IsNullOrWhiteSpace(Subject);
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? Subtitle => Kind switch
+    {
+        ActivityKind.AccountSwitched or ActivityKind.AccountSwitchFailed => HasTransition ? TransitionSummary : null,
+        ActivityKind.GameStarted or ActivityKind.GameLaunchFailed => !string.IsNullOrWhiteSpace(Subject) ? $"🎮 {Subject}" : null,
+        ActivityKind.PreferenceRepaired or ActivityKind.RepairFailed => Operation != null ? $"🔧 {Operation}" : null,
+        _ => null
+    };
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool HasSubtitle => !string.IsNullOrWhiteSpace(Subtitle);
     public string Title => Kind is ActivityKind.PreferenceRepaired or ActivityKind.RepairFailed && Operation is not null
         ? $"{Operation} · {(NeedsAttention ? "falha na correção" : "corrigido")}"
         : Kind switch
