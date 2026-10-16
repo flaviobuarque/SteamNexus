@@ -539,7 +539,7 @@ public partial class SettingsViewModel(
             + "- **Estabilidade:** Eliminadas falhas de concorrência ao alternar entre perfis rapidamente.\n"
             + "- **Verificação de Bans:** Corrigida exibição de status quando não há conexão com a internet.";
 
-        var dialog = new Views.Dialogs.UpdatePromptDialog("1.0.28", "1.0.29", sampleNotes, isReady: false)
+        var dialog = new Views.Dialogs.UpdatePromptDialog("1.0.29", "1.0.30", sampleNotes, isReady: false)
         {
             Owner = Application.Current.MainWindow
         };

@@ -4,6 +4,14 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.30] - 2026-10-16
+
+### Melhorias
+
+- **Interface da Busca Rápida:** Redesenho completo do diálogo de busca rápida com janela borderless nativa, bordas suavizadas em alta definição (anti-aliasing) e sombra projetada no tema escuro.
+- **Efeito de Desfoque em Segundo Plano:** Aplicação dinâmica de efeito blur sobre a aplicação principal ao acionar a busca rápida, destacando a paleta de comandos e melhorando o foco visual.
+- **Interação e Fechamento:** Suporte a fechamento ao clicar fora do diálogo (no backdrop desfocado), além do atalho Esc e botão dedicado.
+
 ## [1.0.29] - 2026-10-16
 
 ### Novidades
