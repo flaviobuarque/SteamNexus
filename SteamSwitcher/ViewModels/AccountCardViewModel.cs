@@ -29,6 +29,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     [ObservableProperty] private bool _isGameRunning;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(LastUsageText))]
+    [NotifyPropertyChangedFor(nameof(LastLoginExactTooltip))]
     private bool _isLastUsed;
     [ObservableProperty] private bool _isSwitching;
     [ObservableProperty] private bool _isPendingRemoval;
@@ -47,6 +48,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     public long Timestamp => Account.EffectiveTimestamp;
     public string LastLoginFormatted => FormatLastLogin(Account.EffectiveTimestamp);
     public string LastUsageText => IsLastUsed ? $"Última usada · {LastLoginFormatted}" : LastLoginFormatted;
+    public string LastLoginExactTooltip => FormatExactLogin(Account.EffectiveTimestamp);
     public bool HasAvatar => AvatarImage is not null || !string.IsNullOrEmpty(AvatarPath);
     public bool IsArchived => Account.IsArchived;
 
@@ -103,24 +105,42 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
         OnPropertyChanged(nameof(Timestamp));
         OnPropertyChanged(nameof(LastLoginFormatted));
         OnPropertyChanged(nameof(LastUsageText));
+        OnPropertyChanged(nameof(LastLoginExactTooltip));
         OnPropertyChanged(nameof(IsArchived));
         RefreshLoginPreference(_globalLoginPreference);
     }
 
-    private static string FormatLastLogin(long timestamp)
+    public static string FormatLastLogin(long timestamp)
     {
-        if (timestamp == 0) return "Nunca";
+        if (timestamp <= 0) return "Nunca";
         var dt = DateTimeOffset.FromUnixTimeSeconds(timestamp).LocalDateTime;
         var diff = DateTime.Now - dt;
-        return diff.TotalDays switch
+        if (diff.TotalDays < 1) return "Hoje";
+        if (diff.TotalDays < 2) return "Ontem";
+        if (diff.TotalDays < 7)
         {
-            < 1 => "Hoje",
-            < 2 => "Ontem",
-            < 7 => $"{(int)diff.TotalDays}d atrás",
-            < 30 => $"{(int)(diff.TotalDays / 7)}sem atrás",
-            < 365 => $"{(int)(diff.TotalDays / 30)}meses atrás",
-            _ => $"{(int)(diff.TotalDays / 365)}a atrás"
-        };
+            var days = (int)diff.TotalDays;
+            return days == 1 ? "1 dia atrás" : $"{days} dias atrás";
+        }
+        if (diff.TotalDays < 30)
+        {
+            var weeks = Math.Max(1, (int)(diff.TotalDays / 7));
+            return weeks == 1 ? "1 semana atrás" : $"{weeks} semanas atrás";
+        }
+        if (diff.TotalDays < 365)
+        {
+            var months = Math.Max(1, (int)(diff.TotalDays / 30));
+            return months == 1 ? "1 mês atrás" : $"{months} meses atrás";
+        }
+        var years = Math.Max(1, (int)(diff.TotalDays / 365));
+        return years == 1 ? "1 ano atrás" : $"{years} anos atrás";
+    }
+
+    public static string FormatExactLogin(long timestamp)
+    {
+        if (timestamp <= 0) return "Nenhum login registrado";
+        var dt = DateTimeOffset.FromUnixTimeSeconds(timestamp).LocalDateTime;
+        return $"Último login: {dt:dd/MM/yyyy 'às' HH:mm:ss}";
     }
 
     partial void OnAvatarPathChanged(string value) => OnPropertyChanged(nameof(HasAvatar));
