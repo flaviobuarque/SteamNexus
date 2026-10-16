@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using SteamSwitcher.Core.Helpers;
 using SteamSwitcher.Core.Models;
@@ -13,6 +14,17 @@ public class SteamGameService(
     ILogger<SteamGameService> logger) : ISteamGameService
 {
     private readonly SemaphoreSlim _launchGate = new(1, 1);
+    private readonly ConcurrentDictionary<string, CachedManifest> _manifestCache = new(StringComparer.OrdinalIgnoreCase);
+
+    private sealed record CachedManifest(
+        long FileLength,
+        long LastWriteTicks,
+        string AppId,
+        string Name,
+        string InstallDir,
+        string? LastOwner,
+        long SizeBytes,
+        bool IsSoftwareOrTool);
 
     private static readonly string _gameLoginStatesPath = System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -368,43 +380,79 @@ public class SteamGameService(
     {
         try
         {
+            var fileInfo = new FileInfo(manifestPath);
+            if (!fileInfo.Exists) return null;
+
+            var length = fileInfo.Length;
+            var writeTicks = fileInfo.LastWriteTimeUtc.Ticks;
+
+            if (_manifestCache.TryGetValue(manifestPath, out var cached)
+                && cached.FileLength == length
+                && cached.LastWriteTicks == writeTicks)
+            {
+                if (cached.IsSoftwareOrTool) return null;
+
+                var cachedOwner = accounts.FirstOrDefault(a => a.SteamId64 == cached.LastOwner);
+                return new SteamGame
+                {
+                    InstallationId = installation.Id,
+                    InstallationName = installation.DisplayName,
+                    InstallationRootPath = installation.RootPath,
+                    AppId = cached.AppId,
+                    Name = cached.Name,
+                    InstallDir = cached.InstallDir,
+                    LibraryPath = libraryPath,
+                    SizeOnDisk = cached.SizeBytes,
+                    OwnerSteamId64 = cached.LastOwner,
+                    OwnerAccount = cachedOwner,
+                };
+            }
+
             using var stream = File.OpenRead(manifestPath);
             var kv = KVSerializer.Create(KVSerializationFormat.KeyValues1Text);
             var data = kv.Deserialize(stream);
 
             var appId = data["appid"]?.ToString();
             var name = data["name"]?.ToString();
-            var installDir = data["installdir"]?.ToString();
+            var installDir = data["installdir"]?.ToString() ?? string.Empty;
             var lastOwner = data["LastOwner"]?.ToString();
             var sizeOnDisk = data["SizeOnDisk"]?.ToString();
 
             if (string.IsNullOrEmpty(appId) || string.IsNullOrEmpty(name))
                 return null;
 
-            // Filtra softwares e ferramentas da Steam
-            if (IsSoftwareOrTool(name))
+            var isTool = IsSoftwareOrTool(name);
+            if (!long.TryParse(sizeOnDisk, out var sizeBytes))
+                sizeBytes = 0;
+
+            _manifestCache[manifestPath] = new CachedManifest(
+                length,
+                writeTicks,
+                appId,
+                name,
+                installDir,
+                lastOwner,
+                sizeBytes,
+                isTool);
+
+            if (isTool)
                 return null;
 
             var owner = accounts.FirstOrDefault(a => a.SteamId64 == lastOwner);
 
-            if (!long.TryParse(sizeOnDisk, out var sizeBytes))
-                sizeBytes = 0;
-
-            var game = new SteamGame
+            return new SteamGame
             {
                 InstallationId = installation.Id,
                 InstallationName = installation.DisplayName,
                 InstallationRootPath = installation.RootPath,
                 AppId = appId,
                 Name = name,
-                InstallDir = installDir ?? string.Empty,
+                InstallDir = installDir,
                 LibraryPath = libraryPath,
                 SizeOnDisk = sizeBytes,
                 OwnerSteamId64 = lastOwner,
                 OwnerAccount = owner,
             };
-
-            return game;
         }
         catch (Exception ex)
         {
