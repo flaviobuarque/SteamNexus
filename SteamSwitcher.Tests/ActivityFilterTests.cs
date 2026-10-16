@@ -85,5 +85,13 @@ public class ActivityFilterTests
         failedGame.HasSubtitle.Should().BeTrue();
         failedGame.Subtitle.Should().Be("🎮 Elden Ring");
         failedGame.RelativeTime.Should().Be("15 min atrás");
+        failedGame.IsGame.Should().BeTrue();
+        failedGame.IsAccountSwitch.Should().BeFalse();
+        failedGame.FailureReason.Should().NotBeNullOrWhiteSpace();
+
+        switchEntry.IsAccountSwitch.Should().BeTrue();
+        switchEntry.DisplaySourceAccount.Should().Be("user1");
+        switchEntry.DisplayTargetAccount.Should().Be("user2");
+        switchEntry.FailureReason.Should().BeNull();
     }
 }

@@ -276,6 +276,14 @@ public partial class ActivityPage : Page
     private void Monitoring_Click(object sender, RoutedEventArgs e)
         => new Dialogs.MonitoringDialog { Owner = Window.GetWindow(this) }.ShowDialog();
 
+    private void GoToDiagnostics_Click(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            mainWindow.OpenDiagnosticsPage();
+        }
+    }
+
     private void Preview_Click(object sender, RoutedEventArgs e)
     {
 #if DEBUG

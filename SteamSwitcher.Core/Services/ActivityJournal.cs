@@ -75,6 +75,40 @@ public sealed record ActivityEntry(DateTimeOffset Timestamp, ActivityKind Kind,
 
     [System.Text.Json.Serialization.JsonIgnore]
     public bool HasSubtitle => !string.IsNullOrWhiteSpace(Subtitle);
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsAccountSwitch => Kind is ActivityKind.AccountSwitched or ActivityKind.AccountSwitchFailed;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsGame => Kind is ActivityKind.GameStarted or ActivityKind.GameLaunchFailed;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsRepair => Kind is ActivityKind.PreferenceRepaired or ActivityKind.RepairFailed;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsGeneral => !IsAccountSwitch && !IsGame && !IsRepair;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string DisplaySourceAccount => SourceAccount ?? "Conta anterior não identificada";
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string DisplayTargetAccount => TargetAccount ?? "Conta de destino não identificada";
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool HasInstallation => !string.IsNullOrWhiteSpace(Installation);
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool HasAccounts => Accounts is { Length: > 0 };
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? FailureReason => NeedsAttention ? Kind switch
+    {
+        ActivityKind.AccountSwitchFailed => "A troca de contas não pôde ser concluída. A Steam pode estar em execução travada ou os arquivos de configuração estão bloqueados.",
+        ActivityKind.GameLaunchFailed => "O jogo não pôde ser iniciado. Verifique se o executável existe e se os arquivos do jogo estão íntegros.",
+        ActivityKind.RepairFailed => "Não foi possível concluir a correção automática das preferências da Steam.",
+        ActivityKind.UpdateFailed => "O download do pacote de atualização falhou. Verifique sua conexão de rede.",
+        _ => "A operação encontrou um erro. Consulte o diagnóstico para mais informações."
+    } : null;
     public string Title => Kind is ActivityKind.PreferenceRepaired or ActivityKind.RepairFailed && Operation is not null
         ? $"{Operation} · {(NeedsAttention ? "falha na correção" : "corrigido")}"
         : Kind switch

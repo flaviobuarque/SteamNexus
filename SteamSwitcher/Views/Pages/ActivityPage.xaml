@@ -491,19 +491,193 @@
                             </Expander.Header>
 
                             <!-- Expanded Details Panel -->
-                            <Border Margin="50,10,0,4" Padding="14,10" CornerRadius="8"
+                            <Border Margin="50,12,0,4" Padding="16,14" CornerRadius="10"
                                     Background="{DynamicResource AppChromeBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
                                 <StackPanel>
-                                    <Grid Margin="0,0,0,6">
+                                    <!-- Header row with metadata badges and copy button -->
+                                    <Grid Margin="0,0,0,12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="DETALHES DA OPERAÇÃO" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextMutedBrush}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding TimeText}" FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}" />
+
+                                        <!-- Metadata Badges -->
+                                        <WrapPanel VerticalAlignment="Center">
+                                            <Border Padding="8,4" CornerRadius="6" Background="{DynamicResource AppSurfaceAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" Margin="0,0,8,0">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="Clock24" FontSize="13" Foreground="{DynamicResource AppAccentBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding TimeText, StringFormat='Registrado em {0}'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Padding="8,4" CornerRadius="6" Background="{DynamicResource AppSurfaceAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" Margin="0,0,8,0"
+                                                    Visibility="{Binding HasInstallation, Converter={StaticResource BoolToVisibility}}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="Folder24" FontSize="13" Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding Installation, StringFormat='Steam: {0}'}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Border>
+                                        </WrapPanel>
+
+                                        <!-- Action: Copy details -->
+                                        <Button Grid.Column="1" Style="{StaticResource NexusActionButton}" Height="30" Padding="10,0"
+                                                PreviewMouseLeftButtonDown="CopyButton_PreviewMouseLeftButtonDown" Tag="{Binding}"
+                                                ToolTip="Copiar detalhes completos deste registro">
+                                            <StackPanel Orientation="Horizontal">
+                                                <ui:SymbolIcon Symbol="Copy24" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="Copiar dados" FontSize="11" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
                                     </Grid>
-                                    <TextBlock Text="{Binding Detail}" FontSize="12" LineHeight="18"
-                                               Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" />
+
+                                    <!-- Account Transition Visual Flow (when IsAccountSwitch == true) -->
+                                    <Grid Margin="0,0,0,10" Visibility="{Binding IsAccountSwitch, Converter={StaticResource BoolToVisibility}}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Origem -->
+                                        <Border Grid.Column="0" Padding="14,12" CornerRadius="8"
+                                                Background="{DynamicResource AppSurfaceAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Border Width="34" Height="34" CornerRadius="17" Background="{DynamicResource AppChromeBrush}" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="Person24" FontSize="16" Foreground="{DynamicResource AppTextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="CONTA DE ORIGEM" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppTextMutedBrush}" />
+                                                    <TextBlock Text="{Binding DisplaySourceAccount}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Arrow Indicator -->
+                                        <Border Grid.Column="1" Width="34" Height="34" CornerRadius="17" Margin="10,0"
+                                                Background="{DynamicResource AppAccentSurfaceBrush}" BorderBrush="{DynamicResource AppAccentBrush}" BorderThickness="1"
+                                                VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <ui:SymbolIcon Symbol="ArrowRight24" FontSize="15" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+
+                                        <!-- Destino -->
+                                        <Border Grid.Column="2" Padding="14,12" CornerRadius="8"
+                                                Background="{DynamicResource AppSurfaceAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Border Width="34" Height="34" CornerRadius="17" Background="{DynamicResource AppAccentSurfaceBrush}" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="Person24" FontSize="16" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="CONTA DE DESTINO" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppAccentBrush}" />
+                                                    <TextBlock Text="{Binding DisplayTargetAccount}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Game Launch Visual (when IsGame == true) -->
+                                    <Border Margin="0,0,0,10" Padding="14,12" CornerRadius="8"
+                                            Background="{DynamicResource AppSurfaceAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                                            Visibility="{Binding IsGame, Converter={StaticResource BoolToVisibility}}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="38" Height="38" CornerRadius="8" Background="{DynamicResource AppSuccessSurfaceBrush}" Margin="0,0,14,0" VerticalAlignment="Center">
+                                                <ui:SymbolIcon Symbol="XboxController24" FontSize="20" Foreground="{DynamicResource AppSuccessBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="JOGO REGISTRADO NA SESSÃO" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppTextMutedBrush}" />
+                                                <TextBlock Text="{Binding Subject}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding DisplayTargetAccount, StringFormat='Conta ativa: {0}'}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,4,0,0"
+                                                           Visibility="{Binding HasTransition, Converter={StaticResource BoolToVisibility}}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Repair Visual (when IsRepair == true) -->
+                                    <Border Margin="0,0,0,10" Padding="14,12" CornerRadius="8"
+                                            Background="{DynamicResource AppSurfaceAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                                            Visibility="{Binding IsRepair, Converter={StaticResource BoolToVisibility}}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="38" Height="38" CornerRadius="8" Background="{DynamicResource AppWarningSurfaceBrush}" Margin="0,0,14,0" VerticalAlignment="Center">
+                                                <ui:SymbolIcon Symbol="Wrench24" FontSize="18" Foreground="{DynamicResource AppWarningBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="CONFIGURAÇÃO AUTOMÁTICA DA STEAM" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppTextMutedBrush}" />
+                                                <TextBlock Text="{Binding Operation}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding DisplayTargetAccount, StringFormat='Conta / Instalação: {0}'}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,4,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- General / Other Visual (when IsGeneral == true) -->
+                                    <Border Margin="0,0,0,10" Padding="14,12" CornerRadius="8"
+                                            Background="{DynamicResource AppSurfaceAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                                            Visibility="{Binding IsGeneral, Converter={StaticResource BoolToVisibility}}">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                            <TextBlock Text="{Binding Detail}" FontSize="12" LineHeight="18" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Failure Alert Banner (when NeedsAttention == true) -->
+                                    <Border Margin="0,2,0,0" Padding="14,12" CornerRadius="8"
+                                            Background="{DynamicResource AppDangerSurfaceBrush}" BorderBrush="{DynamicResource AppDangerBrush}" BorderThickness="1"
+                                            Visibility="{Binding NeedsAttention, Converter={StaticResource BoolToVisibility}}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="32" Height="32" CornerRadius="16" Background="{DynamicResource AppDangerBrush}" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                <ui:SymbolIcon Symbol="Warning24" FontSize="15" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="OPERAÇÃO NÃO CONCLUÍDA" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppDangerBrush}" />
+                                                <TextBlock Text="{Binding FailureReason}" FontSize="11" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                            <Button Grid.Column="2" Click="GoToDiagnostics_Click" Style="{StaticResource NexusActionButton}"
+                                                    Height="32" Padding="12,0" Margin="12,0,0,0" ToolTip="Ver ferramentas de diagnóstico da Steam">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="Diagnóstico" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                    <ui:SymbolIcon Symbol="ArrowRight24" FontSize="12" Margin="5,0,0,0" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Success Confirmation Banner (when NeedsAttention == false) -->
+                                    <Border Margin="0,2,0,0" Padding="12,8" CornerRadius="6"
+                                            Background="{DynamicResource AppSuccessSurfaceBrush}" BorderBrush="{DynamicResource AppSuccessBrush}" BorderThickness="1">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding NeedsAttention}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <ui:SymbolIcon Symbol="Checkmark24" FontSize="14" Foreground="{DynamicResource AppSuccessBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="Operação concluída com sucesso pelo SteamNexus." FontSize="11" Foreground="{DynamicResource AppSuccessBrush}" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
                             </Border>
                         </Expander>
