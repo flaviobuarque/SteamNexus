@@ -16,6 +16,15 @@ public sealed class GameRuntimeService : IGameRuntimeService
         "upc", "rockstarservice", "launcher", "setup", "unins000", "dxsetup", "vc_redist.x64", "vc_redist.x86"
     };
 
+    private static readonly HashSet<string> SystemProcesses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "System", "Registry", "smss", "csrss", "wininit", "services", "lsass", "fontdrvhost",
+        "svchost", "dwm", "audiodg", "spoolsv", "sihost", "taskhostw", "explorer", "shellexperiencehost",
+        "startmenuexperiencehost", "searchhost", "searchindexer", "securityhealthservice",
+        "msmpeng", "nissrv", "runtimebroker", "ctfmon", "conhost", "cmd", "powershell", "pwsh",
+        "devenv", "code", "idle"
+    };
+
     public Task<IReadOnlyDictionary<string, GameRuntimeSnapshot>> InspectAsync(
         IReadOnlyList<SteamGame> games, CancellationToken ct = default) => Task.Run(() =>
     {
@@ -27,10 +36,15 @@ public sealed class GameRuntimeService : IGameRuntimeService
                 ct.ThrowIfCancellationRequested();
                 try
                 {
-                    if (SharedExecutables.Contains(process.ProcessName)) continue;
+                    if (process.Id <= 4) continue;
+                    var name = process.ProcessName;
+                    if (SystemProcesses.Contains(name) || SharedExecutables.Contains(name)) continue;
                     var path = process.MainModule?.FileName;
                     if (path is not null)
-                        processes.Add(new(process.Id, process.StartTime.ToUniversalTime(), path));
+                    {
+                        var normalized = Path.GetFullPath(path);
+                        processes.Add(new(process.Id, process.StartTime.ToUniversalTime(), normalized));
+                    }
                 }
                 catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException)
                 {
@@ -41,8 +55,20 @@ public sealed class GameRuntimeService : IGameRuntimeService
 
         var result = new Dictionary<string, GameRuntimeSnapshot>(StringComparer.Ordinal);
         var groups = games.GroupBy(game => game.UniqueKey).ToDictionary(group => group.Key, group => group.ToArray());
-        var matchesByGame = groups.ToDictionary(group => group.Key,
-            group => processes.Where(p => group.Value.Any(game => BelongsToGame(p.Executable, game))).ToArray());
+
+        var prefixesByGroup = groups.ToDictionary(
+            group => group.Key,
+            group => group.Value.Select(GetInstallPrefix).Where(p => p is not null).Select(p => p!).ToArray());
+
+        var matchesByGame = groups.ToDictionary(
+            group => group.Key,
+            group =>
+            {
+                var prefixes = prefixesByGroup[group.Key];
+                if (prefixes.Length == 0) return [];
+                return processes.Where(p => prefixes.Any(prefix => p.Executable.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))).ToArray();
+            });
+
         foreach (var game in games)
         {
             var matches = matchesByGame[game.UniqueKey];
@@ -72,18 +98,36 @@ public sealed class GameRuntimeService : IGameRuntimeService
         }
     }
 
-    private static bool BelongsToGame(string executable, SteamGame game)
+    private static string? GetInstallPrefix(SteamGame game)
     {
-        if (string.IsNullOrWhiteSpace(game.LibraryPath) || string.IsNullOrWhiteSpace(game.InstallDir)) return false;
+        if (string.IsNullOrWhiteSpace(game.LibraryPath) || string.IsNullOrWhiteSpace(game.InstallDir)) return null;
         try
         {
             var common = Path.GetFullPath(Path.Combine(game.LibraryPath, "steamapps", "common")) + Path.DirectorySeparatorChar;
             var install = Path.GetFullPath(game.InstallFullPath).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-            return install.StartsWith(common, StringComparison.OrdinalIgnoreCase)
-                && install.Length > common.Length
-                && Path.GetFullPath(executable).StartsWith(install, StringComparison.OrdinalIgnoreCase);
+            return (install.StartsWith(common, StringComparison.OrdinalIgnoreCase) && install.Length > common.Length)
+                ? install
+                : null;
         }
-        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or IOException) { return false; }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or IOException)
+        {
+            return null;
+        }
+    }
+
+    private static bool BelongsToGame(string executable, SteamGame game)
+    {
+        var prefix = GetInstallPrefix(game);
+        if (prefix is null) return false;
+        try
+        {
+            var fullExe = Path.GetFullPath(executable);
+            return fullExe.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or IOException)
+        {
+            return false;
+        }
     }
 
     private static Process? OpenExact(GameProcessIdentity identity, SteamGame? game = null)
