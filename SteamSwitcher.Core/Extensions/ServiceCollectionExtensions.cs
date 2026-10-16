@@ -10,6 +10,8 @@ public static class ServiceCollectionExtensions
         // Infraestrutura
         services.AddSingleton<ISteamInstallationService, SteamInstallationService>();
         services.AddSingleton<ISteamLocatorService, SteamLocatorService>();
+        services.AddSingleton<ISteamRegistryService, SteamRegistryService>();
+        services.AddSingleton<ISteamVdfService, SteamVdfService>();
         services.AddSingleton<IAppSettingsService, AppSettingsService>();
         services.AddSingleton<IImageCacheService, ImageCacheService>();
         services.AddSingleton<ISteamKnownAccountStore, SteamKnownAccountStore>();

@@ -13,8 +13,12 @@ public class SteamAccountService(
     ISteamInstallationService installationService,
     IAppSettingsService settingsService,
     ISteamKnownAccountStore knownAccountStore,
-    ILogger<SteamAccountService> logger) : ISteamAccountService
+    ILogger<SteamAccountService> logger,
+    ISteamRegistryService? registryService = null,
+    ISteamVdfService? vdfService = null) : ISteamAccountService
 {
+    private readonly ISteamRegistryService _registryService = registryService ?? new SteamRegistryService();
+    private readonly ISteamVdfService _vdfService = vdfService ?? new SteamVdfService();
     public bool IsOperationInProgress => _steamMutationGate.CurrentCount == 0;
     public async Task<IReadOnlyList<string>> ApplyRememberPasswordDefaultsAsync(CancellationToken ct = default)
     {
@@ -1145,40 +1149,11 @@ public class SteamAccountService(
         }, ct);
     }
 
-    private static void WriteVdfAtomically(
+    private void WriteVdfAtomically(
         string vdfPath,
         byte[] contents,
-        bool createBackup)
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(vdfPath)!);
-        var tempPath = vdfPath + ".tmp";
-        var backupPath = createBackup ? vdfPath + "_last" : null;
-
-        try
-        {
-            using (var stream = new FileStream(
-                tempPath,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.None,
-                bufferSize: 16 * 1024,
-                FileOptions.WriteThrough))
-            {
-                stream.Write(contents);
-                stream.Flush(flushToDisk: true);
-            }
-
-            if (File.Exists(vdfPath))
-                File.Replace(tempPath, vdfPath, backupPath, ignoreMetadataErrors: true);
-            else
-                File.Move(tempPath, vdfPath);
-        }
-        finally
-        {
-            if (File.Exists(tempPath))
-                File.Delete(tempPath);
-        }
-    }
+        bool createBackup) =>
+        _vdfService.WriteAtomically(vdfPath, contents, createBackup);
 
     private async Task RestoreSwitchBackupAsync(SteamSwitchBackup backup)
     {
@@ -1228,12 +1203,9 @@ public class SteamAccountService(
         }
     }
 
-    private static void UpdateRegistry(SteamAccount account)
+    private void UpdateRegistry(SteamAccount account)
     {
-        Registry.SetValue(
-            @"HKEY_CURRENT_USER\Software\Valve\Steam",
-            "AutoLoginUser",
-            account.AccountName);
+        _registryService.SetAutoLoginUser(account.AccountName);
     }
 
     private async Task ValidateSwitchStateAsync(
@@ -1456,10 +1428,7 @@ public class SteamAccountService(
         await CloseSteamCombinedAsync(ct);
 
         // 2. Limpa autologin do registro
-        Registry.SetValue(
-            @"HKEY_CURRENT_USER\Software\Valve\Steam",
-            "AutoLoginUser",
-            string.Empty);
+        _registryService.SetAutoLoginUser(string.Empty);
 
 
         // 3. Abre Steam sem argumentos (cai na tela de login)
