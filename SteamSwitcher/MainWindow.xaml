@@ -1,4 +1,4 @@
-﻿<ui:FluentWindow
+<ui:FluentWindow
     x:Class="SteamSwitcher.Views.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -41,7 +41,7 @@
         </Style>
     </ui:FluentWindow.Resources>
 
-    <Grid Background="{DynamicResource AppBackgroundBrush}">
+    <Grid x:Name="RootGrid" Background="{DynamicResource AppBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />

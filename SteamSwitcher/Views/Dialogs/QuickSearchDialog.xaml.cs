@@ -10,15 +10,41 @@ public partial class QuickSearchDialog : Window
     private readonly IReadOnlyList<QuickSearchEntry> _entries;
     private readonly IReadOnlyList<string> _recentIds;
     public QuickSearchEntry? Selected { get; private set; }
+
     public QuickSearchDialog(IReadOnlyList<QuickSearchEntry> entries, IReadOnlyList<string> recentIds)
     {
         _entries = entries;
         _recentIds = recentIds;
         InitializeComponent();
-        Helpers.DialogChrome.Apply(this);
         PreviewKeyDown += OnKey;
-        Loaded += (_, _) => { Refresh(); SearchBox.Focus(); };
+        Loaded += (_, _) =>
+        {
+            if (Owner is not null)
+            {
+                Width = Owner.ActualWidth;
+                Height = Owner.ActualHeight;
+                Left = Owner.Left;
+                Top = Owner.Top;
+                DialogCard.Width = Math.Min(640, Math.Max(380, Width - 32));
+                DialogCard.Height = Math.Min(560, Math.Max(380, Height - 32));
+                DialogCard.HorizontalAlignment = HorizontalAlignment.Center;
+                DialogCard.VerticalAlignment = VerticalAlignment.Center;
+            }
+            Refresh();
+            SearchBox.Focus();
+        };
     }
+
+    private void Backdrop_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (ReferenceEquals(e.OriginalSource, BackdropGrid))
+        {
+            Close();
+        }
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
     private void SearchChanged(object sender, TextChangedEventArgs e) { if (IsLoaded) Refresh(); }
     private void Refresh()
     {
@@ -29,6 +55,7 @@ public partial class QuickSearchDialog : Window
             : Results.Items.Count == 40 ? "40 resultados · refine a busca para encontrar mais"
             : Results.Items.Count == 1 ? "1 resultado" : $"{Results.Items.Count} resultados";
     }
+
     private void SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (OpenButton is null) return;
@@ -36,6 +63,7 @@ public partial class QuickSearchDialog : Window
         OpenButton.Content = (Results.SelectedItem as QuickSearchEntry)?.Category switch
         { "Jogo" => "Ver jogo", "Conta" => "Ver conta", null => "Selecione uma opção", _ => "Abrir página" };
     }
+
     private void OpenSelected(object sender, RoutedEventArgs e)
     {
         if (Results.SelectedItem is not QuickSearchEntry entry) return;
@@ -44,6 +72,7 @@ public partial class QuickSearchDialog : Window
         Selected = entry;
         DialogResult = true;
     }
+
     private void OnKey(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Escape) { Close(); e.Handled = true; }

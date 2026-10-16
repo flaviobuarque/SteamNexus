@@ -47,7 +47,26 @@ public partial class MainWindow
                 "Conta", card.Account.DisplayName, $"@{card.Account.AccountName} · {card.Account.InstallationName}", card.Account.AccountName,
                 card.AvatarPath)));
             var dialog = new QuickSearchDialog(entries, _recentSearchIds) { Owner = this };
-            if (dialog.ShowDialog() != true || dialog.Selected is not { } selected) return;
+            var blur = new System.Windows.Media.Effects.BlurEffect
+            {
+                Radius = 14,
+                RenderingBias = System.Windows.Media.Effects.RenderingBias.Performance
+            };
+            var oldEffect = RootGrid.Effect;
+            RootGrid.Effect = blur;
+            QuickSearchEntry? selected = null;
+            try
+            {
+                if (dialog.ShowDialog() == true)
+                {
+                    selected = dialog.Selected;
+                }
+            }
+            finally
+            {
+                RootGrid.Effect = oldEffect;
+            }
+            if (selected is null) return;
             var opened = false;
             if (selected.Id.StartsWith("game:", StringComparison.Ordinal))
             {
