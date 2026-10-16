@@ -38,9 +38,11 @@ public class EmptyStringToVisibilityConverter : IValueConverter
 
 // Path local → BitmapImage (com fallback gracioso)
 // Prioriza o cache compartilhado do ImageLoader (pré-decodado e frozen).
-// Em cache miss síncrono, decodifica uma única vez habilitando o cache de Bitmap do WPF.
+// Em cache miss síncrono, decodifica uma única vez com resolução delimitada para economia drástica de RAM.
 public class PathToImageSourceConverter : IValueConverter
 {
+    public int DefaultDecodePixelWidth { get; set; } = 256;
+
     public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         var path = value as string;
@@ -48,6 +50,16 @@ public class PathToImageSourceConverter : IValueConverter
 
         var cached = ImageLoader.GetCached(path);
         if (cached is not null) return cached;
+
+        var decodeWidth = DefaultDecodePixelWidth;
+        if (parameter is int intWidth && intWidth > 0)
+        {
+            decodeWidth = intWidth;
+        }
+        else if (parameter is string strWidth && int.TryParse(strWidth, out var parsedWidth) && parsedWidth > 0)
+        {
+            decodeWidth = parsedWidth;
+        }
 
         try
         {
@@ -58,6 +70,10 @@ public class PathToImageSourceConverter : IValueConverter
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.UriSource = uri;
+            if (decodeWidth > 0)
+            {
+                bitmap.DecodePixelWidth = decodeWidth;
+            }
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.CreateOptions = BitmapCreateOptions.None;
             bitmap.EndInit();
