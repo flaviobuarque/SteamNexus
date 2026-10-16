@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace SteamSwitcher.Core.Models;
 
 public sealed record SteamInstallation
@@ -15,6 +17,7 @@ public sealed record SteamInstallation
     public bool HasLoginUsersFile { get; init; }
     public bool IsSelected { get; init; }
 
+    [JsonIgnore]
     public string StatusText => IsValid && !HasLoginUsersFile
         ? "loginusers.vdf ausente — recuperação disponível"
         : IsValid

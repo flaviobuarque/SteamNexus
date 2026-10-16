@@ -1,4 +1,6 @@
-﻿namespace SteamSwitcher.Core.Models;
+﻿using System.Text.Json.Serialization;
+
+namespace SteamSwitcher.Core.Models;
 
 public class SteamGame
 {
@@ -13,6 +15,7 @@ public class SteamGame
 
     // Qual conta tem esse jogo (LastOwner do appmanifest)
     public string? OwnerSteamId64 { get; set; }
+    [JsonIgnore]
     public SteamAccount? OwnerAccount { get; set; }
     public string UniqueKey => string.IsNullOrWhiteSpace(InstallationId)
         ? AppId
@@ -31,8 +34,10 @@ public class SteamGame
     public int PlaytimeMinutes { get; set; }
     public long LastPlayedTimestamp { get; set; }
     public int PlaytimeForever => PlaytimeMinutes;
+    [JsonIgnore]
     public string PlaytimeFormatted => FormatPlaytime(PlaytimeMinutes);
 
+    [JsonIgnore]
     public string SizeFormatted
     {
         get
@@ -44,10 +49,12 @@ public class SteamGame
         }
     }
 
+    [JsonIgnore]
     public string DriveLetter =>
         string.IsNullOrEmpty(LibraryPath) ? string.Empty
         : Path.GetPathRoot(LibraryPath)?.TrimEnd('\\') ?? string.Empty;
 
+    [JsonIgnore]
     public string SizeAndDrive =>
         string.IsNullOrEmpty(SizeFormatted) ? string.Empty
         : string.IsNullOrEmpty(DriveLetter) ? SizeFormatted

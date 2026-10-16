@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace SteamSwitcher.Core.Models;
 
 public class SteamAccount
@@ -34,7 +36,9 @@ public class SteamAccount
     public bool IsArchived { get; set; }
 
     // Computed
+    [JsonIgnore]
     public string DisplayName => CustomDisplayName ?? PersonaName;
+    [JsonIgnore]
     public string AvatarSource => CustomAvatarPath ?? AvatarUrl ?? string.Empty;
     public bool IsActive { get; set; }
     public string UniqueKey => string.IsNullOrWhiteSpace(InstallationId)
@@ -42,6 +46,7 @@ public class SteamAccount
         : $"{InstallationId}:{SteamId64}";
 
     // SteamID32 para paths de userdata
+    [JsonIgnore]
     public string SteamId32
     {
         get
