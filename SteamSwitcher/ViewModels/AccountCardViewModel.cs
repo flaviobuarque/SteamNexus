@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using SteamSwitcher.Core.Models;
 using System.Windows.Media;
 
@@ -44,8 +44,8 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     public string InstallationId => Account.InstallationId;
     public string InstallationName => Account.InstallationName;
     public string InstallationRootPath => Account.InstallationRootPath;
-    public long Timestamp => Account.Timestamp;
-    public string LastLoginFormatted => FormatLastLogin(Account.Timestamp);
+    public long Timestamp => Account.EffectiveTimestamp;
+    public string LastLoginFormatted => FormatLastLogin(Account.EffectiveTimestamp);
     public string LastUsageText => IsLastUsed ? $"Última usada · {LastLoginFormatted}" : LastLoginFormatted;
     public bool HasAvatar => AvatarImage is not null || !string.IsNullOrEmpty(AvatarPath);
     public bool IsArchived => Account.IsArchived;
@@ -75,6 +75,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
         Account.MostRecent = updated.MostRecent;
         Account.AutoLogin = updated.AutoLogin;
         Account.Timestamp = updated.Timestamp;
+        Account.LastAppSwitchUtc = updated.LastAppSwitchUtc;
         Account.WantsOfflineMode = updated.WantsOfflineMode;
         Account.AvatarUrl = updated.AvatarUrl;
         Account.CustomDisplayName = updated.CustomDisplayName;

@@ -193,6 +193,16 @@ public class SteamAccountService(
         var installationsById = installations.ToDictionary(i => i.Id, StringComparer.Ordinal);
         var presentKeys = accounts.Select(a => a.UniqueKey).ToHashSet(StringComparer.Ordinal);
 
+        foreach (var account in accounts)
+        {
+            if (stored.TryGetValue(account.UniqueKey, out var record))
+            {
+                if (account.Timestamp <= 0 && record.Timestamp > 0)
+                    account.Timestamp = record.Timestamp;
+                account.LastAppSwitchUtc = record.LastAppSwitchUtc;
+            }
+        }
+
         foreach (var record in stored.Values)
         {
             var uniqueKey = $"{record.InstallationId}:{record.SteamId64}";
@@ -210,6 +220,7 @@ public class SteamAccountService(
                 AccountName = record.AccountName,
                 PersonaName = record.PersonaName,
                 Timestamp = record.Timestamp,
+                LastAppSwitchUtc = record.LastAppSwitchUtc,
                 IsArchived = true,
             });
             presentKeys.Add(uniqueKey);
@@ -298,6 +309,7 @@ public class SteamAccountService(
             // 4. Abre Steam
             await StartSteamAsync(settings, ct);
             LogSwitchPhase("steam-started", operation, account.SteamId64);
+            await knownAccountStore.RecordAppSwitchAsync(account.UniqueKey, DateTimeOffset.UtcNow, ct);
         }
         catch
         {

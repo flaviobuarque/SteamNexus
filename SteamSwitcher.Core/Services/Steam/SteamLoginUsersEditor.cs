@@ -83,6 +83,20 @@ public static class SteamLoginUsersEditor
 
             SetString(user, "MostRecent", isTarget ? "1" : "0");
             SetString(user, "AutoLogin", isTarget ? "1" : "0");
+
+            if (isTarget)
+            {
+                var timestampField = user.Children.FirstOrDefault(child => child.Name.Equals("Timestamp", StringComparison.OrdinalIgnoreCase));
+                var currentVal = timestampField?.Value?.ToString();
+                if (string.IsNullOrWhiteSpace(currentVal) || currentVal == "0")
+                {
+                    var repairTimestamp = missingTarget?.EffectiveTimestamp > 0
+                        ? missingTarget.EffectiveTimestamp
+                        : DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    SetString(user, "Timestamp", repairTimestamp.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                }
+            }
+
             // A Steam guarda esta preferencia por conta. A troca só define qual
             // conta entra automaticamente; nunca deve desconectar as demais.
             // Campos ausentes continuam ausentes, inclusive na recuperação.
@@ -111,14 +125,20 @@ public static class SteamLoginUsersEditor
             parent[existingKey] = value;
     }
 
-    private static KVObject CreateTargetObject(SteamAccount target) =>
-        new(target.SteamId64,
+    private static KVObject CreateTargetObject(SteamAccount target)
+    {
+        var timestamp = target.EffectiveTimestamp > 0
+            ? target.EffectiveTimestamp
+            : DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+        return new(target.SteamId64,
         [
             new KVObject("AccountName", target.AccountName),
             new KVObject("PersonaName", target.PersonaName),
-            new KVObject("Timestamp", target.Timestamp.ToString(
+            new KVObject("Timestamp", timestamp.ToString(
                 System.Globalization.CultureInfo.InvariantCulture)),
         ]);
+    }
 
     private static void ApplySessionFlags(KVObject user, LoginState state)
     {

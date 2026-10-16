@@ -211,6 +211,37 @@ public sealed class SteamLoginUsersEditorTests
             Value(user, "RememberPassword").Should().Be(user.Name == target ? "1" : value);
     }
 
+    [Fact]
+    public void Rewrite_SelfHealsZeroOrMissingTimestamp()
+    {
+        var source = $$"""
+            "users"
+            {
+                "{{FirstId}}"
+                {
+                    "AccountName" "first"
+                    "PersonaName" "First"
+                    "Timestamp" "0"
+                }
+            }
+            """;
+
+        var targetAccount = new SteamAccount
+        {
+            SteamId64 = FirstId,
+            AccountName = "first",
+            Timestamp = 1712345678,
+        };
+
+        using var input = StreamOf(source);
+        using var output = new MemoryStream();
+        SteamLoginUsersEditor.Rewrite(input, output, FirstId, LoginState.Online, targetAccount);
+
+        var document = Deserialize(output);
+        var user = document.Children.Single(u => u.Name == FirstId);
+        Value(user, "Timestamp").Should().Be("1712345678");
+    }
+
     private static MemoryStream Rewrite(string source, string target, LoginState state)
     {
         using var input = StreamOf(source);

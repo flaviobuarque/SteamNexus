@@ -7,6 +7,7 @@ public interface ISteamKnownAccountStore
 {
     Task<Dictionary<string, KnownSteamAccount>> LoadAsync(CancellationToken ct = default);
     Task RememberAsync(IEnumerable<SteamAccount> accounts, CancellationToken ct = default);
+    Task RecordAppSwitchAsync(string uniqueKey, DateTimeOffset switchUtc, CancellationToken ct = default);
     Task RemoveAsync(IEnumerable<string> uniqueKeys, CancellationToken ct = default);
 }
 
@@ -55,6 +56,30 @@ public sealed class SteamKnownAccountStore : ISteamKnownAccountStore
                         AccountName = string.IsNullOrWhiteSpace(account.AccountName) && existing is not null ? existing.AccountName : account.AccountName,
                         PersonaName = string.IsNullOrWhiteSpace(account.PersonaName) && existing is not null ? existing.PersonaName : account.PersonaName,
                         Timestamp = maxTimestamp,
+                        LastAppSwitchUtc = account.LastAppSwitchUtc ?? existing?.LastAppSwitchUtc,
+                    };
+                }
+            },
+            ct);
+
+    public Task RecordAppSwitchAsync(
+        string uniqueKey,
+        DateTimeOffset switchUtc,
+        CancellationToken ct = default) =>
+        AtomicJsonFile.UpdateAsync(
+            _storePath,
+            static () => new Dictionary<string, KnownSteamAccount>(StringComparer.Ordinal),
+            stored =>
+            {
+                if (stored.TryGetValue(uniqueKey, out var existing))
+                {
+                    existing.LastAppSwitchUtc = switchUtc;
+                }
+                else
+                {
+                    stored[uniqueKey] = new KnownSteamAccount
+                    {
+                        LastAppSwitchUtc = switchUtc,
                     };
                 }
             },
@@ -81,4 +106,6 @@ public sealed class KnownSteamAccount
     public string AccountName { get; set; } = string.Empty;
     public string PersonaName { get; set; } = string.Empty;
     public long Timestamp { get; set; }
+    public DateTimeOffset? LastAppSwitchUtc { get; set; }
+    public long EffectiveTimestamp => Math.Max(Timestamp, LastAppSwitchUtc?.ToUnixTimeSeconds() ?? 0);
 }

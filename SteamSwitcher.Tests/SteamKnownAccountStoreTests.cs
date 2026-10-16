@@ -89,6 +89,32 @@ public sealed class SteamKnownAccountStoreTests
         }
     }
 
+    [Fact]
+    public async Task RecordAppSwitchAsync_TracksAppSessionAndCalculatesEffectiveTimestamp()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"steam-known-{Guid.NewGuid():N}.json");
+        try
+        {
+            var store = new SteamKnownAccountStore(path);
+            var initialAccount = Account("inst1", "76561198000000001", "player1");
+            initialAccount.Timestamp = 1700000000;
+            await store.RememberAsync([initialAccount]);
+
+            var switchTime = DateTimeOffset.FromUnixTimeSeconds(1700000999);
+            await store.RecordAppSwitchAsync("inst1:76561198000000001", switchTime);
+
+            var records = await store.LoadAsync();
+            var account = records["inst1:76561198000000001"];
+            account.Timestamp.Should().Be(1700000000);
+            account.LastAppSwitchUtc.Should().Be(switchTime);
+            account.EffectiveTimestamp.Should().Be(1700000999);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static SteamAccount Account(
         string installationId,
         string steamId,

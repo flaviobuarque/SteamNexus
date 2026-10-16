@@ -1,4 +1,4 @@
-﻿namespace SteamSwitcher.Core.Models;
+namespace SteamSwitcher.Core.Models;
 
 public class SteamAccount
 {
@@ -15,6 +15,8 @@ public class SteamAccount
     public bool MostRecent { get; set; }
     public bool AutoLogin { get; set; }
     public long Timestamp { get; set; }
+    public DateTimeOffset? LastAppSwitchUtc { get; set; }
+    public long EffectiveTimestamp => Math.Max(Timestamp, LastAppSwitchUtc?.ToUnixTimeSeconds() ?? 0);
     public bool WantsOfflineMode { get; set; }
 
     // Dados remotos (avatar)
