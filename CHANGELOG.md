@@ -12,16 +12,26 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 - **Pré-visualização de Atualizações:** Opção nas configurações e via linha de comando para pré-visualizar a janela de atualização antes da instalação.
 - **Histórico e Atividades:** Painel de atividades da sessão com registro ordenado de trocas de conta, inicialização de jogos e reparos.
 - **Busca Rápida:** Atalho de busca (Ctrl+K) na janela principal para localizar rapidamente contas e jogos instalados.
+- **Sistema Dual-Track de Sessão:** Rastreamento independente entre o login nativo da Steam e as trocas gerenciadas pelo aplicativo, com auto-cura de timestamps corrompidos no arquivo loginusers.vdf.
 
 ### Melhorias
 
+- **Otimização de Decodificação de Capas:** Redução de até 70% no consumo de memória RAM ao limitar a resolução de decodificação de imagens para o tamanho necessário em tela.
+- **Carregamento Instantâneo de Jogos:** Cache em memória baseado em atributos de arquivo (stat/timestamp) para manifestos de jogos (ACF), eliminando leituras redundantes de disco.
+- **Redução Drástica de CPU no Monitoramento:** Otimização no polling em segundo plano com filtragem de processos de sistema protegidos e eliminação de cálculos repetidos de caminhos de arquivos.
+- **Renovação Automática de Conexões DNS:** Conexões HTTP gerenciadas com SocketsHttpHandler e tempo de vida de conexão em pool de 15 minutos, prevenindo falhas por IPs obsoletos de CDN.
 - **Navegação Contínua:** Reutilização de páginas durante a alternância, preservando filtros e posições de rolagem.
-- **Persistência Confiável:** Gravação atômica das configurações com suporte a recuperação automática por cópia de segurança.
-- **Monitoramento Otimizado:** Ciclo de monitoramento adaptativo de processos em segundo plano para menor consumo de recursos.
+- **Persistência Confiável:** Gravação atômica de configurações com recuperação automática por cópia de segurança.
+- **Modularização de Serviços:** Desacoplamento de rotinas de registro do Windows e escrita atômica de arquivos VDF em serviços especializados.
 
 ### Correções
 
-- **Contraste de Temas:** Ajustado o cálculo dinâmico de contraste de texto e ícones em botões de destaque, garantindo legibilidade perfeita nos temas escuros e no tema Roxo Neon.
+- **Monotonicidade de Timestamps:** Prevenção contra sobrescrita com timestamp zero em caso de encerramento anômalo da Steam, preservando o histórico de uso da conta.
+- **Vazamento de Memória Nativa (SkiaSharp):** Descarte explícito de bitmaps intermediários na compressão de capas de jogos, eliminando retenção de memória não gerenciada.
+- **Condição de Corrida (Data Race):** Sincronização e uso de dicionários concorrentes no gerenciamento de substituições de conta em ambientes multithread.
+- **Falsos-Negativos em Verificação de Integridade:** Tratamento correto de falhas de conexão de rede na API da Steam, evitando falsos relatórios de banimento, e controle de taxa de requisições simultâneas.
+- **Sincronização de Cache de Snapshot:** Proteção contra leituras inconsistentes de contas sob concorrência e descarte seguro de handles de processos iniciados.
+- **Contraste de Temas:** Ajuste dinâmico de contraste de texto e ícones em botões de destaque, garantindo legibilidade perfeita nos temas escuros e no tema Roxo Neon.
 - **Diálogos de Confirmação:** Estilização unificada e correção no foco de janelas modais e captura de atalhos.
 
 ## [1.0.28] - 2026-09-07
