@@ -1,14 +1,25 @@
-﻿using Microsoft.Extensions.Logging;
-using SteamSwitcher.Core.Models;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Logging;
+using SteamSwitcher.Core.Models;
 
 namespace SteamSwitcher.Core.Services;
 
-public class HealthCheckService(
-    IAppSettingsService settingsService,
-    ILogger<HealthCheckService> logger) : IHealthCheckService
+public class HealthCheckService : IHealthCheckService
 {
-    private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(10) };
+    private readonly IAppSettingsService _settingsService;
+    private readonly ILogger<HealthCheckService> _logger;
+    private readonly HttpClient _http;
+    private readonly SemaphoreSlim _throttle = new(3, 3);
+
+    public HealthCheckService(
+        IAppSettingsService settingsService,
+        ILogger<HealthCheckService> logger,
+        HttpClient? httpClient = null)
+    {
+        _settingsService = settingsService;
+        _logger = logger;
+        _http = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+    }
 
     public async Task<AccountHealth> CheckAccountAsync(
         SteamAccount account,
@@ -25,7 +36,7 @@ public class HealthCheckService(
         // Com API key: mais preciso via GetPlayerBans
         if (FeatureFlags.SteamWebApiKey)
         {
-            var apiKey = settingsService.Current.SteamApiKey;
+            var apiKey = _settingsService.Current.SteamApiKey;
             if (!string.IsNullOrEmpty(apiKey))
                 await CheckBansViaApiAsync(health, account.SteamId64, apiKey, ct);
         }
@@ -37,9 +48,19 @@ public class HealthCheckService(
         IReadOnlyList<SteamAccount> accounts,
         CancellationToken ct = default)
     {
-        var tasks = accounts.Select(a => CheckAccountAsync(a, ct));
-        var results = await Task.WhenAll(tasks);
-        return results;
+        var tasks = accounts.Select(async a =>
+        {
+            await _throttle.WaitAsync(ct);
+            try
+            {
+                return await CheckAccountAsync(a, ct);
+            }
+            finally
+            {
+                _throttle.Release();
+            }
+        });
+        return await Task.WhenAll(tasks);
     }
 
     private async Task CheckBansViaXmlAsync(
@@ -52,10 +73,14 @@ public class HealthCheckService(
 
             health.IsVacBanned = xml.Contains("<vacBanned>1</vacBanned>");
             health.IsLimitedAccount = xml.Contains("<isLimitedAccount>1</isLimitedAccount>");
+            health.IsCheckSuccessful = true;
         }
         catch (Exception ex)
         {
-            logger.LogDebug(ex, "Erro ao checar bans via XML para {Id}", steamId64);
+            _logger.LogDebug(ex, "Erro ao checar bans via XML para {Id}", steamId64);
+            health.IsVacBanned = null;
+            health.IsLimitedAccount = null;
+            health.IsCheckSuccessful = false;
         }
     }
 
@@ -75,10 +100,17 @@ public class HealthCheckService(
             health.IsVacBanned = player["VACBanned"]?.GetValue<bool>() ?? false;
             health.IsGameBanned = (player["NumberOfGameBans"]?.GetValue<int>() ?? 0) > 0;
             health.IsCommunityBanned = player["CommunityBanned"]?.GetValue<bool>() ?? false;
+            health.IsCheckSuccessful = true;
         }
         catch (Exception ex)
         {
-            logger.LogDebug(ex, "Erro ao checar bans via API para {Id}", steamId64);
+            _logger.LogDebug(ex, "Erro ao checar bans via API para {Id}", steamId64);
+            if (!health.IsCheckSuccessful)
+            {
+                health.IsVacBanned = null;
+                health.IsGameBanned = null;
+                health.IsCommunityBanned = null;
+            }
         }
     }
 }

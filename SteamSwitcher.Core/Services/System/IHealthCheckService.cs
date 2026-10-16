@@ -1,4 +1,4 @@
-﻿using SteamSwitcher.Core.Models;
+using SteamSwitcher.Core.Models;
 
 namespace SteamSwitcher.Core.Services;
 
@@ -13,9 +13,11 @@ public class AccountHealth
 {
     public required string SteamId64 { get; init; }
     public bool HasValidSession { get; set; }
-    public bool IsVacBanned { get; set; }
-    public bool IsGameBanned { get; set; }
-    public bool IsLimitedAccount { get; set; }
-    public bool IsCommunityBanned { get; set; }
+    public bool? IsVacBanned { get; set; }
+    public bool? IsGameBanned { get; set; }
+    public bool? IsLimitedAccount { get; set; }
+    public bool? IsCommunityBanned { get; set; }
+    public bool IsCheckSuccessful { get; set; }
+    public bool IsBanned => IsVacBanned == true || IsGameBanned == true || IsCommunityBanned == true;
     public DateTime CheckedAt { get; set; } = DateTime.UtcNow;
 }
