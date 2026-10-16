@@ -17,6 +17,41 @@
             <Setter Property="ToolTipService.InitialShowDelay" Value="300" />
         </Style>
 
+        <Style x:Key="FloatingTopButton" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource NexusKeyboardFocus}" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderStrongBrush}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="ToolTipService.InitialShowDelay" Value="200" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="FabBorder" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="21" Width="42" Height="42">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="12" ShadowDepth="3" Direction="270" Opacity="0.5" Color="#000000" />
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="FabBorder" Property="Background" Value="{DynamicResource AppAccentBrush}" />
+                                <Setter TargetName="FabBorder" Property="BorderBrush" Value="{DynamicResource AppAccentAltBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AppOnAccentTextBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="FabBorder" Property="Opacity" Value="0.8" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="KpiCardButton" TargetType="Button">
             <Setter Property="FocusVisualStyle" Value="{StaticResource NexusKeyboardFocus}" />
             <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
@@ -53,10 +88,10 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border Margin="0,0,0,8" Padding="12,10" CornerRadius="10" BorderThickness="1"
+                        <Border Margin="0,0,0,8" Padding="14,10" CornerRadius="10" BorderThickness="1"
                                 BorderBrush="{DynamicResource AppBorderBrush}" Background="{DynamicResource AppSurfaceBrush}"
-                                x:Name="CardSurface">
-                            <ContentPresenter />
+                                HorizontalAlignment="Stretch" x:Name="CardSurface">
+                            <ContentPresenter HorizontalAlignment="Stretch" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -75,38 +110,28 @@
 
         <Style x:Key="ActivityExpander" TargetType="Expander">
             <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Expander">
-                        <StackPanel>
-                            <ToggleButton x:Name="HeaderToggle" IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                          Cursor="Hand" FocusVisualStyle="{StaticResource NexusKeyboardFocus}" AutomationProperties.Name="{Binding Title}"
+                        <StackPanel HorizontalAlignment="Stretch">
+                            <ToggleButton x:Name="HeaderToggle"
+                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          Cursor="Hand" FocusVisualStyle="{StaticResource NexusKeyboardFocus}"
+                                          AutomationProperties.Name="{Binding Title}"
+                                          HorizontalAlignment="Stretch"
                                           HorizontalContentAlignment="Stretch">
                                 <ToggleButton.Template>
                                     <ControlTemplate TargetType="ToggleButton">
-                                        <Border Background="Transparent" Padding="0,2">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="28" />
-                                                </Grid.ColumnDefinitions>
-                                                <ContentPresenter Content="{Binding Header, RelativeSource={RelativeSource AncestorType=Expander}}" />
-                                                <Path x:Name="Chevron" Grid.Column="1" Data="M0,0 L5,5 10,0"
-                                                      Stroke="{DynamicResource AppTextSecondaryBrush}" StrokeThickness="1.5"
-                                                      HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin=".5,.5" />
-                                            </Grid>
+                                        <Border Background="Transparent" Padding="0,2" HorizontalAlignment="Stretch">
+                                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                                              Content="{Binding Header, RelativeSource={RelativeSource AncestorType=Expander}}" />
                                         </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="Chevron" Property="RenderTransform">
-                                                    <Setter.Value><RotateTransform Angle="180" /></Setter.Value>
-                                                </Setter>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </ToggleButton.Template>
                             </ToggleButton>
-                            <ContentPresenter x:Name="Details" Visibility="Collapsed" ContentSource="Content" />
+                            <ContentPresenter x:Name="Details" Visibility="Collapsed" ContentSource="Content" HorizontalAlignment="Stretch" />
                         </StackPanel>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsExpanded" Value="True">
@@ -293,7 +318,7 @@
             </Grid>
         </StackPanel>
 
-        <!-- Entries List -->
+        <!-- Entries List Container -->
         <Grid Grid.Row="3">
             <ListBox x:Name="Entries" Background="Transparent" BorderThickness="0"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -303,15 +328,16 @@
                     <ControlTemplate TargetType="ListBox">
                         <ScrollViewer x:Name="PART_ScrollViewer" CanContentScroll="False" Focusable="False"
                                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <ItemsPresenter Margin="0,0,12,0" />
+                            <ItemsPresenter Margin="0,0,8,0" HorizontalAlignment="Stretch" />
                         </ScrollViewer>
                     </ControlTemplate>
                 </ListBox.Template>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Expander IsExpanded="False" HorizontalContentAlignment="Stretch" Style="{StaticResource ActivityExpander}" AutomationProperties.Name="{Binding Title}">
+                        <Expander IsExpanded="False" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                  Style="{StaticResource ActivityExpander}" AutomationProperties.Name="{Binding Title}">
                             <Expander.Header>
-                                <Grid>
+                                <Grid HorizontalAlignment="Stretch">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
@@ -319,7 +345,7 @@
                                     </Grid.ColumnDefinitions>
 
                                     <!-- Category Icon -->
-                                    <Border Grid.Column="0" Width="36" Height="36" CornerRadius="8" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <Border Grid.Column="0" Width="36" Height="36" CornerRadius="8" VerticalAlignment="Center" Margin="0,0,14,0">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="Background" Value="{DynamicResource AppSurfaceAltBrush}" />
@@ -379,7 +405,7 @@
                                     </Border>
 
                                     <!-- Title & Context -->
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
                                         <WrapPanel VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold"
                                                        Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center" />
@@ -428,22 +454,44 @@
                                                    Visibility="{Binding HasSubtitle, Converter={StaticResource BoolToVisibility}}" />
                                     </StackPanel>
 
-                                    <!-- Right: Relative Time and Copy Button -->
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <!-- Far Right: Relative Time, Copy Button and Chevron -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                                         <TextBlock Text="{Binding RelativeTime}" ToolTip="{Binding TimeText}"
                                                    FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}"
-                                                   VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                   VerticalAlignment="Center" Margin="0,0,10,0" />
 
-                                        <Button Style="{StaticResource NexusSidebarAction}" Width="30" Height="30"
-                                                Click="CopyEntry_Click" Tag="{Binding}" Margin="0,0,4,0" ToolTip="Copiar detalhes deste registro">
+                                        <Button Style="{StaticResource NexusSidebarAction}" Width="28" Height="28"
+                                                PreviewMouseLeftButtonDown="CopyButton_PreviewMouseLeftButtonDown"
+                                                Tag="{Binding}" Margin="0,0,6,0" ToolTip="Copiar detalhes deste registro">
                                             <ui:SymbolIcon Symbol="Copy24" FontSize="14" />
                                         </Button>
+
+                                        <Border Width="24" Height="24" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <Path Data="M0,0 L5,5 10,0" Stroke="{DynamicResource AppTextSecondaryBrush}"
+                                                  StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  RenderTransformOrigin="0.5,0.5">
+                                                <Path.Style>
+                                                    <Style TargetType="Path">
+                                                        <Setter Property="RenderTransform">
+                                                            <Setter.Value><RotateTransform Angle="0" /></Setter.Value>
+                                                        </Setter>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsExpanded, RelativeSource={RelativeSource AncestorType=Expander}}" Value="True">
+                                                                <Setter Property="RenderTransform">
+                                                                    <Setter.Value><RotateTransform Angle="180" /></Setter.Value>
+                                                                </Setter>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Path.Style>
+                                            </Path>
+                                        </Border>
                                     </StackPanel>
                                 </Grid>
                             </Expander.Header>
 
                             <!-- Expanded Details Panel -->
-                            <Border Margin="48,10,0,4" Padding="14,10" CornerRadius="8"
+                            <Border Margin="50,10,0,4" Padding="14,10" CornerRadius="8"
                                     Background="{DynamicResource AppChromeBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
                                 <StackPanel>
                                     <Grid Margin="0,0,0,6">
@@ -472,15 +520,25 @@
                            HorizontalAlignment="Center" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,0,0,12" />
                 <Button Content="Limpar filtros" HorizontalAlignment="Center" Style="{StaticResource NexusActionButton}" Click="ClearFilters_Click" />
             </StackPanel>
-        </Grid>
 
-        <!-- Footer / Pagination -->
-        <Grid Grid.Row="4" Margin="0,10,12,0">
-            <Button x:Name="LoadMore" Content="Carregar mais 30" HorizontalAlignment="Center" Style="{StaticResource NexusActionButton}" Click="LoadMore_Click" Visibility="Collapsed" />
-            <TextBlock x:Name="EndNotice" Text="Todos os registros carregados" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource AppTextMutedBrush}" Visibility="Collapsed" />
-            <Button x:Name="TopButton" HorizontalAlignment="Right" Visibility="Collapsed" ToolTip="Voltar ao topo" AutomationProperties.Name="Voltar ao topo" Style="{StaticResource ActivityAction}" Click="Top_Click">
-                <ui:SymbolIcon Symbol="ArrowUp24" FontSize="16" />
+            <!-- Floating Back-to-Top Button -->
+            <Button x:Name="TopButton"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,24,20"
+                    Width="42" Height="42"
+                    Visibility="Collapsed"
+                    ToolTip="Voltar ao topo"
+                    AutomationProperties.Name="Voltar ao topo"
+                    Style="{StaticResource FloatingTopButton}"
+                    Click="Top_Click">
+                <ui:SymbolIcon Symbol="ArrowUp24" FontSize="18" />
             </Button>
         </Grid>
+
+        <!-- End Notice Footer -->
+        <TextBlock Grid.Row="4" x:Name="EndNotice" Text="Todos os registros carregados"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,8,0,0"
+                   FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}" Visibility="Collapsed" />
     </Grid>
 </Page>

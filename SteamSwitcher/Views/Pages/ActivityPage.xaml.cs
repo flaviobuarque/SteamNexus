@@ -3,6 +3,7 @@ using SteamSwitcher.Core.Services;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -161,13 +162,10 @@ public partial class ActivityPage : Page
         {
             foreach (var entry in _filtered.Skip(_visible.Count).Take(30)) _visible.Add(entry);
             Summary.Text = $"Mostrando {_visible.Count} de {_filtered.Length} registros · Mais recentes primeiro";
-            LoadMore.Visibility = _visible.Count < _filtered.Length ? Visibility.Visible : Visibility.Collapsed;
             EndNotice.Visibility = _filtered.Length > 0 && _visible.Count == _filtered.Length ? Visibility.Visible : Visibility.Collapsed;
         }
         finally { _loading = false; }
     }
-
-    private void LoadMore_Click(object sender, RoutedEventArgs e) => AddBatch();
     private void Top_Click(object sender, RoutedEventArgs e) => ListScroll?.ScrollToTop();
 
     private void Entries_ScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -240,9 +238,15 @@ public partial class ActivityPage : Page
         catch { }
     }
 
+    private void CopyButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        CopyEntry_Click(sender, e);
+    }
+
     private void CopyEntry_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button { Tag: ActivityEntry entry })
+        if (sender is FrameworkElement { Tag: ActivityEntry entry })
         {
             try
             {
