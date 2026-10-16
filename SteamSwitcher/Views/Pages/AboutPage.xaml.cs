@@ -1,3 +1,4 @@
+using SteamSwitcher.Services.Updates;
 using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
@@ -9,20 +10,55 @@ public partial class AboutPage : Page
 {
     private const string RepositoryUrl = "https://github.com/flaviobuarque/SteamNexus";
 
-    public string VersionText { get; } = GetVersionText();
+    public string VersionText { get; }
 
-    public AboutPage()
+    public AboutPage() : this(null) { }
+
+    public AboutPage(IUpdateService? updateService)
     {
         InitializeComponent();
+        VersionText = ResolveVersionText(updateService);
         DataContext = this;
     }
 
-    private static string GetVersionText()
+    public static string ResolveVersionText(IUpdateService? updateService = null)
     {
-        var version = Assembly.GetEntryAssembly()?.GetName().Version;
-        return version is null
-            ? "Versão em desenvolvimento"
-            : $"Versão {version.Major}.{version.Minor}.{version.Build}";
+        // 1. If UpdateService has an active installed version (Velopack)
+        if (updateService is not null && !string.IsNullOrWhiteSpace(updateService.CurrentVersion)
+            && updateService.CurrentVersion != "0.0.0" && updateService.CurrentVersion != "1.0.0")
+        {
+            return $"Versão {updateService.CurrentVersion}";
+        }
+
+        var appAssembly = typeof(AboutPage).Assembly;
+
+        // 2. InformationalVersion (e.g. 1.0.31 or 1.0.31+git_hash)
+        var infoVersion = appAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (!string.IsNullOrWhiteSpace(infoVersion))
+        {
+            var clean = infoVersion.Split('+')[0].Trim();
+            if (clean != "0.0.0" && clean != "1.0.0" && clean != "1.0.0.0")
+            {
+                return $"Versão {clean}";
+            }
+        }
+
+        // 3. Assembly Name Version (e.g. 1.0.31.0)
+        var version = appAssembly.GetName().Version;
+        if (version is not null && (version.Major != 1 || version.Minor != 0 || version.Build != 0))
+        {
+            return $"Versão {version.Major}.{version.Minor}.{version.Build}";
+        }
+
+        // 4. Fallback to update service or assembly version
+        if (updateService is not null && !string.IsNullOrWhiteSpace(updateService.CurrentVersion) && updateService.CurrentVersion != "0.0.0")
+        {
+            return $"Versão {updateService.CurrentVersion}";
+        }
+
+        return version is not null
+            ? $"Versão {version.Major}.{version.Minor}.{version.Build}"
+            : "Versão em desenvolvimento";
     }
 
     private static void OpenUrl(string url)
