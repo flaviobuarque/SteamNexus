@@ -4,6 +4,25 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.31] - 2026-10-16
+
+### Novidades
+
+- **Painel de Histórico e Atividades Redesenhado:** Modernização completa da página de histórico com mini-cartões de métricas (Total, Trocas, Jogos e Falhas/Atenção) que funcionam como filtros interativos com um clique.
+- **Busca Textual no Histórico:** Campo de pesquisa integrado para localizar registros instantaneamente por nome de usuário, conta de origem/destino, nome de jogo ou detalhes técnicos.
+- **Exportação e Cópia de Histórico:** Botão de exportação para copiar todo o histórico filtrado para a área de transferência com cabeçalho formatado, além de ação de cópia rápida para cada registro individual.
+
+### Melhorias
+
+- **Visual Fluent dos Registros de Histórico:** Substituição do fundo colorido uniforme por cartões escuros elegantes com badges sutis de categoria e status (`Sucesso` / `Falha`), ícones dedicados e visualização direta de transições de conta (`Origem ➔ Destino`).
+- **Formatação Gramatical de Timestamps:** Ajuste rigoroso de número gramatical em tempos relativos ("1 semana atrás" vs. "2 semanas atrás", "1 mês atrás" vs. "2 meses atrás", etc.).
+- **Data e Hora Exata no Hover:** Tooltip informativo exibindo data e hora completas (`dd/MM/yyyy às HH:mm:ss`) ao passar o mouse sobre os indicadores de último uso nos modos de grade e lista.
+
+### Correções
+
+- **Leitura Case-Insensitive do Timestamp no VDF:** Suporte robusto a chaves com grafia variada (`timestamp` vs `Timestamp`) geradas por diferentes versões do cliente Steam, corrigindo contas que exibiam "Nunca" incorretamente.
+- **Atualização Imediata do Timestamp na Troca:** Registro automático do horário atual (`UtcNow`) na troca de conta ativa tanto no arquivo `loginusers.vdf` quanto no estado em memória e interface.
+
 ## [1.0.30] - 2026-10-16
 
 ### Melhorias
