@@ -19,10 +19,13 @@ public sealed class SteamDiagnosticsService(
     {
         using var stream = new MemoryStream(bytes);
         var users = KVSerializer.Create(KVSerializationFormat.KeyValues1Text).Deserialize(stream);
-        return users.Where(user => user["RememberPassword"]?.ToString() == "0")
+        static string? Get(KVObject obj, string key) =>
+            obj.Children.FirstOrDefault(c => string.Equals(c.Name, key, StringComparison.OrdinalIgnoreCase))?.Value?.ToString();
+
+        return users.Where(user => Get(user, "RememberPassword") == "0")
             .Select(user => new RememberPasswordAccount(user.Name,
-                user["AccountName"]?.ToString() ?? string.Empty,
-                user["PersonaName"]?.ToString() ?? user["AccountName"]?.ToString() ?? user.Name)).ToArray();
+                Get(user, "AccountName") ?? string.Empty,
+                Get(user, "PersonaName") ?? Get(user, "AccountName") ?? user.Name)).ToArray();
     }
 
     public async Task<int> RepairRememberPasswordAsync(string installationId,

@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
@@ -714,7 +714,9 @@ public partial class AccountsViewModel(
 
             mainViewModel.NotifyAccountSwitchFinished();
             mainViewModel.ApplyActiveAccount(cardVm.Account, cardVm.AvatarPath);
+            cardVm.RefreshUsageTimestamp();
             RefreshLastUsedBadge();
+            AccountsView.Refresh();
 
             snackbarService.Show(
                 "Conta alternada",

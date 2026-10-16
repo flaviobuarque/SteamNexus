@@ -51,7 +51,8 @@ public static class SteamLoginUsersEditor
         string targetSteamId64,
         LoginState state,
         SteamAccount? missingTarget = null,
-        bool enableRememberPassword = true)
+        bool enableRememberPassword = true,
+        bool updateTimestampToNow = false)
     {
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(output);
@@ -86,14 +87,22 @@ public static class SteamLoginUsersEditor
 
             if (isTarget)
             {
-                var timestampField = user.Children.FirstOrDefault(child => child.Name.Equals("Timestamp", StringComparison.OrdinalIgnoreCase));
-                var currentVal = timestampField?.Value?.ToString();
-                if (string.IsNullOrWhiteSpace(currentVal) || currentVal == "0")
+                if (updateTimestampToNow)
                 {
-                    var repairTimestamp = missingTarget?.EffectiveTimestamp > 0
-                        ? missingTarget.EffectiveTimestamp
-                        : DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                    SetString(user, "Timestamp", repairTimestamp.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    SetString(user, "Timestamp", now.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                }
+                else
+                {
+                    var timestampField = user.Children.FirstOrDefault(child => child.Name.Equals("Timestamp", StringComparison.OrdinalIgnoreCase));
+                    var currentVal = timestampField?.Value?.ToString();
+                    if (string.IsNullOrWhiteSpace(currentVal) || currentVal == "0")
+                    {
+                        var repairTimestamp = missingTarget?.EffectiveTimestamp > 0
+                            ? missingTarget.EffectiveTimestamp
+                            : DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        SetString(user, "Timestamp", repairTimestamp.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    }
                 }
             }
 

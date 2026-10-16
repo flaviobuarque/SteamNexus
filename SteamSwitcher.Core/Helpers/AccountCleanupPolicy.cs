@@ -18,8 +18,8 @@ public static class AccountCleanupPolicy
 
         return accounts
             .Where(account => !account.IsActive)
-            .Where(account => account.Timestamp > 0 && account.Timestamp < cutoff)
-            .OrderBy(account => account.Timestamp)
+            .Where(account => account.EffectiveTimestamp > 0 && account.EffectiveTimestamp < cutoff)
+            .OrderBy(account => account.EffectiveTimestamp)
             .ToList();
     }
 }

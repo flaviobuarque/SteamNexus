@@ -194,8 +194,7 @@ public class SteamAccountService(
         {
             if (stored.TryGetValue(account.UniqueKey, out var record))
             {
-                if (account.Timestamp <= 0 && record.Timestamp > 0)
-                    account.Timestamp = record.Timestamp;
+                account.Timestamp = Math.Max(account.Timestamp, record.Timestamp);
                 account.LastAppSwitchUtc = record.LastAppSwitchUtc;
             }
         }
@@ -305,8 +304,10 @@ public class SteamAccountService(
 
             // 4. Abre Steam
             await StartSteamAsync(settings, ct);
-            LogSwitchPhase("steam-started", operation, account.SteamId64);
-            await knownAccountStore.RecordAppSwitchAsync(account.UniqueKey, DateTimeOffset.UtcNow, ct);
+            var switchTime = DateTimeOffset.UtcNow;
+            await knownAccountStore.RecordAppSwitchAsync(account.UniqueKey, switchTime, ct);
+            account.LastAppSwitchUtc = switchTime;
+            account.Timestamp = Math.Max(account.Timestamp, switchTime.ToUnixTimeSeconds());
         }
         catch
         {
@@ -1132,7 +1133,8 @@ public class SteamAccountService(
                 SteamLoginUsersEditor.Rewrite(
                     input, output, target.SteamId64,
                     state ?? LoginState.Online, target,
-                    !settingsService.Current.PreserveRememberPasswordAccounts.Contains(target.UniqueKey));
+                    !settingsService.Current.PreserveRememberPasswordAccounts.Contains(target.UniqueKey),
+                    updateTimestampToNow: true);
             }
             else
             {

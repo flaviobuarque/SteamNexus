@@ -18,16 +18,16 @@ public static class SteamAccountSnapshotParser
             var account = new SteamAccount
             {
                 SteamId64 = user.Name,
-                AccountName = user["AccountName"]?.ToString() ?? string.Empty,
-                PersonaName = user["PersonaName"]?.ToString() ?? string.Empty,
-                RememberPassword = user["RememberPassword"]?.ToString() == "1",
-                MostRecent = user["MostRecent"]?.ToString() == "1",
-                AutoLogin = user["AutoLogin"]?.ToString() == "1",
-                WantsOfflineMode = user["WantsOfflineMode"]?.ToString() == "1",
+                AccountName = GetValue(user, "AccountName") ?? string.Empty,
+                PersonaName = GetValue(user, "PersonaName") ?? string.Empty,
+                RememberPassword = GetValue(user, "RememberPassword") == "1",
+                MostRecent = GetValue(user, "MostRecent") == "1",
+                AutoLogin = GetValue(user, "AutoLogin") == "1",
+                WantsOfflineMode = GetValue(user, "WantsOfflineMode") == "1",
             };
 
             if (long.TryParse(
-                    user["Timestamp"]?.ToString(),
+                    GetValue(user, "Timestamp"),
                     System.Globalization.NumberStyles.Integer,
                     System.Globalization.CultureInfo.InvariantCulture,
                     out var timestamp))
@@ -54,5 +54,12 @@ public static class SteamAccountSnapshotParser
 
         var recentAccounts = accounts.Where(a => a.MostRecent).ToList();
         return recentAccounts.Count == 1 ? recentAccounts[0] : null;
+    }
+
+    private static string? GetValue(KVObject obj, string key)
+    {
+        return obj.Children
+            .FirstOrDefault(child => string.Equals(child.Name, key, StringComparison.OrdinalIgnoreCase))
+            ?.Value?.ToString();
     }
 }

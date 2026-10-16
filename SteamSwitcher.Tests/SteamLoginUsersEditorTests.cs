@@ -13,6 +13,25 @@ public sealed class SteamLoginUsersEditorTests
     private const string SecondId = "76561198000000002";
 
     [Fact]
+    public void Parse_LowercaseTimestamp_ShouldPopulateAccountTimestamp()
+    {
+        var vdf = """"
+            "users"
+            {
+                "76561198000000001"
+                {
+                    "AccountName" "first"
+                    "PersonaName" "First"
+                    "timestamp" "1792182064"
+                }
+            }
+            """";
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(vdf));
+        var snapshot = SteamAccountSnapshotParser.Parse(stream);
+        snapshot.Accounts[0].Timestamp.Should().Be(1792182064);
+    }
+
+    [Fact]
     public void Rewrite_SelectsExactlyOneAccountAndClearsPreviousIndicators()
     {
         using var output = Rewrite(CreateVdf(), SecondId, LoginState.Online);
@@ -240,6 +259,34 @@ public sealed class SteamLoginUsersEditorTests
         var document = Deserialize(output);
         var user = document.Children.Single(u => u.Name == FirstId);
         Value(user, "Timestamp").Should().Be("1712345678");
+    }
+
+    [Fact]
+    public void Rewrite_WithUpdateTimestampToNow_UpdatesTimestampInVdf()
+    {
+        var before = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var source = """"
+            "users"
+            {
+                "76561198000000001"
+                {
+                    "AccountName" "first"
+                    "PersonaName" "First"
+                    "timestamp" "1700000000"
+                }
+            }
+            """";
+
+        using var input = StreamOf(source);
+        using var output = new MemoryStream();
+        SteamLoginUsersEditor.Rewrite(
+            input, output, FirstId, LoginState.Online,
+            updateTimestampToNow: true);
+
+        var document = Deserialize(output);
+        var user = document.Children.Single(u => u.Name == FirstId);
+        var val = long.Parse(Value(user, "Timestamp"));
+        val.Should().BeGreaterOrEqualTo(before);
     }
 
     private static MemoryStream Rewrite(string source, string target, LoginState state)

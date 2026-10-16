@@ -133,4 +133,11 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     }
 
     partial void OnIsFavoriteChanged(bool value) => Account.IsFavorite = value;
+
+    public void RefreshUsageTimestamp()
+    {
+        OnPropertyChanged(nameof(Timestamp));
+        OnPropertyChanged(nameof(LastLoginFormatted));
+        OnPropertyChanged(nameof(LastUsageText));
+    }
 }
