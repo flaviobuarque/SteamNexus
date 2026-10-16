@@ -45,13 +45,16 @@ public sealed class SteamKnownAccountStore : ISteamKnownAccountStore
                         || string.IsNullOrWhiteSpace(account.SteamId64))
                         continue;
 
+                    var existing = stored.TryGetValue(account.UniqueKey, out var prev) ? prev : null;
+                    var maxTimestamp = Math.Max(account.Timestamp, existing?.Timestamp ?? 0);
+
                     stored[account.UniqueKey] = new KnownSteamAccount
                     {
                         InstallationId = account.InstallationId,
                         SteamId64 = account.SteamId64,
-                        AccountName = account.AccountName,
-                        PersonaName = account.PersonaName,
-                        Timestamp = account.Timestamp,
+                        AccountName = string.IsNullOrWhiteSpace(account.AccountName) && existing is not null ? existing.AccountName : account.AccountName,
+                        PersonaName = string.IsNullOrWhiteSpace(account.PersonaName) && existing is not null ? existing.PersonaName : account.PersonaName,
+                        Timestamp = maxTimestamp,
                     };
                 }
             },

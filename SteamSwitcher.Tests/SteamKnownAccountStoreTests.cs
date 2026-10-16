@@ -56,6 +56,39 @@ public sealed class SteamKnownAccountStoreTests
         }
     }
 
+    [Fact]
+    public async Task EnforcesMonotonicTimestamp_DoesNotOverwriteWithZero()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"steam-known-{Guid.NewGuid():N}.json");
+        try
+        {
+            var store = new SteamKnownAccountStore(path);
+            var initialAccount = Account("inst1", "76561198000000001", "player1");
+            initialAccount.Timestamp = 1700000000;
+            await store.RememberAsync([initialAccount]);
+
+            // Attempt to overwrite with timestamp 0 (e.g. Steam wiped timestamp)
+            var zeroAccount = Account("inst1", "76561198000000001", "player1");
+            zeroAccount.Timestamp = 0;
+            await store.RememberAsync([zeroAccount]);
+
+            var records = await store.LoadAsync();
+            records["inst1:76561198000000001"].Timestamp.Should().Be(1700000000);
+
+            // Update with a newer timestamp
+            var newerAccount = Account("inst1", "76561198000000001", "player1");
+            newerAccount.Timestamp = 1700000500;
+            await store.RememberAsync([newerAccount]);
+
+            records = await store.LoadAsync();
+            records["inst1:76561198000000001"].Timestamp.Should().Be(1700000500);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static SteamAccount Account(
         string installationId,
         string steamId,
