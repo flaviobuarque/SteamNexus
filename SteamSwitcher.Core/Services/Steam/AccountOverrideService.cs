@@ -1,5 +1,5 @@
-﻿using System.Text.Json;
-
+using System.Collections.Concurrent;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
 namespace SteamSwitcher.Core.Services;
@@ -7,9 +7,11 @@ namespace SteamSwitcher.Core.Services;
 public class AccountOverrideService : IAccountOverrideService
 {
     private readonly ILogger<AccountOverrideService> _logger;
-    private static readonly string _overridesPath = Path.Combine(
+    private static readonly string DefaultOverridesPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SteamSwitcher", "overrides.json");
+
+    private readonly string _overridesPath;
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -17,13 +19,14 @@ public class AccountOverrideService : IAccountOverrideService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    private Dictionary<string, AccountOverride> _overrides = [];
+    private readonly ConcurrentDictionary<string, AccountOverride> _overrides = new(StringComparer.Ordinal);
     private readonly Task _initialLoadTask;
     private readonly SemaphoreSlim _writeGate = new(1, 1);
 
-    public AccountOverrideService(ILogger<AccountOverrideService> logger)
+    public AccountOverrideService(ILogger<AccountOverrideService> logger, string? overridesPath = null)
     {
         _logger = logger;
+        _overridesPath = overridesPath ?? DefaultOverridesPath;
         _initialLoadTask = LoadAsync();
     }
 
@@ -33,21 +36,25 @@ public class AccountOverrideService : IAccountOverrideService
         try
         {
             var json = await File.ReadAllTextAsync(_overridesPath);
-            _overrides = JsonSerializer.Deserialize<Dictionary<string, AccountOverride>>(
-                json, _jsonOptions) ?? [];
+            var loaded = JsonSerializer.Deserialize<Dictionary<string, AccountOverride>>(
+                json, _jsonOptions);
+            if (loaded is not null)
+            {
+                _overrides.Clear();
+                foreach (var (k, v) in loaded)
+                    _overrides[k] = v;
+            }
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Erro ao carregar overrides de contas");
-            _overrides = [];
         }
     }
 
     public async Task<AccountOverride?> GetOverrideAsync(string steamId64)
     {
         await _initialLoadTask;
-        _overrides.TryGetValue(steamId64, out var o);
-        return o;
+        return _overrides.TryGetValue(steamId64, out var o) ? o : null;
     }
 
     public async Task SaveOverrideAsync(string steamId64, AccountOverride data)
@@ -71,7 +78,7 @@ public class AccountOverrideService : IAccountOverrideService
         await _writeGate.WaitAsync();
         try
         {
-            if (_overrides.Remove(steamId64))
+            if (_overrides.TryRemove(steamId64, out _))
                 await PersistAsync();
         }
         finally
