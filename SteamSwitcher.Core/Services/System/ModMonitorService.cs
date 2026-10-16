@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace SteamSwitcher.Core.Services;
 
@@ -118,7 +118,7 @@ public class ModMonitorService(ILogger<ModMonitorService> logger) : IModMonitorS
         };
 
         var suspicious = type != ModType.Plugin &&
-            (fullPath.EndsWith(".exe") || fullPath.EndsWith(".dll"));
+            (fullPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || fullPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
 
         return new DetectedMod
         {

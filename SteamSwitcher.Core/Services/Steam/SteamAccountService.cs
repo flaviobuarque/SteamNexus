@@ -67,11 +67,6 @@ public class SteamAccountService(
     {
         var installationId = _operationContext.Value?.InstallationId
             ?? installationService.SelectedInstallation?.Id;
-        if (!string.Equals(_cachedInstallationId, installationId, StringComparison.Ordinal))
-        {
-            InvalidateSnapshot();
-            _cachedInstallationId = installationId;
-        }
 
         if (string.IsNullOrEmpty(SteamPath))
         {
@@ -86,18 +81,16 @@ public class SteamAccountService(
             return SteamAccountsSnapshot.Empty;
         }
 
-        var fileInfo = new FileInfo(vdfPath);
-        if (_cachedSnapshot is not null
-            && _cachedVdfLength == fileInfo.Length
-            && _cachedVdfWriteTicks == fileInfo.LastWriteTimeUtc.Ticks)
-        {
-            return _cachedSnapshot;
-        }
-
         await _snapshotGate.WaitAsync(ct);
         try
         {
-            fileInfo.Refresh();
+            if (!string.Equals(_cachedInstallationId, installationId, StringComparison.Ordinal))
+            {
+                InvalidateSnapshotCore();
+                _cachedInstallationId = installationId;
+            }
+
+            var fileInfo = new FileInfo(vdfPath);
             if (_cachedSnapshot is not null
                 && _cachedVdfLength == fileInfo.Length
                 && _cachedVdfWriteTicks == fileInfo.LastWriteTimeUtc.Ticks)
@@ -1215,11 +1208,24 @@ public class SteamAccountService(
         bool VdfExisted,
         object? AutoLoginUser);
 
-    private void InvalidateSnapshot()
+    private void InvalidateSnapshotCore()
     {
         _cachedSnapshot = null;
         _cachedVdfLength = -1;
         _cachedVdfWriteTicks = -1;
+    }
+
+    private void InvalidateSnapshot()
+    {
+        _snapshotGate.Wait();
+        try
+        {
+            InvalidateSnapshotCore();
+        }
+        finally
+        {
+            _snapshotGate.Release();
+        }
     }
 
     private static void UpdateRegistry(SteamAccount account)
@@ -1464,7 +1470,7 @@ public class SteamAccountService(
         {
             FileName = steamExe,
             UseShellExecute = true
-        });
+        })?.Dispose();
     }
 
     private async Task RunSteamMutationAsync(

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace SteamSwitcher.Core.Services;
@@ -78,7 +78,7 @@ public class OnboardingService : IOnboardingService
             {
                 FileName = url,
                 UseShellExecute = true
-            });
+            })?.Dispose();
 
             progress.Report(100);
 
@@ -109,7 +109,7 @@ public class OnboardingService : IOnboardingService
             FileName = steamExe,
             Arguments = "/uninstall",
             UseShellExecute = true
-        });
+        })?.Dispose();
     }
 
     private async Task SaveFlagsAsync()
