@@ -24,29 +24,42 @@ public static class CoverCompressor
             using var src = SKBitmap.Decode(sourcePath);
             if (src is null) return false;
 
-            // Redimensiona mantendo proporcao se exceder o tamanho nominal.
-            SKBitmap target = src;
-            if (src.Width > MaxWidth || src.Height > MaxHeight)
+            SKBitmap? resized = null;
+            try
             {
-                var scale = Math.Min(
-                    (double)MaxWidth / src.Width,
-                    (double)MaxHeight / src.Height);
+                // Redimensiona mantendo proporcao se exceder o tamanho nominal.
+                SKBitmap target = src;
+                if (src.Width > MaxWidth || src.Height > MaxHeight)
+                {
+                    var scale = Math.Min(
+                        (double)MaxWidth / src.Width,
+                        (double)MaxHeight / src.Height);
 
-                var newW = Math.Max(1, (int)(src.Width * scale));
-                var newH = Math.Max(1, (int)(src.Height * scale));
+                    var newW = Math.Max(1, (int)(src.Width * scale));
+                    var newH = Math.Max(1, (int)(src.Height * scale));
 
-                target = src.Resize(new SKImageInfo(newW, newH), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None));
-                src.Dispose();
+                    resized = src.Resize(new SKImageInfo(newW, newH), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None));
+                    if (resized is not null)
+                    {
+                        target = resized;
+                    }
+                }
+
+                using var img = SKImage.FromBitmap(target);
+                if (img is null) return false;
+                using var data = img.Encode(SKEncodedImageFormat.Jpeg, JpegQuality);
+                if (data is null) return false;
+
+                Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                using var fs = File.Create(destPath);
+                data.SaveTo(fs);
+
+                return true;
             }
-
-            using var img = SKImage.FromBitmap(target);
-            using var data = img.Encode(SKEncodedImageFormat.Jpeg, JpegQuality);
-
-            Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-            using var fs = File.Create(destPath);
-            data.SaveTo(fs);
-
-            return true;
+            finally
+            {
+                resized?.Dispose();
+            }
         }
         catch
         {
