@@ -4,6 +4,18 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.32] - 2026-10-16
+
+### Novidades
+
+- **Detalhes Estruturados no Histórico:** Redesenho completo dos detalhes expandidos nas atividades, com blocos visuais para conta de origem e destino, dados de sessão, badges com carimbo de data/hora e atalho direto para a ferramenta de diagnóstico da Steam em caso de falha.
+- **Botão Flutuante Voltar ao Topo:** Navegação rápida com botão flutuante circular (FAB) no canto inferior direito, acionado suavemente ao rolar a página.
+
+### Melhorias
+
+- **Interface Aperfeiçoada no Histórico:** Alinhamento de ações de cópia, data e controle de expansão à extrema direita do cartão; remoção de paginação redundante graças à rolagem infinita contínua.
+- **Sincronização de Versão na Página Sobre:** Integração do número de versão oficial com propriedades globais de build e injeção do serviço de atualizações, refletindo fielmente a versão em execução.
+
 ## [1.0.31] - 2026-10-16
 
 ### Novidades
