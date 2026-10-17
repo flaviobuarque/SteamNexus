@@ -4,6 +4,13 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.33] - 2026-10-16
+
+### Correções
+
+- **Adicionar Nova Conta Sem Conflitos:** Ao adicionar uma nova conta, o aplicativo agora zera os indicadores de conta ativa (`MostRecent` e `AutoLogin`) de todas as contas no `loginusers.vdf`, além de limpar o autologin no registro do Windows (padrão TcNo Switcher). Isso evita falsos avisos de divergência de autologin no diagnóstico e garante que a Steam abra diretamente na tela limpa de login.
+- **Sincronização Imediata de Contas em Jogos:** Contas recém-adicionadas ou alteradas agora atualizam instantaneamente a lista de opções para associação de jogos na aba de Jogos sem necessidade de reiniciar o aplicativo.
+
 ## [1.0.32] - 2026-10-16
 
 ### Novidades
