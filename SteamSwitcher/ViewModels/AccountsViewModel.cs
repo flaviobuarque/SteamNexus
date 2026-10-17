@@ -447,8 +447,9 @@ public partial class AccountsViewModel(
                 .Task
                 .Unwrap();
 
-            // Avisa o MainViewModel para re-ler a conta ativa do registry/VDF.
+            // Avisa o MainViewModel e GamesViewModel sobre contas atualizadas
             WeakReferenceMessenger.Default.Send(new ActiveAccountChanged());
+            WeakReferenceMessenger.Default.Send(new AccountsRefreshedMessage());
         }
         catch (OperationCanceledException)
         {

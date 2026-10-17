@@ -1,4 +1,4 @@
-﻿using SteamSwitcher.ViewModels;
+using SteamSwitcher.ViewModels;
 using CommunityToolkit.Mvvm.Messaging;
 using System.Windows;
 using System.Windows.Controls;
@@ -37,6 +37,7 @@ public partial class GamesPage : Page,
             (_, _) => ViewModel.RefreshGameGridDensity());
 
         await ViewModel.InitializeAsync();
+        await ViewModel.RefreshAccountsAsync();
 
         ViewModel.RefreshStatusBar();
         await _scrollMemory.RestoreAsync(this);

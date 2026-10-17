@@ -23,6 +23,8 @@ public class AboutPageTests
     {
         var text = AboutPage.ResolveVersionText(null);
         text.Should().StartWith("Versão ");
-        text.Should().Be("Versão 1.0.32");
+        var version = typeof(AboutPage).Assembly.GetName().Version;
+        var versionStr = version is not null ? $"{version.Major}.{version.Minor}.{version.Build}" : string.Empty;
+        text.Should().Be($"Versão {versionStr}");
     }
 }

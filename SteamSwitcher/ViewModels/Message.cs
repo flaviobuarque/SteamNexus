@@ -1,4 +1,4 @@
-﻿namespace SteamSwitcher.ViewModels;
+namespace SteamSwitcher.ViewModels;
 
 public record CacheCleared;
 public record SteamGridDbKeyChanged;
@@ -9,3 +9,4 @@ public record GameGridDensityChanged;
 public record NavigateToSettingsRequested;
 public record DefaultLoginPreferenceChanged(SteamSwitcher.Core.Models.LoginState? State);
 public record AccountLoginPreferenceChanged(string AccountKey, SteamSwitcher.Core.Models.LoginState? State);
+public record AccountsRefreshedMessage;

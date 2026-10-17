@@ -298,6 +298,28 @@ public sealed class SteamLoginUsersEditorTests
         return output;
     }
 
+    [Fact]
+    public void ClearActiveAccount_ClearsMostRecentAndAutoLogin_PreservingRememberPassword()
+    {
+        using var input = StreamOf(CreateVdf());
+        using var output = new MemoryStream();
+
+        var changed = SteamLoginUsersEditor.ClearActiveAccount(input, output);
+
+        changed.Should().BeTrue();
+        output.Position = 0;
+        var snapshot = SteamAccountSnapshotParser.Parse(output);
+        snapshot.ActiveAccount.Should().BeNull();
+        snapshot.Accounts.Should().HaveCount(2);
+
+        foreach (var account in snapshot.Accounts)
+        {
+            account.AutoLogin.Should().BeFalse();
+            account.MostRecent.Should().BeFalse();
+            account.RememberPassword.Should().BeTrue();
+        }
+    }
+
     private static KVDocument Deserialize(Stream stream)
     {
         stream.Position = 0;

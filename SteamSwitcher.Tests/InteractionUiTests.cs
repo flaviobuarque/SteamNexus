@@ -83,12 +83,16 @@ public sealed class InteractionUiTests
                 cards.Should().OnlyContain(card => !card.IsExpanded);
                 var opened = cards[0];
                 opened.IsExpanded = true;
-                ((Button)activity.FindName("LoadMore")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                typeof(SteamSwitcher.Views.Pages.ActivityPage)
+                    .GetMethod("AddBatch", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(activity, null);
                 history.Items.Count.Should().Be(60);
                 activity.UpdateLayout();
                 Expanders(history).Should().Contain(opened);
                 opened.IsExpanded.Should().BeTrue();
-                ((Button)activity.FindName("LoadMore")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                typeof(SteamSwitcher.Views.Pages.ActivityPage)
+                    .GetMethod("AddBatch", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(activity, null);
                 history.Items.Count.Should().Be(90);
                 ((ComboBox)activity.FindName("TypeFilter")).SelectedIndex = 5;
                 history.Items.Count.Should().Be(22);

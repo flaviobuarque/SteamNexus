@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using SteamSwitcher.Core.Helpers;
@@ -190,6 +190,10 @@ public partial class GamesViewModel(
             WeakReferenceMessenger.Default.Register<SteamGridDbKeyChanged>(this, async (_, _) =>
                 await RetryMissingCoversAsync());
 
+        if (!WeakReferenceMessenger.Default.IsRegistered<AccountsRefreshedMessage>(this))
+            WeakReferenceMessenger.Default.Register<AccountsRefreshedMessage>(this, async (_, _) =>
+                await RefreshAccountsAsync());
+
         if (!WeakReferenceMessenger.Default.IsRegistered<CacheCleared>(this))
             WeakReferenceMessenger.Default.Register<CacheCleared>(this, (_, _) =>
             {
@@ -218,33 +222,10 @@ public partial class GamesViewModel(
         IsLoading = true;
         try
         {
-            var accounts = await accountService.GetAllAccountsAsync(ct);
-            foreach (var account in accounts)
-            {
-                ct.ThrowIfCancellationRequested();
-                var preference = await accountOverrideService.GetOverrideAsync(account.UniqueKey)
-                    ?? await accountOverrideService.GetOverrideAsync(account.SteamId64);
-                if (preference is null) continue;
-                account.LoginStateOverride = preference.LoginStateOverride;
-                account.CustomDisplayName = preference.CustomDisplayName;
-                account.CustomAvatarPath = preference.CustomAvatarPath;
-            }
-            _allAccounts = accounts;
-
-            // Monta lista de filtros
-            FilterAccounts = new ObservableCollection<AccountCardViewModel>(
-                accounts.Prepend(new SteamAccount
-                {
-                    SteamId64 = string.Empty,
-                    AccountName = "Sem filtro de conta",
-                    PersonaName = "Todas as contas"
-                }).Select(account => new AccountCardViewModel(account)));
-            SelectedFilterAccount = FilterAccounts.First();
-
-            VisibleFilterAccounts = new ObservableCollection<AccountCardViewModel>(FilterAccounts);
+            await RefreshAccountsAsync(ct);
 
             // Carrega jogos
-            var rawGames = await gameService.GetInstalledGamesAsync(accounts, ct);
+            var rawGames = await gameService.GetInstalledGamesAsync(_allAccounts, ct);
             _favoriteGameIds = await LoadFavoriteGameIdsAsync();
             var cards = rawGames
                 .Select(game => new GameCardViewModel(
@@ -338,6 +319,48 @@ public partial class GamesViewModel(
                 StringComparison.OrdinalIgnoreCase));
 
         VisibleFilterAccounts = new ObservableCollection<AccountCardViewModel>(filtered);
+    }
+
+    public async Task RefreshAccountsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var accounts = await accountService.GetAllAccountsAsync(ct);
+            foreach (var account in accounts)
+            {
+                ct.ThrowIfCancellationRequested();
+                var preference = await accountOverrideService.GetOverrideAsync(account.UniqueKey)
+                    ?? await accountOverrideService.GetOverrideAsync(account.SteamId64);
+                if (preference is null) continue;
+                account.LoginStateOverride = preference.LoginStateOverride;
+                account.CustomDisplayName = preference.CustomDisplayName;
+                account.CustomAvatarPath = preference.CustomAvatarPath;
+            }
+            _allAccounts = accounts;
+
+            RunOnUi(() =>
+            {
+                var previousKey = SelectedFilterAccount?.Account?.UniqueKey;
+                var cards = accounts.Prepend(new SteamAccount
+                {
+                    SteamId64 = string.Empty,
+                    AccountName = "Sem filtro de conta",
+                    PersonaName = "Todas as contas"
+                }).Select(account => new AccountCardViewModel(account)).ToList();
+
+                FilterAccounts = new ObservableCollection<AccountCardViewModel>(cards);
+                SelectedFilterAccount = FilterAccounts.FirstOrDefault(a => a.Account?.UniqueKey == previousKey)
+                    ?? FilterAccounts.First();
+                VisibleFilterAccounts = new ObservableCollection<AccountCardViewModel>(FilterAccounts);
+            });
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Falha ao recarregar contas em GamesViewModel: {ex.Message}");
+        }
     }
 
     private void StartFilterAvatarLoading()
@@ -645,8 +668,9 @@ public partial class GamesViewModel(
         if (!TryBeginGameOperation()) return;
         try
         {
-        if (!await RequireStoppedGameAsync(cardVm)) return;
-        if (_allAccounts.Count == 0)
+            if (!await RequireStoppedGameAsync(cardVm)) return;
+            await RefreshAccountsAsync();
+            if (_allAccounts.Count == 0)
         {
             snackbarService.Show(
                 "Nenhuma conta disponível",
@@ -1187,6 +1211,7 @@ public partial class GamesViewModel(
         // Conta desconhecida — pede pro usuário escolher
         if (account is null)
         {
+            await RefreshAccountsAsync();
             if (_allAccounts.Count == 0)
             {
                 snackbarService.Show(

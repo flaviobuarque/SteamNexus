@@ -1429,11 +1429,13 @@ public class SteamAccountService(
         // 1. Fecha Steam
         await CloseSteamCombinedAsync(ct);
 
-        // 2. Limpa autologin do registro
+        // 2. Limpa conta ativa em loginusers.vdf (MostRecent = 0, AutoLogin = 0)
+        await ClearActiveAccountInVdfAsync(ct);
+
+        // 3. Limpa autologin do registro
         _registryService.SetAutoLoginUser(string.Empty);
 
-
-        // 3. Abre Steam sem argumentos (cai na tela de login)
+        // 4. Abre Steam sem argumentos (cai na tela limpa de login)
         var steamExe = locator.GetSteamExePath(SteamPath);
         if (!File.Exists(steamExe)) return;
 
@@ -1442,6 +1444,25 @@ public class SteamAccountService(
             FileName = steamExe,
             UseShellExecute = true
         })?.Dispose();
+    }
+
+    private async Task ClearActiveAccountInVdfAsync(CancellationToken ct)
+    {
+        await Task.Run(() =>
+        {
+            var vdfPath = locator.GetLoginUsersVdfPath(SteamPath);
+            if (!File.Exists(vdfPath)) return;
+
+            var originalVdf = File.ReadAllBytes(vdfPath);
+            using var input = new MemoryStream(originalVdf, writable: false);
+            using var output = new MemoryStream();
+
+            if (SteamLoginUsersEditor.ClearActiveAccount(input, output))
+            {
+                WriteVdfAtomically(vdfPath, output.ToArray(), createBackup: true);
+                InvalidateSnapshot();
+            }
+        }, ct);
     }
 
     private async Task RunSteamMutationAsync(

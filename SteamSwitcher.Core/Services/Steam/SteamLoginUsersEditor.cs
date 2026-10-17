@@ -25,6 +25,40 @@ public static class SteamLoginUsersEditor
         return changed;
     }
 
+    public static bool ClearActiveAccount(Stream input, Stream output)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
+
+        var serializer = KVSerializer.Create(KVSerializationFormat.KeyValues1Text);
+        var document = serializer.Deserialize(input);
+        if (!string.Equals(document.Name, "users", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("loginusers.vdf inválido.");
+
+        var changed = false;
+        foreach (var user in document.Children)
+        {
+            if (!ulong.TryParse(user.Name, out _)) continue;
+
+            var mostRecent = user.Children.FirstOrDefault(child => child.Name.Equals("MostRecent", StringComparison.OrdinalIgnoreCase));
+            if (mostRecent?.Value?.ToString() == "1")
+            {
+                SetString(user, "MostRecent", "0");
+                changed = true;
+            }
+
+            var autoLogin = user.Children.FirstOrDefault(child => child.Name.Equals("AutoLogin", StringComparison.OrdinalIgnoreCase));
+            if (autoLogin?.Value?.ToString() == "1")
+            {
+                SetString(user, "AutoLogin", "0");
+                changed = true;
+            }
+        }
+
+        if (changed) serializer.Serialize(output, document);
+        return changed;
+    }
+
     public static void Create(
         Stream output,
         SteamAccount target,

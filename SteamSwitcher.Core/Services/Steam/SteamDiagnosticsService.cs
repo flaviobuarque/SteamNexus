@@ -260,23 +260,43 @@ public sealed class SteamDiagnosticsService(
         var isRunning = pathsForInstallation.Count > 0;
 
         var active = snapshot.ActiveAccount;
+        var registryName = Registry.GetValue(
+            @"HKEY_CURRENT_USER\Software\Valve\Steam", "AutoLoginUser", null)?.ToString() ?? string.Empty;
+
         if (snapshot.Accounts.Count > 0)
-            items.Add(active is null
-                ? Error("Conta ativa", "O VDF não possui exatamente uma conta ativa.")
-                : Success("Conta ativa", $"{active.PersonaName} (@{active.AccountName})"));
+        {
+            if (active is not null)
+            {
+                items.Add(Success("Conta ativa", $"{active.PersonaName} (@{active.AccountName})"));
+            }
+            else if (string.IsNullOrWhiteSpace(registryName))
+            {
+                items.Add(Success("Conta ativa", "Nenhuma conta ativa (autologin desativado)."));
+            }
+            else
+            {
+                items.Add(Error("Conta ativa", "O VDF não possui exatamente uma conta ativa."));
+            }
+        }
 
         var shouldCheckGlobalRegistry = isRunning
             || (runningPaths.Count == 0 && installation.IsSelected);
         var registryMatches = false;
         if (shouldCheckGlobalRegistry)
         {
-            var registryName = Registry.GetValue(
-                @"HKEY_CURRENT_USER\Software\Valve\Steam", "AutoLoginUser", null)?.ToString() ?? string.Empty;
-            registryMatches = active is not null
-                && string.Equals(registryName, active.AccountName, StringComparison.OrdinalIgnoreCase);
-            items.Add(registryMatches
-                ? Success("Registro", $"Autologin configurado para @{registryName}.")
-                : Warning("Registro", "O autologin global não corresponde à conta ativa desta instalação."));
+            if (active is null && string.IsNullOrWhiteSpace(registryName))
+            {
+                registryMatches = true;
+                items.Add(Success("Registro", "Nenhum autologin configurado no registro."));
+            }
+            else
+            {
+                registryMatches = active is not null
+                    && string.Equals(registryName, active.AccountName, StringComparison.OrdinalIgnoreCase);
+                items.Add(registryMatches
+                    ? Success("Registro", $"Autologin configurado para @{registryName}.")
+                    : Warning("Registro", "O autologin global não corresponde à conta ativa desta instalação."));
+            }
         }
         else
         {
