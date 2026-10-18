@@ -1,6 +1,10 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!-- Explicit styles: no global replacement of third-party control templates. -->
+    <SolidColorBrush x:Key="AccentButtonForeground" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="#FFFFFF" />
+
     <Style x:Key="NexusKeyboardFocus" TargetType="Control">
         <Setter Property="Template">
             <Setter.Value>

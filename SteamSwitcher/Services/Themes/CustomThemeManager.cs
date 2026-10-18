@@ -274,6 +274,9 @@ public static class CustomThemeManager
         resources["AccentTextFillColorDisabledBrush"] = FrozenBrush(accentSurface, 0.65);
         resources["AccentButtonBorderBrush"] = FrozenBrush(accentAlt);
         resources["AccentControlElevationBorderBrush"] = FrozenBrush(accentAlt);
+        resources["AccentButtonForeground"] = FrozenBrush(onAccent);
+        resources["AccentButtonForegroundPointerOver"] = FrozenBrush(onAccent);
+        resources["AccentButtonForegroundPressed"] = FrozenBrush(onAccent);
         resources["TextOnAccentFillColorPrimaryBrush"] = FrozenBrush(onAccent);
         resources["TextOnAccentFillColorSecondaryBrush"] = FrozenBrush(onAccent, 0.88);
         resources["TextOnAccentFillColorDisabledBrush"] = FrozenBrush(onAccent, 0.55);

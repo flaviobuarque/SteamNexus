@@ -32,6 +32,9 @@ public sealed class InteractionUiTests
                 app.Resources["AppAccentBrush"] = new SolidColorBrush(Colors.Purple);
                 System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
                 ((SolidColorBrush)button.Background).Color.Should().Be(Colors.Purple);
+                ((SolidColorBrush)app.FindResource("AccentButtonForeground")).Color.Should().Be(Colors.White);
+                ((SolidColorBrush)app.FindResource("AccentButtonForegroundPointerOver")).Color.Should().Be(Colors.White);
+                ((SolidColorBrush)app.FindResource("AccentButtonForegroundPressed")).Color.Should().Be(Colors.White);
 
                 var confirm = new ConfirmDialog("Confirmar", new string('a', 1000));
                 var quick = new QuickSearchDialog([new QuickSearchEntry("id", "Jogo", "Teste", "Conta · E:", "")], []);

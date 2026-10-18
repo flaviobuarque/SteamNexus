@@ -39,6 +39,9 @@
     <SolidColorBrush x:Key="AppDialogBackdropBrush" Color="#88000000" />
 
     <!-- Aliases WPF-UI -->
+    <SolidColorBrush x:Key="AccentButtonForeground"                  Color="#FFFFFF" />
+    <SolidColorBrush x:Key="AccentButtonForegroundPointerOver"       Color="#FFFFFF" />
+    <SolidColorBrush x:Key="AccentButtonForegroundPressed"           Color="#FFFFFF" />
     <SolidColorBrush x:Key="ApplicationBackgroundBrush"              Color="#07111F" />
     <SolidColorBrush x:Key="ControlFillColorDefaultBrush"            Color="#0D2135" />
     <SolidColorBrush x:Key="ControlFillColorSecondaryBrush"          Color="#102B45" />
