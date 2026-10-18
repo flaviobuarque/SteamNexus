@@ -4,6 +4,12 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.34] - 2026-10-18
+
+### Correções
+
+- **Contraste de Ícones em Botões de Destaque:** Correção da cor dos ícones de alternância de modo de visualização (Grade e Lista) em Contas e Jogos, além de botões com estilo de destaque (Primary). O alias de tema `AccentButtonForeground` e seus estados agora mapeiam corretamente para a cor de alto contraste calculada (`White` em temas escuros, AMOLED e Roxo neon), garantindo que os ícones permaneçam nítidos e brancos quando o botão estiver ativo, selecionado ou focado.
+
 ## [1.0.33] - 2026-10-16
 
 ### Correções
