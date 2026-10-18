@@ -5,10 +5,13 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:ic="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
     xmlns:helpers="clr-namespace:SteamSwitcher.Helpers"
+    xmlns:converters="clr-namespace:SteamSwitcher.Converters"
     xmlns:models="clr-namespace:SteamSwitcher.Core.Models;assembly=SteamSwitcher.Core"
     Loaded="Page_Loaded">
 
     <Page.Resources>
+        <converters:EqualityToVisibilityConverter x:Key="EqualityToVisibility" />
+        <converters:EqualityToBoolConverter x:Key="EqualityToBool" />
         <Style x:Key="TileStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
@@ -27,10 +30,14 @@
             <Setter Property="CornerRadius" Value="0,0,10,10" />
             <Setter Property="Margin" Value="0" />
         </Style>
+        <Style x:Key="TileSingleStyle" TargetType="Border" BasedOn="{StaticResource TileStyle}">
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Margin" Value="0" />
+        </Style>
         <Style x:Key="SettingsNavButtonStyle" TargetType="ui:Button">
             <Setter Property="Background" Value="{DynamicResource AppSurfaceAltBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -43,16 +50,17 @@
                         <Border x:Name="NavBorder" Padding="{TemplateBinding Padding}"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7">
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="NavBorder" Property="Opacity" Value="0.86" />
+                                <Setter TargetName="NavBorder" Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="NavBorder" Property="Opacity" Value="0.72" />
+                                <Setter TargetName="NavBorder" Property="Opacity" Value="0.75" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -69,7 +77,7 @@
 
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="184" />
+                <ColumnDefinition Width="196" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -101,7 +109,7 @@
                         Tag="Account" Click="SettingsNavButton_Click">
                         <StackPanel Orientation="Horizontal">
                             <ic:SymbolIcon Symbol="ArrowSwap" FontSize="15" Margin="0,0,9,0" />
-                            <TextBlock Text="Conta" VerticalAlignment="Center" />
+                            <TextBlock Text="Troca de conta" VerticalAlignment="Center" />
                         </StackPanel>
                     </ui:Button>
                     <ui:Button x:Name="InstallationsNavButton"
@@ -109,7 +117,7 @@
                         Tag="Installations" Click="SettingsNavButton_Click">
                         <StackPanel Orientation="Horizontal">
                             <ic:SymbolIcon Symbol="HardDrive" FontSize="15" Margin="0,0,9,0" />
-                            <TextBlock Text="Instalações" VerticalAlignment="Center" />
+                            <TextBlock Text="Instalações Steam" VerticalAlignment="Center" />
                         </StackPanel>
                     </ui:Button>
                     <ui:Button x:Name="SteamNavButton"
@@ -183,21 +191,128 @@
                 <TextBlock x:Name="AppearanceSection" Text="PERSONALIZAÇÃO" Style="{StaticResource SteamSwitcherSectionTitleStyle}" />
                 <StackPanel Margin="0,8,0,24">
                     <Border Style="{StaticResource TileFirstStyle}">
-                        <Grid>
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="260"/></Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="Tema atual" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                                <TextBlock Text="Escolha rapidamente a aparência do aplicativo."
-                                           Margin="0,3,18,0" FontSize="12" Foreground="{DynamicResource AppTextMutedBrush}"/>
+                        <StackPanel>
+                            <StackPanel Margin="0,0,0,16">
+                                <TextBlock Text="Tema visual" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                                <TextBlock Text="Escolha a paleta e aparência do aplicativo."
+                                           Margin="0,3,0,0" FontSize="12" Foreground="{DynamicResource AppTextMutedBrush}"/>
                             </StackPanel>
-                            <ComboBox Grid.Column="1" ItemsSource="{Binding ThemeOptions}"
-                                      SelectedValue="{Binding SelectedThemeName}" SelectedValuePath="Key"
-                                      SelectionChanged="ThemeSelection_Changed">
- <ComboBox.ItemTemplate><DataTemplate><Grid MinWidth="200"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
- <TextBlock Text="{Binding Name}" Margin="0,0,12,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
- <Border Grid.Column="1" Padding="6,2" CornerRadius="4" Background="{DynamicResource AppAccentSurfaceBrush}"><TextBlock Text="{Binding Badge}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/></Border>
- </Grid></DataTemplate></ComboBox.ItemTemplate></ComboBox>
-                        </Grid>
+
+                            <!-- Galeria Visual de Temas (Tiles com Swatches) -->
+                            <ItemsControl ItemsSource="{Binding ThemeOptions}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.ApplySelectedThemeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding Key}"
+                                                Margin="0,0,10,10"
+                                                Padding="0"
+                                                Cursor="Hand"
+                                                Width="175" Height="74">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Grid>
+                                                                    <!-- Base surface container -->
+                                                                    <Border x:Name="TileBorder"
+                                                                            Background="{TemplateBinding Background}"
+                                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                                                            CornerRadius="10"
+                                                                            Padding="12,10">
+                                                                        <ContentPresenter />
+                                                                    </Border>
+                                                                    <!-- Active ring highlight when selected -->
+                                                                    <Border x:Name="ActiveRing"
+                                                                            BorderBrush="{DynamicResource AppAccentBrush}"
+                                                                            BorderThickness="2"
+                                                                            CornerRadius="10"
+                                                                            IsHitTestVisible="False">
+                                                                        <Border.Style>
+                                                                            <Style TargetType="Border">
+                                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Value="True">
+                                                                                        <DataTrigger.Binding>
+                                                                                            <MultiBinding Converter="{StaticResource EqualityToBool}">
+                                                                                                <Binding Path="Key" />
+                                                                                                <Binding Path="DataContext.SelectedThemeName" RelativeSource="{RelativeSource AncestorType=ItemsControl}" />
+                                                                                            </MultiBinding>
+                                                                                        </DataTrigger.Binding>
+                                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </Border.Style>
+                                                                    </Border>
+                                                                </Grid>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="TileBorder" Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" />
+                                                                        <Setter TargetName="TileBorder" Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </Button.Style>
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="*" />
+                                                </Grid.RowDefinitions>
+                                                <!-- Top row: 3 mini swatches + badge -->
+                                                <Grid Grid.Row="0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Border Width="14" Height="14" CornerRadius="3" Background="{Binding BackgroundColor}" BorderBrush="#33FFFFFF" BorderThickness="1" Margin="0,0,4,0" ToolTip="Cor de fundo" />
+                                                        <Border Width="14" Height="14" CornerRadius="3" Background="{Binding SurfaceColor}" BorderBrush="#33FFFFFF" BorderThickness="1" Margin="0,0,4,0" ToolTip="Cor de superfície" />
+                                                        <Border Width="14" Height="14" CornerRadius="7" Background="{Binding AccentColor}" Margin="0,0,6,0" ToolTip="Cor de destaque" />
+                                                    </StackPanel>
+                                                    <Border HorizontalAlignment="Right" Padding="5,1" CornerRadius="4" Background="{DynamicResource AppAccentSurfaceBrush}">
+                                                        <TextBlock Text="{Binding Badge}" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                                    </Border>
+                                                </Grid>
+                                                <!-- Bottom row: Theme Name + Checkmark when selected -->
+                                                <Grid Grid.Row="1" Margin="0,8,0,0" VerticalAlignment="Bottom">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"
+                                                               Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                                               TextTrimming="CharacterEllipsis" Margin="0,0,22,0" VerticalAlignment="Center" />
+                                                    <Border HorizontalAlignment="Right" VerticalAlignment="Center" Width="16" Height="16" CornerRadius="8" Background="{DynamicResource AppAccentBrush}">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Value="True">
+                                                                        <DataTrigger.Binding>
+                                                                            <MultiBinding Converter="{StaticResource EqualityToBool}">
+                                                                                <Binding Path="Key" />
+                                                                                <Binding Path="DataContext.SelectedThemeName" RelativeSource="{RelativeSource AncestorType=ItemsControl}" />
+                                                                            </MultiBinding>
+                                                                        </DataTrigger.Binding>
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <ic:SymbolIcon Symbol="Checkmark" FontSize="9" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Border>
+                                                </Grid>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
                     </Border>
                     <Border Style="{StaticResource TileLastStyle}">
                         <Grid>
@@ -209,38 +324,39 @@
                                 <TextBlock Text="Tema personalizado" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
                                 <TextBlock Text="Crie e organize seus temas. Os oficiais são preservados."
                                            Margin="0,3,16,0" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource AppTextMutedBrush}"/>
-                                <TextBlock Text="BETA — A personalização de temas está em fase de testes."
-                                           Margin="0,6,16,0" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource AppWarningBrush}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,6,16,0">
+                                    <Border Padding="6,1" CornerRadius="4" Background="{DynamicResource AppWarningSurfaceBrush}"
+                                            BorderBrush="{DynamicResource AppWarningBrush}" BorderThickness="1" Margin="0,0,8,0">
+                                        <TextBlock Text="BETA" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource AppWarningBrush}" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="A personalização de temas está em fase de testes."
+                                               FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource AppTextMutedBrush}" VerticalAlignment="Center" />
+                                </StackPanel>
                             </StackPanel>
-                            <!-- Keep four fixed slots; add future actions to the overflow menu. -->
-                            <Grid Grid.Column="2" Width="186" Height="42" VerticalAlignment="Center">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="48"/><ColumnDefinition Width="48"/>
-                                    <ColumnDefinition Width="48"/><ColumnDefinition Width="42"/>
-                                </Grid.ColumnDefinitions>
-                                <ui:Button Width="42" Height="42" Padding="0" HorizontalAlignment="Left"
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <ui:Button Width="40" Height="40" Padding="0" Margin="0,0,6,0"
                                            Click="CreateTheme_Click" ToolTip="Criar tema" AutomationProperties.Name="Criar tema"
                                            Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
                                            Background="{DynamicResource AppAccentBrush}" Foreground="{DynamicResource AppOnAccentTextBrush}"
                                            BorderBrush="{DynamicResource AppAccentAltBrush}">
-                                    <Grid Width="24" Height="24">
-                                        <ic:SymbolIcon Symbol="Color" FontSize="18" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                    <Grid Width="22" Height="22">
+                                        <ic:SymbolIcon Symbol="Color" FontSize="17" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                                         <ic:SymbolIcon Symbol="Add" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
                                     </Grid>
                                 </ui:Button>
-                                <ui:Button Grid.Column="1" Width="42" Height="42" Padding="0" HorizontalAlignment="Left"
+                                <ui:Button Width="40" Height="40" Padding="0" Margin="0,0,6,0"
                                            Click="ImportTheme_Click" ToolTip="Importar tema" AutomationProperties.Name="Importar tema">
-                                    <ic:SymbolIcon Symbol="ArrowUpload" FontSize="18"/>
+                                    <ic:SymbolIcon Symbol="ArrowUpload" FontSize="17"/>
                                 </ui:Button>
-                                <ui:Button Grid.Column="2" Width="42" Height="42" Padding="0" HorizontalAlignment="Left"
+                                <ui:Button Width="40" Height="40" Padding="0" Margin="0,0,6,0"
                                            Click="OpenThemeEditor_Click" ToolTip="Editar tema" AutomationProperties.Name="Editar tema"
                                            Visibility="{Binding HasAppliedCustomTheme, Converter={StaticResource BoolToVisibility}}">
-                                    <ic:SymbolIcon Symbol="Edit" FontSize="18"/>
+                                    <ic:SymbolIcon Symbol="Edit" FontSize="17"/>
                                 </ui:Button>
-                                <ui:Button Grid.Column="3" Width="42" Height="42" Padding="0"
+                                <ui:Button Width="40" Height="40" Padding="0"
                                            ToolTip="Mais ações do tema" AutomationProperties.Name="Mais ações do tema" Click="ThemeActions_Click"
                                            Visibility="{Binding HasAppliedCustomTheme, Converter={StaticResource BoolToVisibility}}">
-                                    <TextBlock Text="⋯" FontSize="22" VerticalAlignment="Center"/>
+                                    <TextBlock Text="⋯" FontSize="20" FontWeight="Bold" LineHeight="14" VerticalAlignment="Center"/>
                                     <ui:Button.ContextMenu>
                                         <ContextMenu Style="{StaticResource AppCardContextMenuStyle}">
                                             <ContextMenu.Resources><Style TargetType="MenuItem" BasedOn="{StaticResource AppCardMenuItemStyle}"/></ContextMenu.Resources>
@@ -251,7 +367,7 @@
                                         </ContextMenu>
                                     </ui:Button.ContextMenu>
                                 </ui:Button>
-                            </Grid>
+                            </StackPanel>
                         </Grid>
                     </Border>
                 </StackPanel>
@@ -413,16 +529,18 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center">
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,18,0">
                                 <TextBlock Text="Status padrão de login" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                                <TextBlock Text="Usado quando a conta não possui override." FontSize="12" Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,3,0,0" />
+                                <TextBlock Text="Usado quando a conta não possui preferência definida."
+                                           FontSize="12" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,3,0,0" />
                             </StackPanel>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <RadioButton Content="Online" GroupName="LoginState" Margin="0,0,16,0" Cursor="Hand"
-                IsChecked="{Binding DefaultLoginStateOverride, Converter={StaticResource EnumToBool}, ConverterParameter={x:Static models:LoginState.Online}}" />
-                                <RadioButton Content="Offline" GroupName="LoginState" Cursor="Hand"
-                IsChecked="{Binding DefaultLoginStateOverride, Converter={StaticResource EnumToBool}, ConverterParameter={x:Static models:LoginState.Offline}}" />
-                            </StackPanel>
+                            <ComboBox Grid.Column="1" SelectedIndex="{Binding DefaultLoginPreferenceIndex, Mode=TwoWay}"
+                                      MinWidth="180" VerticalAlignment="Center" Cursor="Hand">
+                                <ComboBoxItem Content="Padrão da Steam" />
+                                <ComboBoxItem Content="Sempre Online" />
+                                <ComboBoxItem Content="Sempre Offline" />
+                            </ComboBox>
                         </Grid>
                     </Border>
                 </StackPanel>
@@ -506,39 +624,48 @@
                                                     RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                        CommandParameter="{Binding}" ToolTip="Definir como padrão"
                                                        Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                                       Padding="10,8" Margin="0,0,6,0"
+                                                       Height="36" Padding="12,0" Margin="0,0,6,0"
                                                        IsEnabled="{Binding IsValid}"
                                                        Visibility="{Binding IsSelected, Converter={StaticResource InverseBoolToVisibility}}">
-                                                <ic:SymbolIcon Symbol="Pin" FontSize="15" />
-                                            </ui:Button>
-                                            <ui:Button Command="{Binding DataContext.RenameSteamInstallationCommand,
-                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                       CommandParameter="{Binding}" ToolTip="Renomear"
-                                                       Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                                       Padding="10,8" Margin="0,0,6,0">
-                                                <ic:SymbolIcon Symbol="Edit" FontSize="15" />
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ic:SymbolIcon Symbol="Pin" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="Tornar padrão" FontSize="12" VerticalAlignment="Center" />
+                                                </StackPanel>
                                             </ui:Button>
                                             <ui:Button Command="{Binding DataContext.OpenSteamInstallationFolderCommand,
                                                     RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                       CommandParameter="{Binding}" ToolTip="Abrir pasta"
+                                                       CommandParameter="{Binding}" ToolTip="Abrir pasta de instalação"
                                                        Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                                       Padding="10,8" Margin="0,0,6,0" IsEnabled="{Binding IsValid}">
-                                                <ic:SymbolIcon Symbol="FolderOpen" FontSize="15" />
+                                                       Width="36" Height="36" Padding="0" Margin="0,0,6,0" IsEnabled="{Binding IsValid}">
+                                                <ic:SymbolIcon Symbol="FolderOpen" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                             </ui:Button>
-                                            <ui:Button Command="{Binding DataContext.RelocateSteamInstallationCommand,
-                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                       CommandParameter="{Binding}" ToolTip="Localizar novamente"
-                                                       Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                                       Padding="10,8" Margin="0,0,6,0">
-                                                <ic:SymbolIcon Symbol="FolderSearch" FontSize="15" />
-                                            </ui:Button>
-                                            <ui:Button Command="{Binding DataContext.RemoveSteamInstallationCommand,
-                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                       CommandParameter="{Binding}" ToolTip="Remover"
-                                                       Foreground="{DynamicResource AppDangerBrush}"
-                                                       Padding="10,8" IsEnabled="{Binding IsCustom}">
-                                                <ic:SymbolIcon Symbol="Delete" FontSize="15"
-                                                               Foreground="{DynamicResource AppDangerBrush}" />
+                                            <ui:Button Width="36" Height="36" Padding="0" ToolTip="Mais opções da instalação"
+                                                       AutomationProperties.Name="Mais opções da instalação"
+                                                       Click="ThemeActions_Click"
+                                                       Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                                <ic:SymbolIcon Symbol="MoreHorizontal" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <ui:Button.ContextMenu>
+                                                    <ContextMenu Style="{StaticResource AppCardContextMenuStyle}">
+                                                        <ContextMenu.Resources><Style TargetType="MenuItem" BasedOn="{StaticResource AppCardMenuItemStyle}"/></ContextMenu.Resources>
+                                                        <MenuItem Header="Renomear"
+                                                                  Command="{Binding PlacementTarget.Tag.RenameSteamInstallationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                            <MenuItem.Icon><ic:SymbolIcon Symbol="Edit" FontSize="15" /></MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <MenuItem Header="Localizar novamente"
+                                                                  Command="{Binding PlacementTarget.Tag.RelocateSteamInstallationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                            <MenuItem.Icon><ic:SymbolIcon Symbol="FolderSearch" FontSize="15" /></MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <Separator />
+                                                        <MenuItem Header="Remover instalação" Foreground="{DynamicResource AppDangerBrush}"
+                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsCustom, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                  Command="{Binding PlacementTarget.Tag.RemoveSteamInstallationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                            <MenuItem.Icon><ic:SymbolIcon Symbol="Delete" FontSize="15" Foreground="{DynamicResource AppDangerBrush}" /></MenuItem.Icon>
+                                                        </MenuItem>
+                                                    </ContextMenu>
+                                                </ui:Button.ContextMenu>
                                             </ui:Button>
                                         </StackPanel>
                                     </Grid>
@@ -624,15 +751,17 @@
                                 Grid.Column="1"
                                 PlaceholderText="Opcional"
                                 VerticalAlignment="Center"
+                                RevealButtonEnabled="True"
+                                ClearButtonEnabled="True"
                                 PasswordChanged="SteamApiKeyBox_PasswordChanged" />
                         </Grid>
                     </Border>
 
-                    <Border x:Name="SteamGridDbApiKeyTile" Style="{StaticResource TileStyle}">
+                    <Border x:Name="SteamGridDbApiKeyTile" Style="{StaticResource TileSingleStyle}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="240" />
+                                <ColumnDefinition Width="260" />
                             </Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="SteamGridDB API Key" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
@@ -646,6 +775,8 @@
                                 Grid.Column="1"
                                 PlaceholderText="Opcional"
                                 VerticalAlignment="Center"
+                                RevealButtonEnabled="True"
+                                ClearButtonEnabled="True"
                                 PasswordChanged="SteamGridDbApiKeyBox_PasswordChanged" />
                         </Grid>
                     </Border>
@@ -759,14 +890,6 @@
                                         <TextBlock Text="Verificar atualizações" />
                                     </StackPanel>
                                 </ui:Button>
-                                <ui:Button Appearance="Transparent" Margin="8,0,0,0" Padding="10,8" Cursor="Hand"
-                                    ToolTip="Visualizar o diálogo de atualização com o novo modelo de changelog estilizado"
-                                    Command="{Binding PreviewUpdateDialogCommand}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <ic:SymbolIcon Symbol="Eye" FontSize="14" Margin="0,0,6,0" />
-                                        <TextBlock Text="Pré-visualizar diálogo" />
-                                    </StackPanel>
-                                </ui:Button>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -872,13 +995,18 @@
         </ScrollViewer>
         </Grid>
 
-        <!-- Barra de salvar fixa -->
+        <!-- Barra de salvar flutuante -->
         <Border
             Grid.Row="1"
-            Padding="32,12"
-            BorderThickness="0,1,0,0"
+            Margin="24,8,24,14"
+            MaxWidth="740"
+            Padding="20,10"
+            CornerRadius="12"
+            BorderThickness="1"
             BorderBrush="{DynamicResource AppBorderBrush}"
             Background="{DynamicResource AppChromeBrush}"
+            Effect="{DynamicResource AppCardEffect}"
+            HorizontalAlignment="Stretch"
             Visibility="{Binding HasUnsavedChanges, Converter={StaticResource BoolToVisibility}}">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -887,14 +1015,22 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
                     Visibility="{Binding HasUnsavedChanges, Converter={StaticResource BoolToVisibility}}">
-                    <ic:SymbolIcon Symbol="Warning" FontSize="15"
-                        Foreground="{DynamicResource AppWarningBrush}"
-                        Margin="0,0,8,0" VerticalAlignment="Center" />
-                    <TextBlock Text="Há alterações não salvas"
-                        Foreground="{DynamicResource AppWarningBrush}"
-                        FontSize="13" VerticalAlignment="Center" />
+                    <Border Width="26" Height="26" CornerRadius="13" Background="{DynamicResource AppAccentSurfaceBrush}" Margin="0,0,10,0">
+                        <ic:SymbolIcon Symbol="Info" FontSize="14"
+                            Foreground="{DynamicResource AppAccentBrush}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Alterações pendentes"
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource AppTextPrimaryBrush}"
+                            FontSize="13" VerticalAlignment="Center" />
+                        <TextBlock Text="Clique em salvar para aplicar suas preferências."
+                            FontSize="11"
+                            Foreground="{DynamicResource AppTextMutedBrush}" />
+                    </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <ui:Button
                         Appearance="Secondary"
                         Padding="16,8"
@@ -914,7 +1050,7 @@
                         Command="{Binding SaveCommand}">
                         <StackPanel Orientation="Horizontal">
                             <ic:SymbolIcon Symbol="Save" FontSize="14" Margin="0,0,7,0" />
-                            <TextBlock Text="Salvar configurações" VerticalAlignment="Center" />
+                            <TextBlock Text="Salvar alterações" VerticalAlignment="Center" />
                         </StackPanel>
                     </ui:Button>
                 </StackPanel>

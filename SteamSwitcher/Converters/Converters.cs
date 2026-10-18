@@ -1,4 +1,4 @@
-﻿using SteamSwitcher.Helpers;
+using SteamSwitcher.Helpers;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
@@ -90,13 +90,16 @@ public class PathToImageSourceConverter : IValueConverter
         throw new NotImplementedException();
 }
 
-// Enum → bool (para RadioButton)
+// Enum → bool (para RadioButton, suporta null para opções padrão/neutras)
 public class EnumToBoolConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
-        value?.Equals(parameter) ?? false;
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is null) return parameter is null;
+        return value.Equals(parameter);
+    }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+    public object? ConvertBack(object value, Type targetType, object? parameter, CultureInfo culture) =>
         value is true ? parameter : Binding.DoNothing;
 }
 

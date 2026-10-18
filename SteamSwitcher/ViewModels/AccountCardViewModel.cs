@@ -14,6 +14,10 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
     public LoginState? LoginPreferenceValue => Account.LoginStateOverride;
     public string LoginPreferenceInheritedText => $"Padrão global: {Helpers.LoginPreferencePresentation.StateName(_globalLoginPreference)}";
     public string LoginPreferenceTooltip => $"{(Account.LoginStateOverride.HasValue ? LoginPreferenceText : LoginPreferenceInheritedText)} · Clique para alterar";
+    public bool IsOffline => Account.LoginStateOverride == LoginState.Offline
+        || (Account.LoginStateOverride is null && _globalLoginPreference == LoginState.Offline)
+        || Account.WantsOfflineMode;
+
     public void RefreshLoginPreference(LoginState? globalPreference)
     {
         _globalLoginPreference = globalPreference;
@@ -21,6 +25,7 @@ public partial class AccountCardViewModel(SteamAccount account) : ObservableObje
         OnPropertyChanged(nameof(LoginPreferenceTooltip));
         OnPropertyChanged(nameof(LoginPreferenceValue));
         OnPropertyChanged(nameof(LoginPreferenceInheritedText));
+        OnPropertyChanged(nameof(IsOffline));
     }
 
     [ObservableProperty] private string _avatarPath = string.Empty;

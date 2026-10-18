@@ -54,6 +54,9 @@ public partial class GamesViewModel(
     [ObservableProperty] private AccountCardViewModel? _selectedFilterAccount;
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private bool _isLoading;
+    [ObservableProperty] private bool _showFavoritesOnly;
+
+    partial void OnShowFavoritesOnlyChanged(bool value) => ApplyFilters();
 
     [ObservableProperty] private ObservableCollection<AccountCardViewModel> _visibleFilterAccounts = [];
     [ObservableProperty] private string _filterAccountSearchText = string.Empty;
@@ -1013,7 +1016,8 @@ public partial class GamesViewModel(
             _allGames,
             SelectedFilterAccount?.UniqueKey,
             SearchText,
-            GameSortMode);
+            GameSortMode,
+            ShowFavoritesOnly);
 
         if (resetPage)
             CurrentPage = 1;
@@ -1026,9 +1030,13 @@ public partial class GamesViewModel(
     }
 
     [RelayCommand]
+    private void ToggleFavoritesFilter() => ShowFavoritesOnly = !ShowFavoritesOnly;
+
+    [RelayCommand]
     private void ClearGameFilters()
     {
         SearchText = string.Empty;
+        ShowFavoritesOnly = false;
         SelectedFilterAccount = FilterAccounts.FirstOrDefault();
         ApplyFilters();
     }

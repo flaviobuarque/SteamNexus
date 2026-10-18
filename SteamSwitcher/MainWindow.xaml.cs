@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.Messaging;
+using CommunityToolkit.Mvvm.Messaging;
 using SteamSwitcher.Core;
 using SteamSwitcher.Core.Models;
 using SteamSwitcher.Core.Services;
@@ -100,6 +100,11 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         _snackbarService.SetSnackbarPresenter(SnackbarPresenter);
         _contentDialogService.SetDialogHost(RootContentDialogHost);
 
+        MainFrame.Navigated += (s, e) =>
+        {
+            var anim = new System.Windows.Media.Animation.DoubleAnimation(0.2, 1.0, TimeSpan.FromMilliseconds(130));
+            MainFrame.BeginAnimation(UIElement.OpacityProperty, anim);
+        };
         NavigateTo(typeof(AccountsPage), "Accounts");
         await _viewModel.InitializeAsync();
 
@@ -215,25 +220,25 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         }
     }
 
-    private void NavItem_Accounts_Click(object sender, MouseButtonEventArgs e)
+    private void NavItem_Accounts_Click(object sender, RoutedEventArgs e)
         => NavigateTo(typeof(AccountsPage), "Accounts");
 
-    private void NavItem_Games_Click(object sender, MouseButtonEventArgs e)
+    private void NavItem_Games_Click(object sender, RoutedEventArgs e)
         => NavigateTo(typeof(GamesPage), "Games");
 
-    private void NavItem_Mods_Click(object sender, MouseButtonEventArgs e)
+    private void NavItem_Mods_Click(object sender, RoutedEventArgs e)
     {
         if (!FeatureFlags.Mods) return;
         NavigateTo(typeof(ModsPage), "Mods");
     }
 
-    private void NavItem_Settings_Click(object sender, MouseButtonEventArgs e)
+    private void NavItem_Settings_Click(object sender, RoutedEventArgs e)
         => NavigateTo(typeof(SettingsPage), "Settings");
 
-    private void NavItem_Diagnostics_Click(object sender, MouseButtonEventArgs e)
+    private void NavItem_Diagnostics_Click(object sender, RoutedEventArgs e)
         => NavigateTo(typeof(DiagnosticsPage), "Diagnostics");
 
-    private void NavItem_About_Click(object sender, MouseButtonEventArgs e)
+    private void NavItem_About_Click(object sender, RoutedEventArgs e)
         => NavigateTo(typeof(AboutPage), "About");
 
     private async void UpdateIndicator_Click(object sender, RoutedEventArgs e)

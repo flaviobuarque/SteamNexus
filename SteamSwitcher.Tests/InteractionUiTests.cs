@@ -1,5 +1,7 @@
 using FluentAssertions;
+using NSubstitute;
 using SteamSwitcher.Core.Helpers;
+using SteamSwitcher.Core.Services;
 using SteamSwitcher.Views.Dialogs;
 using SteamSwitcher.Views.Pages;
 using System.Windows;
@@ -23,6 +25,7 @@ public sealed class InteractionUiTests
                 var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
                 app.Resources.MergedDictionaries.Add(new ResourceDictionary
                 { Source = new Uri("pack://application:,,,/SteamSwitcher;component/Themes/Dark.xaml") });
+                app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
                 app.Resources.MergedDictionaries.Add(new ResourceDictionary
                 { Source = new Uri("pack://application:,,,/SteamSwitcher;component/Themes/InteractionStyles.xaml") });
                 var button = new Button { Style = (Style)app.FindResource("NexusPrimaryButton"), Content = "Teste" };
@@ -39,6 +42,31 @@ public sealed class InteractionUiTests
                 var confirm = new ConfirmDialog("Confirmar", new string('a', 1000));
                 var quick = new QuickSearchDialog([new QuickSearchEntry("id", "Jogo", "Teste", "Conta · E:", "")], []);
                 var activity = new ActivityPage();
+                var about = new AboutPage();
+                about.Measure(new Size(900, 500));
+                about.Arrange(new Rect(0, 0, 900, 500));
+                about.UpdateLayout();
+                about.ActualWidth.Should().Be(900);
+
+                var gameService = Substitute.For<ISteamGameService>();
+                var accountService = Substitute.For<ISteamAccountService>();
+                var imageCacheService = Substitute.For<IImageCacheService>();
+                var snackbarService = Substitute.For<Wpf.Ui.ISnackbarService>();
+                var settingsService = Substitute.For<IAppSettingsService>();
+                var updateService = Substitute.For<SteamSwitcher.Services.Updates.IUpdateService>();
+                var locatorService = Substitute.For<ISteamLocatorService>();
+                var runtimeService = Substitute.For<IGameRuntimeService>();
+                var overrideService = Substitute.For<IAccountOverrideService>();
+                var appSettings = new SteamSwitcher.Core.Models.AppSettings();
+                settingsService.Current.Returns(appSettings);
+                var mainVm = new SteamSwitcher.ViewModels.MainViewModel(accountService, locatorService, snackbarService, settingsService, updateService, gameService, runtimeService);
+                var gamesVm = new SteamSwitcher.ViewModels.GamesViewModel(gameService, accountService, imageCacheService, snackbarService, settingsService, mainVm, runtimeService, overrideService);
+                var gamesPage = new GamesPage(gamesVm);
+                gamesPage.Measure(new Size(900, 500));
+                gamesPage.Arrange(new Rect(0, 0, 900, 500));
+                gamesPage.UpdateLayout();
+                gamesPage.ActualWidth.Should().Be(900);
+
                 var results = (ListBox)quick.FindName("Results");
                 results.ItemsSource = Enumerable.Range(0, 20)
                     .Select(i => new QuickSearchEntry(i.ToString(), "Jogo", $"Jogo {i}", "Conta · E:", "")).ToArray();

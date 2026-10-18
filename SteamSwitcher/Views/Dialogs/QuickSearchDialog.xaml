@@ -6,6 +6,10 @@
         Title="Busca rápida" Width="640" Height="560" MinWidth="380" MinHeight="380"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
         Foreground="{DynamicResource AppTextPrimaryBrush}">
     <Window.Resources>
         <local:SearchThumbnailConverter x:Key="SearchThumbnail" />
@@ -35,14 +39,19 @@
         </Style>
     </Window.Resources>
     <Grid x:Name="BackdropGrid" Background="{DynamicResource AppDialogBackdropBrush}" MouseDown="Backdrop_MouseDown">
-        <Border x:Name="DialogCard" MaxWidth="640" MaxHeight="560" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                Background="{DynamicResource AppChromeBrush}"
-                BorderBrush="{DynamicResource AppBorderStrongBrush}"
-                BorderThickness="1" CornerRadius="16">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="28" ShadowDepth="6" Direction="270" Opacity="0.4" Color="#000000" />
-            </Border.Effect>
-            <Grid Margin="20">
+        <Grid x:Name="DialogCard" MaxWidth="640" MaxHeight="560" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <!-- Sombra desacoplada para evitar desfoque e manter texto nítido com ClearType -->
+            <Border CornerRadius="16" Background="{DynamicResource AppChromeBrush}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="28" ShadowDepth="6" Direction="270" Opacity="0.4" Color="#000000" />
+                </Border.Effect>
+            </Border>
+
+            <!-- Card de conteúdo sem Effect -->
+            <Border Background="{DynamicResource AppChromeBrush}"
+                    BorderBrush="{DynamicResource AppBorderStrongBrush}"
+                    BorderThickness="1" CornerRadius="16">
+                <Grid Margin="20">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
                     <RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
@@ -195,5 +204,6 @@
                 </Grid>
             </Grid>
         </Border>
+        </Grid>
     </Grid>
 </Window>

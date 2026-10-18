@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using SteamSwitcher.Core.Models;
 using System.Windows.Media;
 
@@ -15,6 +15,109 @@ public partial class GameCardViewModel : ObservableObject
     public LoginState? LoginPreferenceValue => Game.LoginStateOverride;
     public string LoginPreferenceInheritedText => $"{(Game.OwnerAccount?.LoginStateOverride.HasValue == true ? "Da conta" : "Padrão global")}: {Helpers.LoginPreferencePresentation.StateName(Game.OwnerAccount?.LoginStateOverride ?? _globalLoginPreference)}";
     public string LoginPreferenceTooltip => $"{(Game.LoginStateOverride.HasValue ? LoginPreferenceText : LoginPreferenceInheritedText)} · Clique para alterar";
+    public bool HasCustomLoginPreference => Game.LoginStateOverride.HasValue;
+    public string CustomLoginPreferenceText => Game.LoginStateOverride switch
+    {
+        LoginState.Offline => "● Offline",
+        LoginState.Online => "● Online",
+        _ => string.Empty
+    };
+    public string CustomLoginBadgeText => Game.LoginStateOverride switch
+    {
+        LoginState.Offline => " · Offline",
+        LoginState.Online => " · Online",
+        _ => string.Empty
+    };
+
+    public string OwnerBadgeTooltip
+    {
+        get
+        {
+            var owner = HasOwner ? $"Conta: {OwnerAccountName}" : "Sem conta associada";
+            var mode = Game.LoginStateOverride.HasValue
+                ? $"Modo: {Helpers.LoginPreferencePresentation.StateName(Game.LoginStateOverride.Value)}"
+                : "Modo: Padrão da conta";
+            return $"{owner}\n{mode}\n(Clique com botão direito no card para opções)";
+        }
+    }
+
+    public string StorageText
+    {
+        get
+        {
+            var size = InstallSize;
+            var drive = InstallDrive;
+            if (!string.IsNullOrEmpty(size) && !string.IsNullOrEmpty(drive))
+                return $"{size} · {drive}";
+            if (!string.IsNullOrEmpty(size))
+                return size;
+            if (!string.IsNullOrEmpty(drive))
+                return $"Disco {drive}";
+            return "Local desconhecido";
+        }
+    }
+
+    public bool IsCustomOffline => Game.LoginStateOverride == LoginState.Offline;
+    public bool IsCustomOnline => Game.LoginStateOverride == LoginState.Online;
+    public string CustomLoginBadgeLabel => Game.LoginStateOverride switch
+    {
+        LoginState.Offline => "OFFLINE",
+        LoginState.Online => "ONLINE",
+        _ => string.Empty
+    };
+
+    public string OwnerAccountTooltip => HasOwner
+        ? $"Conta proprietária: {OwnerAccountName}"
+        : "Nenhuma conta proprietária associada";
+
+    public string StorageDisplay
+    {
+        get
+        {
+            var drive = InstallDrive?.TrimEnd(':', '\\', '/');
+            var size = InstallSize;
+            if (!string.IsNullOrEmpty(drive) && !string.IsNullOrEmpty(size))
+                return $"{drive}: {size}";
+            if (!string.IsNullOrEmpty(size))
+                return size;
+            if (!string.IsNullOrEmpty(drive))
+                return $"Disco {drive}:";
+            return "-";
+        }
+    }
+
+    public bool HasNeverPlayed => Game.PlaytimeMinutes <= 0;
+
+    public string PlaytimeShortDisplay => Game.PlaytimeMinutes > 0
+        ? Game.PlaytimeFormatted
+        : "Nunca";
+
+    public string PlaytimeTooltip => Game.PlaytimeMinutes > 0
+        ? $"Tempo de jogo: {Game.PlaytimeFormatted} jogadas"
+        : "Tempo de jogo: Nunca jogado";
+
+    public string PlaytimeDisplay => Game.PlaytimeMinutes > 0
+        ? $"{Game.PlaytimeFormatted} jogadas"
+        : "Nunca jogado";
+
+    public string SubtitleText
+    {
+        get
+        {
+            var size = InstallSize;
+            var hasPlaytime = Game.PlaytimeMinutes > 0;
+            var playtime = hasPlaytime ? Game.PlaytimeFormatted : string.Empty;
+
+            if (!string.IsNullOrEmpty(size) && !string.IsNullOrEmpty(playtime))
+                return $"{size} • {playtime}";
+            if (!string.IsNullOrEmpty(size))
+                return size;
+            if (!string.IsNullOrEmpty(playtime))
+                return playtime;
+            return !string.IsNullOrEmpty(InstallDrive) ? $"Disco {InstallDrive}" : string.Empty;
+        }
+    }
+
     public void RefreshLoginPreference(LoginState? globalPreference)
     {
         _globalLoginPreference = globalPreference;
@@ -22,6 +125,14 @@ public partial class GameCardViewModel : ObservableObject
         OnPropertyChanged(nameof(LoginPreferenceTooltip));
         OnPropertyChanged(nameof(LoginPreferenceValue));
         OnPropertyChanged(nameof(LoginPreferenceInheritedText));
+        OnPropertyChanged(nameof(HasCustomLoginPreference));
+        OnPropertyChanged(nameof(CustomLoginPreferenceText));
+        OnPropertyChanged(nameof(CustomLoginBadgeText));
+        OnPropertyChanged(nameof(CustomLoginBadgeLabel));
+        OnPropertyChanged(nameof(IsCustomOffline));
+        OnPropertyChanged(nameof(IsCustomOnline));
+        OnPropertyChanged(nameof(OwnerBadgeTooltip));
+        OnPropertyChanged(nameof(OwnerAccountTooltip));
     }
 
     [ObservableProperty] private string _coverPath = string.Empty;
@@ -82,6 +193,13 @@ public partial class GameCardViewModel : ObservableObject
         OnPropertyChanged(nameof(InstallFullPath));
         OnPropertyChanged(nameof(InstallationName));
         OnPropertyChanged(nameof(InstallationRootPath));
+        OnPropertyChanged(nameof(StorageText));
+        OnPropertyChanged(nameof(StorageDisplay));
+        OnPropertyChanged(nameof(PlaytimeDisplay));
+        OnPropertyChanged(nameof(PlaytimeShortDisplay));
+        OnPropertyChanged(nameof(PlaytimeTooltip));
+        OnPropertyChanged(nameof(HasNeverPlayed));
+        OnPropertyChanged(nameof(SubtitleText));
         RefreshLoginPreference(_globalLoginPreference);
     }
 

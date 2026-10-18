@@ -15,10 +15,42 @@ public partial class MainWindow
     private void QuickSearchKeyDown(object sender, KeyEventArgs e)
     {
         // Local window event only: never register this combination with Windows.
-        if (e.Key == Key.K && Keyboard.Modifiers == ModifierKeys.Control && IsActive && IsEnabled)
+        if (Keyboard.Modifiers == ModifierKeys.Control && IsActive && IsEnabled)
         {
-            e.Handled = true;
-            ShowQuickSearch();
+            if (e.Key == Key.K)
+            {
+                e.Handled = true;
+                ShowQuickSearch();
+                return;
+            }
+
+            switch (e.Key)
+            {
+                case Key.D1:
+                case Key.NumPad1:
+                    NavigateTo(typeof(AccountsPage), "Accounts");
+                    e.Handled = true;
+                    break;
+                case Key.D2:
+                case Key.NumPad2:
+                    NavigateTo(typeof(GamesPage), "Games");
+                    e.Handled = true;
+                    break;
+                case Key.D3:
+                case Key.NumPad3:
+                    NavigateTo(typeof(ActivityPage), "Activity");
+                    e.Handled = true;
+                    break;
+                case Key.D4:
+                case Key.NumPad4:
+                    NavigateTo(typeof(DiagnosticsPage), "Diagnostics");
+                    e.Handled = true;
+                    break;
+                case Key.OemComma:
+                    NavigateTo(typeof(SettingsPage), "Settings");
+                    e.Handled = true;
+                    break;
+            }
         }
     }
 

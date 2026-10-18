@@ -303,11 +303,12 @@ public class SteamAccountService(
             LogSwitchPhase("state-validated", operation, account.SteamId64);
 
             // 4. Abre Steam
-            await StartSteamAsync(settings, ct);
+            await StartSteamAsync(settings, targetState, ct);
             var switchTime = DateTimeOffset.UtcNow;
             await knownAccountStore.RecordAppSwitchAsync(account.UniqueKey, switchTime, ct);
             account.LastAppSwitchUtc = switchTime;
             account.Timestamp = Math.Max(account.Timestamp, switchTime.ToUnixTimeSeconds());
+            account.WantsOfflineMode = targetState == LoginState.Offline;
         }
         catch
         {
@@ -1284,14 +1285,27 @@ public class SteamAccountService(
         }
     }
 
-    private async Task StartSteamAsync(AppSettings settings, CancellationToken ct)
+    private async Task StartSteamAsync(
+        AppSettings settings,
+        LoginState targetState,
+        CancellationToken ct)
     {
         var steamExe = locator.GetSteamExePath(SteamPath);
         if (!File.Exists(steamExe)) return;
 
         var args = new List<string>();
 
-        if (settings.StartSilent) args.Add("-silent");
+        if (targetState == LoginState.Offline)
+        {
+            args.Add("-offline");
+        }
+
+        // Em modo offline, não iniciamos com -silent para evitar que a Steam fique
+        // congelada em segundo plano caso o cache offline exija confirmação de credenciais.
+        if (settings.StartSilent && targetState != LoginState.Offline)
+        {
+            args.Add("-silent");
+        }
 
         if (SteamLaunchPolicy.ShouldLaunchAsDesktopUser(
                 IsCurrentProcessElevated(), settings.StartAsAdmin))

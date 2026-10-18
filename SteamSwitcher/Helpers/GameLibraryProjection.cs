@@ -9,9 +9,15 @@ public static class GameLibraryProjection
         IReadOnlyList<GameCardViewModel> games,
         string? ownerUniqueKey,
         string? searchText,
-        GameSortMode sortMode)
+        GameSortMode sortMode,
+        bool showFavoritesOnly = false)
     {
         var filtered = games.AsEnumerable();
+
+        if (showFavoritesOnly)
+        {
+            filtered = filtered.Where(game => game.IsFavorite);
+        }
 
         if (!string.IsNullOrEmpty(ownerUniqueKey))
         {
@@ -46,6 +52,7 @@ public static class GameLibraryProjection
                 .ToList(),
             GameSortMode.RecentlyPlayed => filtered
                 .OrderByDescending(game => game.IsRunning)
+                .ThenByDescending(game => game.IsFavorite)
                 .ThenByDescending(game => game.Game.LastPlayedTimestamp)
                 .ThenBy(game => game.Game.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList(),

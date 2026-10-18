@@ -7,15 +7,20 @@
       Title="Atividade recente"
       Background="{DynamicResource AppBackgroundBrush}" Foreground="{DynamicResource AppTextPrimaryBrush}">
     <Page.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/SteamSwitcher;component/Themes/InteractionStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
 
-        <Style x:Key="ActivityAction" TargetType="Button" BasedOn="{StaticResource NexusActionButton}">
-            <Setter Property="Width" Value="38" />
-            <Setter Property="Height" Value="38" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Margin" Value="6,0,0,0" />
-            <Setter Property="ToolTipService.InitialShowDelay" Value="300" />
-        </Style>
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+            <Style x:Key="ActivityAction" TargetType="Button" BasedOn="{StaticResource NexusActionButton}">
+                <Setter Property="Width" Value="38" />
+                <Setter Property="Height" Value="38" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="6,0,0,0" />
+                <Setter Property="ToolTipService.InitialShowDelay" Value="300" />
+            </Style>
 
         <Style x:Key="FloatingTopButton" TargetType="Button">
             <Setter Property="FocusVisualStyle" Value="{StaticResource NexusKeyboardFocus}" />
@@ -64,7 +69,7 @@
                         <Border x:Name="CardBorder" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10" Padding="14,10">
+                                CornerRadius="8" Padding="12,6">
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -88,19 +93,47 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border Margin="0,0,0,8" Padding="14,10" CornerRadius="10" BorderThickness="1"
-                                BorderBrush="{DynamicResource AppBorderBrush}" Background="{DynamicResource AppSurfaceBrush}"
-                                HorizontalAlignment="Stretch" x:Name="CardSurface">
-                            <ContentPresenter HorizontalAlignment="Stretch" />
-                        </Border>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Linha vertical contínua da timeline -->
+                            <Rectangle Grid.Column="0" Width="2" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                                       Fill="{DynamicResource AppBorderBrush}" Margin="0,-4,0,-14" SnapsToDevicePixels="True" />
+
+                            <!-- Marcador / Nó da timeline -->
+                            <Border x:Name="TimelineNode" Grid.Column="0" Width="14" Height="14" CornerRadius="7"
+                                    VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,21,0,0"
+                                    Background="{DynamicResource AppBackgroundBrush}"
+                                    BorderBrush="{DynamicResource AppAccentBrush}" BorderThickness="3"
+                                    Panel.ZIndex="2">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="6" ShadowDepth="0" Opacity="0.35" Color="#000000" />
+                                </Border.Effect>
+                            </Border>
+
+                            <!-- Superfície do Card -->
+                            <Border Grid.Column="1" Margin="6,0,0,0" Padding="14,10" CornerRadius="10" BorderThickness="1"
+                                    BorderBrush="{DynamicResource AppBorderBrush}" Background="{DynamicResource AppSurfaceBrush}"
+                                    HorizontalAlignment="Stretch" x:Name="CardSurface">
+                                <ContentPresenter HorizontalAlignment="Stretch" />
+                            </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="CardSurface" Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" />
                                 <Setter TargetName="CardSurface" Property="BorderBrush" Value="{DynamicResource AppBorderStrongBrush}" />
+                                <Setter TargetName="TimelineNode" Property="BorderBrush" Value="{DynamicResource AppAccentAltBrush}" />
                             </Trigger>
                             <DataTrigger Binding="{Binding NeedsAttention}" Value="True">
                                 <Setter TargetName="CardSurface" Property="BorderBrush" Value="{DynamicResource AppDangerBrush}" />
                                 <Setter TargetName="CardSurface" Property="Background" Value="{DynamicResource AppDangerSurfaceBrush}" />
+                                <Setter TargetName="TimelineNode" Property="BorderBrush" Value="{DynamicResource AppDangerBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Kind}" Value="{x:Static core:ActivityKind.GameStarted}">
+                                <Setter TargetName="TimelineNode" Property="BorderBrush" Value="{DynamicResource AppSuccessBrush}" />
                             </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -142,6 +175,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        </ResourceDictionary>
     </Page.Resources>
 
     <Grid Margin="28,20,22,18">
@@ -169,7 +203,7 @@
                 </StackPanel>
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button x:Name="ExportButton" Style="{StaticResource NexusActionButton}" Click="Export_Click"
+                <Button x:Name="ExportButton" Style="{DynamicResource NexusActionButton}" Click="Export_Click"
                         ToolTip="Copiar todo o histórico filtrado para a área de transferência" Height="38" Padding="12,0" Margin="0,0,6,0">
                     <StackPanel Orientation="Horizontal">
                         <ui:SymbolIcon Symbol="Copy24" FontSize="16" Margin="0,0,6,0" VerticalAlignment="Center" />
@@ -189,14 +223,15 @@
         </Grid>
 
         <!-- KPIs Strip -->
-        <Grid Grid.Row="1" Margin="0,0,0,16">
+        <!-- KPIs Strip (Compact) -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="10" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="10" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="10" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -207,12 +242,12 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource AppSurfaceAltBrush}" Margin="0,0,10,0">
-                        <ui:SymbolIcon Symbol="History24" FontSize="16" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource AppSurfaceAltBrush}" Margin="0,0,8,0">
+                        <ui:SymbolIcon Symbol="History24" FontSize="14" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Total" FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}" />
-                        <TextBlock x:Name="KpiTotalText" Text="0" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        <TextBlock Text="Total" FontSize="10.5" Foreground="{DynamicResource AppTextMutedBrush}" />
+                        <TextBlock x:Name="KpiTotalText" Text="0" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
                     </StackPanel>
                 </Grid>
             </Button>
@@ -224,12 +259,12 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource AppAccentSurfaceBrush}" Margin="0,0,10,0">
-                        <ui:SymbolIcon Symbol="People24" FontSize="16" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource AppAccentSurfaceBrush}" Margin="0,0,8,0">
+                        <ui:SymbolIcon Symbol="People24" FontSize="14" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Trocas de Conta" FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}" />
-                        <TextBlock x:Name="KpiSwitchesText" Text="0" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppAccentBrush}" />
+                        <TextBlock Text="Trocas de Conta" FontSize="10.5" Foreground="{DynamicResource AppTextMutedBrush}" />
+                        <TextBlock x:Name="KpiSwitchesText" Text="0" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AppAccentBrush}" />
                     </StackPanel>
                 </Grid>
             </Button>
@@ -241,12 +276,12 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource AppSuccessSurfaceBrush}" Margin="0,0,10,0">
-                        <ui:SymbolIcon Symbol="XboxController24" FontSize="16" Foreground="{DynamicResource AppSuccessBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource AppSuccessSurfaceBrush}" Margin="0,0,8,0">
+                        <ui:SymbolIcon Symbol="XboxController24" FontSize="14" Foreground="{DynamicResource AppSuccessBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Jogos Iniciados" FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}" />
-                        <TextBlock x:Name="KpiGamesText" Text="0" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppSuccessBrush}" />
+                        <TextBlock Text="Jogos Iniciados" FontSize="10.5" Foreground="{DynamicResource AppTextMutedBrush}" />
+                        <TextBlock x:Name="KpiGamesText" Text="0" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AppSuccessBrush}" />
                     </StackPanel>
                 </Grid>
             </Button>
@@ -258,65 +293,62 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Border x:Name="KpiAttentionIconBorder" Width="34" Height="34" CornerRadius="8" Background="{DynamicResource AppSurfaceAltBrush}" Margin="0,0,10,0">
-                        <ui:SymbolIcon x:Name="KpiAttentionIcon" Symbol="Warning24" FontSize="16" Foreground="{DynamicResource AppTextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border x:Name="KpiAttentionIconBorder" Width="28" Height="28" CornerRadius="6" Background="{DynamicResource AppSurfaceAltBrush}" Margin="0,0,8,0">
+                        <ui:SymbolIcon x:Name="KpiAttentionIcon" Symbol="Warning24" FontSize="14" Foreground="{DynamicResource AppTextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Atenção / Falhas" FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}" />
-                        <TextBlock x:Name="KpiAttentionText" Text="0" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        <TextBlock Text="Atenção / Falhas" FontSize="10.5" Foreground="{DynamicResource AppTextMutedBrush}" />
+                        <TextBlock x:Name="KpiAttentionText" Text="0" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" />
                     </StackPanel>
                 </Grid>
             </Button>
         </Grid>
 
-        <!-- Filters Strip -->
-        <StackPanel Grid.Row="2" Margin="0,0,0,14">
-            <WrapPanel VerticalAlignment="Center">
-                <!-- Search Input -->
-                <StackPanel Margin="0,0,10,6">
-                    <TextBlock Text="Pesquisar" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,0,0,4" />
-                    <ui:TextBox x:Name="SearchBox" Width="220" Height="36" PlaceholderText="Buscar conta, jogo, detalhe..." TextChanged="SearchBox_TextChanged">
+        <!-- Barra de Filtros Compacta e Alinhada -->
+        <Border Grid.Row="2" Margin="0,0,0,14" Padding="12,10" CornerRadius="10"
+                Background="{DynamicResource AppSurfaceBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+            <StackPanel>
+                <WrapPanel VerticalAlignment="Center">
+                    <!-- Search Input -->
+                    <ui:TextBox x:Name="SearchBox" Width="220" Height="34" Margin="0,0,8,0"
+                                PlaceholderText="Buscar conta, jogo, detalhe..." TextChanged="SearchBox_TextChanged">
                         <ui:TextBox.Icon>
                             <ui:SymbolIcon Symbol="Search24" FontSize="14" />
                         </ui:TextBox.Icon>
                     </ui:TextBox>
-                </StackPanel>
 
-                <!-- Period Picker -->
-                <StackPanel Margin="0,0,10,6">
-                    <TextBlock Text="Data ou período" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,0,0,4" />
-                    <controls:HistoryPeriodPicker x:Name="PeriodPicker" />
-                </StackPanel>
+                    <!-- Period Picker -->
+                    <controls:HistoryPeriodPicker x:Name="PeriodPicker" Margin="0,0,8,0" />
 
-                <!-- Type Filter -->
-                <StackPanel Margin="0,0,10,6">
-                    <TextBlock Text="Tipo de registro" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,0,0,4" />
-                    <ComboBox x:Name="TypeFilter" Width="210" Height="36" SelectedIndex="0" SelectionChanged="FilterChanged" AutomationProperties.Name="Tipo de registro">
+                    <!-- Type Filter -->
+                    <ComboBox x:Name="TypeFilter" Width="185" Height="34" Margin="0,0,8,0"
+                              SelectedIndex="0" SelectionChanged="FilterChanged" AutomationProperties.Name="Tipo de registro">
                         <ComboBoxItem Content="Todos os tipos" />
                         <ComboBoxItem Content="Troca de conta" />
                         <ComboBoxItem Content="Início de jogo" />
                         <ComboBoxItem Content="Correção da Steam" />
                         <ComboBoxItem Content="Atualização" />
-                        <ComboBoxItem Content="Recuperação de configurações" />
+                        <ComboBoxItem Content="Recuperação de configs" />
                         <ComboBoxItem Content="Somente falhas / atenção" />
                     </ComboBox>
-                </StackPanel>
 
-                <!-- Clear Filters Button -->
-                <Button x:Name="ClearFiltersButton" Visibility="Collapsed" Content="Limpar filtros" Height="36" Padding="14,0"
-                        Margin="0,0,10,6" VerticalAlignment="Bottom" Style="{StaticResource NexusActionButton}" Click="ClearFilters_Click" />
+                    <!-- Clear Filters Button -->
+                    <Button x:Name="ClearFiltersButton" Visibility="Collapsed" Content="Limpar filtros" Height="34" Padding="12,0"
+                            Margin="0,0,8,0" VerticalAlignment="Center" Style="{DynamicResource NexusActionButton}" Click="ClearFilters_Click" />
 
-                <!-- Preview Toggle (Debug) -->
-                <Button x:Name="PreviewToggle" Visibility="Collapsed" Content="Sair da prévia" Height="36" Padding="14,0"
-                        Margin="0,0,10,6" VerticalAlignment="Bottom" Style="{StaticResource NexusActionButton}" Click="Preview_Click" />
-            </WrapPanel>
+                    <!-- Preview Toggle (Debug) -->
+                    <Button x:Name="PreviewToggle" Visibility="Collapsed" Content="Sair da prévia" Height="34" Padding="12,0"
+                            Margin="0,0,8,0" VerticalAlignment="Center" Style="{DynamicResource NexusActionButton}" Click="Preview_Click" />
+                </WrapPanel>
 
-            <Grid Margin="0,6,0,0">
-                <TextBlock x:Name="Summary" FontSize="12" Foreground="{DynamicResource AppTextMutedBrush}" VerticalAlignment="Center" />
-                <Button x:Name="NewActivity" Content="Novas atividades · Clique para atualizar" Visibility="Collapsed"
-                        HorizontalAlignment="Right" Style="{StaticResource NexusActionButton}" Height="30" Padding="12,0" Click="Refresh_Click" />
-            </Grid>
-        </StackPanel>
+                <Grid Margin="0,8,0,0">
+                    <TextBlock x:Name="Summary" FontSize="11.5" Foreground="{DynamicResource AppTextMutedBrush}" VerticalAlignment="Center" />
+                    <Button x:Name="NewActivity" Content="Novas atividades · Clique para atualizar" Visibility="Collapsed"
+                            HorizontalAlignment="Right" Style="{DynamicResource NexusActionButton}" Height="28" Padding="10,0" Click="Refresh_Click" />
+                </Grid>
+            </StackPanel>
+        </Border>
 
         <!-- Entries List Container -->
         <Grid Grid.Row="3">
@@ -410,40 +442,12 @@
                                             <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold"
                                                        Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center" />
 
-                                            <!-- Category Badge -->
-                                            <Border Margin="8,0,0,0" Padding="6,2" CornerRadius="4"
-                                                    Background="{DynamicResource AppSurfaceAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}"
-                                                    BorderThickness="1" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding CategoryName}" FontSize="10" FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource AppTextSecondaryBrush}" />
-                                            </Border>
-
-                                            <!-- Status Badge -->
-                                            <Border Margin="5,0,0,0" Padding="6,2" CornerRadius="4" VerticalAlignment="Center">
-                                                <Border.Style>
-                                                    <Style TargetType="Border">
-                                                        <Setter Property="Background" Value="{DynamicResource AppSuccessSurfaceBrush}" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding NeedsAttention}" Value="True">
-                                                                <Setter Property="Background" Value="{DynamicResource AppDangerSurfaceBrush}" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Border.Style>
-                                                <TextBlock FontSize="10" FontWeight="SemiBold">
-                                                    <TextBlock.Style>
-                                                        <Style TargetType="TextBlock">
-                                                            <Setter Property="Text" Value="Sucesso" />
-                                                            <Setter Property="Foreground" Value="{DynamicResource AppSuccessBrush}" />
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding NeedsAttention}" Value="True">
-                                                                    <Setter Property="Text" Value="Falha" />
-                                                                    <Setter Property="Foreground" Value="{DynamicResource AppDangerBrush}" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </TextBlock.Style>
-                                                </TextBlock>
+                                            <!-- Status Badge (apenas exibido quando exige atenção/falha) -->
+                                            <Border Margin="8,0,0,0" Padding="6,2" CornerRadius="4" VerticalAlignment="Center"
+                                                    Background="{DynamicResource AppDangerSurfaceBrush}"
+                                                    BorderBrush="{DynamicResource AppDangerBrush}" BorderThickness="1"
+                                                    Visibility="{Binding NeedsAttention, Converter={StaticResource BoolToVisibility}}">
+                                                <TextBlock Text="Falha" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppDangerBrush}" />
                                             </Border>
                                         </WrapPanel>
 
@@ -454,15 +458,25 @@
                                                    Visibility="{Binding HasSubtitle, Converter={StaticResource BoolToVisibility}}" />
                                     </StackPanel>
 
-                                    <!-- Far Right: Relative Time, Copy Button and Chevron -->
+                                    <!-- Far Right: Relative Time, Copy Button (Hover) and Chevron -->
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                                         <TextBlock Text="{Binding RelativeTime}" ToolTip="{Binding TimeText}"
                                                    FontSize="11" Foreground="{DynamicResource AppTextMutedBrush}"
                                                    VerticalAlignment="Center" Margin="0,0,10,0" />
 
-                                        <Button Style="{StaticResource NexusSidebarAction}" Width="28" Height="28"
+                                        <Button Width="28" Height="28"
                                                 PreviewMouseLeftButtonDown="CopyButton_PreviewMouseLeftButtonDown"
                                                 Tag="{Binding}" Margin="0,0,6,0" ToolTip="Copiar detalhes deste registro">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource NexusSidebarAction}">
+                                                    <Setter Property="Opacity" Value="0" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                                            <Setter Property="Opacity" Value="1" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
                                             <ui:SymbolIcon Symbol="Copy24" FontSize="14" />
                                         </Button>
 
@@ -520,7 +534,7 @@
                                         </WrapPanel>
 
                                         <!-- Action: Copy details -->
-                                        <Button Grid.Column="1" Style="{StaticResource NexusActionButton}" Height="30" Padding="10,0"
+                                        <Button Grid.Column="1" Style="{DynamicResource NexusActionButton}" Height="30" Padding="10,0"
                                                 PreviewMouseLeftButtonDown="CopyButton_PreviewMouseLeftButtonDown" Tag="{Binding}"
                                                 ToolTip="Copiar detalhes completos deste registro">
                                             <StackPanel Orientation="Horizontal">
@@ -650,7 +664,7 @@
                                                 <TextBlock Text="OPERAÇÃO NÃO CONCLUÍDA" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppDangerBrush}" />
                                                 <TextBlock Text="{Binding FailureReason}" FontSize="11" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
                                             </StackPanel>
-                                            <Button Grid.Column="2" Click="GoToDiagnostics_Click" Style="{StaticResource NexusActionButton}"
+                                            <Button Grid.Column="2" Click="GoToDiagnostics_Click" Style="{DynamicResource NexusActionButton}"
                                                     Height="32" Padding="12,0" Margin="12,0,0,0" ToolTip="Ver ferramentas de diagnóstico da Steam">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Text="Diagnóstico" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
@@ -692,7 +706,7 @@
                            HorizontalAlignment="Center" Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,0,0,4" />
                 <TextBlock Text="Ajuste os termos de busca, o período ou limpe os filtros." FontSize="12"
                            HorizontalAlignment="Center" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,0,0,12" />
-                <Button Content="Limpar filtros" HorizontalAlignment="Center" Style="{StaticResource NexusActionButton}" Click="ClearFilters_Click" />
+                <Button Content="Limpar filtros" HorizontalAlignment="Center" Style="{DynamicResource NexusActionButton}" Click="ClearFilters_Click" />
             </StackPanel>
 
             <!-- Floating Back-to-Top Button -->

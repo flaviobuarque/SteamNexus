@@ -68,9 +68,11 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <Border Grid.Column="1" Width="150" Height="102" Margin="28,0,0,0"
-                            Background="White" CornerRadius="18" Padding="12">
-                        <Image Source="/Assets/logo.png" Stretch="Uniform"
+                    <Border Grid.Column="1" VerticalAlignment="Center" Margin="24,0,0,0"
+                            Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1"
+                            CornerRadius="16" Padding="16,10">
+                        <Image Source="pack://application:,,,/Assets/logo.png" MaxWidth="160" Stretch="Uniform"
                                RenderOptions.BitmapScalingMode="HighQuality" />
                     </Border>
                 </Grid>
@@ -145,8 +147,20 @@
                                    Margin="0,4,0,0" Foreground="{DynamicResource AppTextSecondaryBrush}" />
                     </StackPanel>
 
-                    <ui:Button Grid.Column="2" Content="Ver no GitHub" Appearance="Secondary"
-                               VerticalAlignment="Center" Cursor="Hand" Click="OpenGitHub_Click" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <ui:Button Content="Reportar problema" Appearance="Secondary"
+                                   Margin="0,0,8,0" Cursor="Hand" Click="OpenIssues_Click">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Bug24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button Content="Ver no GitHub" Appearance="Secondary"
+                                   Cursor="Hand" Click="OpenGitHub_Click">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Open24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </StackPanel>
                 </Grid>
             </Border>
 
@@ -163,8 +177,17 @@
                                Foreground="{DynamicResource AppTextMutedBrush}"
                                Text="SteamNexus não possui vínculo, patrocínio ou aprovação da Valve Corporation." />
                 </StackPanel>
-                <ui:Button Grid.Column="1" Content="Ver versões" Style="{StaticResource SteamSwitcherPrimaryButtonStyle}"
-                           Margin="16,0,0,0" Cursor="Hand" Click="OpenReleases_Click" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                    <ui:Button Content="Copiar diagnóstico" Appearance="Secondary"
+                               Margin="0,0,8,0" Cursor="Hand" Click="CopyDiagnostics_Click"
+                               ToolTip="Copia informações de sistema e versão para suporte">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Copy24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                    <ui:Button Content="Ver versões" Style="{DynamicResource SteamSwitcherPrimaryButtonStyle}"
+                               Cursor="Hand" Click="OpenReleases_Click" />
+                </StackPanel>
             </Grid>
         </Grid>
     </ScrollViewer>

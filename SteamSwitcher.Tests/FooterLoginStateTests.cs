@@ -58,4 +58,26 @@ public sealed class FooterLoginStateTests
         vm.DefaultLoginStateText.Should().Be("Online");
         await settings.Received(2).SaveAsync(stored);
     }
+
+    [Fact]
+    public void ApplyActiveAccount_WithOfflineOverride_SetsStatusLoginStateToOffline()
+    {
+        var settings = Substitute.For<IAppSettingsService>();
+        settings.Current.Returns(new AppSettings());
+        var vm = new MainViewModel(Substitute.For<ISteamAccountService>(),
+            Substitute.For<ISteamLocatorService>(), Substitute.For<ISnackbarService>(),
+            settings, Substitute.For<IUpdateService>(),
+            Substitute.For<ISteamGameService>(), Substitute.For<IGameRuntimeService>());
+
+        vm.ApplyActiveAccount(new SteamAccount
+        {
+            SteamId64 = "1",
+            AccountName = "test",
+            WantsOfflineMode = false,
+            LoginStateOverride = LoginState.Offline
+        });
+
+        vm.StatusLoginState.Should().Be("Offline");
+        vm.TrayAccountStatusText.Should().Be("Conta ativa · Offline");
+    }
 }

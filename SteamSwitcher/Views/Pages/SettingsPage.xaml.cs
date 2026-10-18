@@ -1,4 +1,4 @@
-﻿using SteamSwitcher.Core;
+using SteamSwitcher.Core;
 using SteamSwitcher.ViewModels;
 using SteamSwitcher.Views.Dialogs;
 using System.Diagnostics;
@@ -300,11 +300,6 @@ public partial class SettingsPage : System.Windows.Controls.Page,
         if (picker.ShowDialog() == true) await SteamSwitcher.Services.Themes.CustomThemeManager.ExportAsync(entry.Theme, picker.FileName);
     });
 
-    private async void ThemeSelection_Changed(object sender, SelectionChangedEventArgs e)
-    {
-        if (!IsLoaded) return;
-        await ViewModel.ApplySelectedThemeAsync(ViewModel.SelectedThemeName);
-    }
 
     private void UpdateActiveSettingsSection(Wpf.Ui.Controls.Button activeButton)
     {
@@ -313,13 +308,14 @@ public partial class SettingsPage : System.Windows.Controls.Page,
             var isActive = ReferenceEquals(section.Button, activeButton);
             section.Button.SetResourceReference(
                 System.Windows.Controls.Control.BackgroundProperty,
-                isActive ? "AppAccentBrush" : "AppSurfaceAltBrush");
+                isActive ? "AppAccentSurfaceBrush" : "AppSurfaceAltBrush");
             section.Button.SetResourceReference(
                 System.Windows.Controls.Control.ForegroundProperty,
-                isActive ? "AppOnAccentTextBrush" : "AppTextPrimaryBrush");
+                isActive ? "AppTextPrimaryBrush" : "AppTextSecondaryBrush");
             section.Button.SetResourceReference(
                 System.Windows.Controls.Control.BorderBrushProperty,
-                isActive ? "AppAccentAltBrush" : "AppBorderBrush");
+                isActive ? "AppAccentBrush" : "AppBorderBrush");
+            section.Button.FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Normal;
         }
     }
 

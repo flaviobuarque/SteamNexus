@@ -124,6 +124,37 @@ public sealed class GameScaleTests(ITestOutputHelper output)
         LibraryPath = index % 2 == 0 ? @"C:\Steam" : @"D:\SteamLibrary",
         SizeOnDisk = (index + 1L) * 1_048_576L,
         PlaytimeMinutes = index,
+        LastPlayedTimestamp = index * 100,
         OwnerSteamId64 = $"owner-{index % 10}"
     };
+
+    [Theory]
+    [InlineData(GameSortMode.Alphabetical)]
+    [InlineData(GameSortMode.MostPlayed)]
+    [InlineData(GameSortMode.LargestSize)]
+    [InlineData(GameSortMode.RecentlyPlayed)]
+    public void FilterAndSort_PinsFavoritesToTopAcrossAllSortModes(GameSortMode mode)
+    {
+        var games = CreateCards(10);
+        games[3].IsFavorite = true;
+        games[7].IsFavorite = true;
+
+        var result = GameLibraryProjection.FilterAndSort(games, null, null, mode);
+
+        result.Take(2).Should().OnlyContain(g => g.IsFavorite);
+        result.Skip(2).Should().OnlyContain(g => !g.IsFavorite);
+    }
+
+    [Fact]
+    public void FilterAndSort_ShowFavoritesOnly_FiltersOutNonFavorites()
+    {
+        var games = CreateCards(10);
+        games[2].IsFavorite = true;
+        games[5].IsFavorite = true;
+
+        var result = GameLibraryProjection.FilterAndSort(games, null, null, GameSortMode.Alphabetical, showFavoritesOnly: true);
+
+        result.Should().HaveCount(2);
+        result.Should().OnlyContain(g => g.IsFavorite);
+    }
 }

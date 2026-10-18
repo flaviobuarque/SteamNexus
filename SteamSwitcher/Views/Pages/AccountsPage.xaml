@@ -96,20 +96,22 @@
 
                 <ui:Button Grid.Column="2" Width="36" Height="34" Padding="0"
                     Margin="0,0,10,0" ToolTip="Mostrar somente favoritas"
+                    Appearance="Secondary"
                     Command="{Binding ToggleFavoritesFilterCommand}">
-                    <ui:Button.Style>
-                        <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
-                            <Setter Property="Appearance" Value="Secondary" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ShowFavoritesOnly}" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource AppAccentSurfaceBrush}" />
-                                    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
-                                    <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ui:Button.Style>
-                    <ic:SymbolIcon Symbol="Star" />
+                    <ic:SymbolIcon Symbol="Star" FontSize="16">
+                        <ic:SymbolIcon.Style>
+                            <Style TargetType="ic:SymbolIcon">
+                                <Setter Property="IconVariant" Value="Regular" />
+                                <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowFavoritesOnly}" Value="True">
+                                        <Setter Property="IconVariant" Value="Filled" />
+                                        <Setter Property="Foreground" Value="#F59E0B" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ic:SymbolIcon.Style>
+                    </ic:SymbolIcon>
                 </ui:Button>
 
                 <Border

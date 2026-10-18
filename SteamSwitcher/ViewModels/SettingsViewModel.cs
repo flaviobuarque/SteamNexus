@@ -66,9 +66,33 @@ public partial class SettingsViewModel(
     partial void OnThemeChanged(AppTheme value) => CheckDirty();
     partial void OnAfterAccountSwitchChanged(PostSwitchBehavior value) => CheckDirty();
     partial void OnAfterGameLaunchChanged(PostSwitchBehavior value) => CheckDirty();
+    public int DefaultLoginPreferenceIndex
+    {
+        get => DefaultLoginStateOverride switch
+        {
+            LoginState.Online => 1,
+            LoginState.Offline => 2,
+            _ => 0
+        };
+        set
+        {
+            var target = value switch
+            {
+                1 => (LoginState?)LoginState.Online,
+                2 => LoginState.Offline,
+                _ => null
+            };
+            if (DefaultLoginStateOverride != target)
+            {
+                DefaultLoginStateOverride = target;
+            }
+        }
+    }
+
     partial void OnDefaultLoginStateOverrideChanged(LoginState? value)
     {
         if (!_initializing) _defaultLoginPreferenceEdited = value != _loadedDefaultLoginPreference;
+        OnPropertyChanged(nameof(DefaultLoginPreferenceIndex));
         CheckDirty();
     }
     partial void OnStartSilentChanged(bool value) => CheckDirty();
@@ -295,6 +319,7 @@ public partial class SettingsViewModel(
         RefreshStatusBar();
     }
 
+    [RelayCommand]
     public async Task ApplySelectedThemeAsync(string? key)
     {
         if (_initializing || string.IsNullOrWhiteSpace(key) || key == CurrentThemeName(settingsService.Current)) return;
@@ -324,9 +349,17 @@ public partial class SettingsViewModel(
     {
         var wasInitializing = _initializing;
         _initializing = true;
-        var options = new List<ThemeOption> { new("Sistema", "Sistema", "Automático") };
-        options.AddRange(CustomThemeManager.BuiltInPresetNames.Select(name => new ThemeOption(name, name, "Oficial")));
-        options.AddRange(settings.ThemeLibrary.Select(item => new ThemeOption("custom:" + item.Id, item.Theme.Name, "Pessoal")));
+        var options = new List<ThemeOption>
+        {
+            new("Sistema", "Sistema", "Automático", "#0E1520", "#162232", "#408EE3")
+        };
+        options.AddRange(CustomThemeManager.BuiltInPresetNames.Select(name =>
+        {
+            var p = CustomThemeManager.CreateBuiltInPreset(name);
+            return new ThemeOption(name, name, "Oficial", p.Background, p.Surface, p.Accent);
+        }));
+        options.AddRange(settings.ThemeLibrary.Select(item =>
+            new ThemeOption("custom:" + item.Id, item.Theme.Name, "Pessoal", item.Theme.Background, item.Theme.Surface, item.Theme.Accent)));
         ThemeOptions = new ObservableCollection<ThemeOption>(options);
         SelectedThemeName = CurrentThemeName(settings);
         OnPropertyChanged(nameof(HasAppliedCustomTheme));
@@ -524,26 +557,6 @@ public partial class SettingsViewModel(
                 : ControlAppearance.Danger,
             null,
             TimeSpan.FromSeconds(4));
-    }
-
-    [RelayCommand]
-    private void PreviewUpdateDialog()
-    {
-        var sampleNotes = "### Novidades\n"
-            + "- **Histórico Seguro:** Seus horários de login não são mais perdidos se a Steam fechar ou deslogar.\n"
-            + "- **Sessões do App:** Identificação visual de contas alternadas diretamente pelo SteamNexus.\n\n"
-            + "### Melhorias\n"
-            + "- **Desempenho:** Menor consumo de memória nativa ao carregar e comprimir capas de jogos.\n"
-            + "- **Filtros Ágeis:** Busca de contas mais rápida em bibliotecas extensas.\n\n"
-            + "### Correções\n"
-            + "- **Estabilidade:** Eliminadas falhas de concorrência ao alternar entre perfis rapidamente.\n"
-            + "- **Verificação de Bans:** Corrigida exibição de status quando não há conexão com a internet.";
-
-        var dialog = new Views.Dialogs.UpdatePromptDialog("1.0.30", "1.0.31", sampleNotes, isReady: false)
-        {
-            Owner = Application.Current.MainWindow
-        };
-        dialog.ShowDialog();
     }
 
     [RelayCommand]
@@ -857,4 +870,10 @@ public partial class SettingsViewModel(
 }
 
 
-public sealed record ThemeOption(string Key, string Name, string Badge);
+public sealed record ThemeOption(
+    string Key,
+    string Name,
+    string Badge,
+    string BackgroundColor = "#07111F",
+    string SurfaceColor = "#0D2135",
+    string AccentColor = "#408EE3");

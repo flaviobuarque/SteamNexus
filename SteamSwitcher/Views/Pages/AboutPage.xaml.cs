@@ -72,6 +72,34 @@ public partial class AboutPage : Page
     private void OpenGitHub_Click(object sender, RoutedEventArgs e)
         => OpenUrl(RepositoryUrl);
 
+    private void OpenIssues_Click(object sender, RoutedEventArgs e)
+        => OpenUrl($"{RepositoryUrl}/issues");
+
     private void OpenReleases_Click(object sender, RoutedEventArgs e)
         => OpenUrl($"{RepositoryUrl}/releases");
+
+    private void CopyDiagnostics_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var os = Environment.OSVersion.ToString();
+            var net = Environment.Version.ToString();
+            var is64 = Environment.Is64BitProcess ? "x64" : "x86";
+            var text = $"SteamNexus Diagnostic Info:\n" +
+                       $"- {VersionText}\n" +
+                       $"- OS: {os}\n" +
+                       $"- Runtime: .NET {net} ({is64})\n" +
+                       $"- Timestamp: {DateTime.UtcNow:u}";
+            Clipboard.SetText(text);
+
+            if (sender is FrameworkElement element)
+            {
+                element.ToolTip = "Copiado com sucesso!";
+            }
+        }
+        catch
+        {
+            // Ignore clipboard errors
+        }
+    }
 }

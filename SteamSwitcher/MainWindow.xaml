@@ -122,163 +122,164 @@
                 Margin="0,0,0,8">
 
                         <!-- Configurações -->
-                        <Border
-                    Width="40" Height="40"
-                    CornerRadius="10"
-                    Margin="8,2"
-                    Cursor="Hand"
-                    ToolTip="Configurações"
-                    ToolTipService.InitialShowDelay="300"
-                    MouseLeftButtonUp="NavItem_Settings_Click">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="Transparent"/>
+                        <Button
+                            Click="NavItem_Settings_Click"
+                            ToolTip="Configurações (Ctrl+,)"
+                            ToolTipService.InitialShowDelay="300"
+                            AutomationProperties.Name="Configurações">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NexusNavButton}">
                                     <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
-                                        </Trigger>
                                         <DataTrigger Binding="{Binding ActivePage}" Value="Settings">
-                                            <Setter Property="Background" Value="{DynamicResource AppAccentBrush}"/>
+                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <ui:SymbolIcon Symbol="Settings24" FontSize="18"
-                                HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <ui:SymbolIcon.Style>
-                                    <Style TargetType="ui:SymbolIcon">
-                                        <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.ActivePage,
-                    RelativeSource={RelativeSource AncestorType=Window}}" Value="Settings">
-                                                <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ui:SymbolIcon.Style>
-                            </ui:SymbolIcon>
-                        </Border>
-
+                            </Button.Style>
+                            <Grid Width="40" Height="40">
+                                <Border Width="3" Height="18" CornerRadius="1.5"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                        Margin="-6,0,0,0"
+                                        Background="{DynamicResource AppAccentBrush}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.ActivePage, RelativeSource={RelativeSource AncestorType=Window}}" Value="Settings">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                                <ui:SymbolIcon Symbol="Settings24" FontSize="18"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            </Grid>
+                        </Button>
 
                         <!-- Sobre -->
-                        <Border
-                    Width="40" Height="40"
-                    CornerRadius="10"
-                    Margin="8,2"
-                    Cursor="Hand"
-                    ToolTip="Sobre"
-                    ToolTipService.InitialShowDelay="300"
-                    MouseLeftButtonUp="NavItem_About_Click">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="Transparent"/>
+                        <Button
+                            Click="NavItem_About_Click"
+                            ToolTip="Sobre o SteamNexus"
+                            ToolTipService.InitialShowDelay="300"
+                            AutomationProperties.Name="Sobre">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NexusNavButton}">
                                     <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
-                                        </Trigger>
                                         <DataTrigger Binding="{Binding ActivePage}" Value="About">
-                                            <Setter Property="Background" Value="{DynamicResource AppAccentBrush}"/>
+                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <ui:SymbolIcon Symbol="Info24" FontSize="18"
-                                HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <ui:SymbolIcon.Style>
-                                    <Style TargetType="ui:SymbolIcon">
-                                        <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.ActivePage,
-                    RelativeSource={RelativeSource AncestorType=Window}}" Value="About">
-                                                <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ui:SymbolIcon.Style>
-                            </ui:SymbolIcon>
-                        </Border>
+                            </Button.Style>
+                            <Grid Width="40" Height="40">
+                                <Border Width="3" Height="18" CornerRadius="1.5"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                        Margin="-6,0,0,0"
+                                        Background="{DynamicResource AppAccentBrush}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.ActivePage, RelativeSource={RelativeSource AncestorType=Window}}" Value="About">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                                <ui:SymbolIcon Symbol="Info24" FontSize="18"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            </Grid>
+                        </Button>
                     </StackPanel>
 
                     <!-- Itens de navegação — centro vertical -->
                     <StackPanel VerticalAlignment="Center">
 
                         <!-- Contas -->
-                        <Border
-                    Width="40" Height="40"
-                    CornerRadius="10"
-                    Margin="8,2"
-                    Cursor="Hand"
-                    ToolTip="Contas"
-                    ToolTipService.InitialShowDelay="300"
-                    MouseLeftButtonUp="NavItem_Accounts_Click">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="Transparent"/>
+                        <Button
+                            Click="NavItem_Accounts_Click"
+                            ToolTip="Contas (Ctrl+1)"
+                            ToolTipService.InitialShowDelay="300"
+                            AutomationProperties.Name="Contas">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NexusNavButton}">
                                     <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
-                                        </Trigger>
                                         <DataTrigger Binding="{Binding ActivePage}" Value="Accounts">
-                                            <Setter Property="Background" Value="{DynamicResource AppAccentBrush}"/>
+                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <ui:SymbolIcon Symbol="People24" FontSize="18"
-                                HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <ui:SymbolIcon.Style>
-                                    <Style TargetType="ui:SymbolIcon">
-                                        <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.ActivePage,
-                                                RelativeSource={RelativeSource AncestorType=Window}}" Value="Accounts">
-                                                <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ui:SymbolIcon.Style>
-                            </ui:SymbolIcon>
-                        </Border>
+                            </Button.Style>
+                            <Grid Width="40" Height="40">
+                                <Border Width="3" Height="18" CornerRadius="1.5"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                        Margin="-6,0,0,0"
+                                        Background="{DynamicResource AppAccentBrush}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.ActivePage, RelativeSource={RelativeSource AncestorType=Window}}" Value="Accounts">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                                <ui:SymbolIcon Symbol="People24" FontSize="18"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            </Grid>
+                        </Button>
 
                         <!-- Jogos -->
-                        <Border
-                    Width="40" Height="40"
-                    CornerRadius="10"
-                    Margin="8,2"
-                    Cursor="Hand"
-                    ToolTip="Jogos"
-                    ToolTipService.InitialShowDelay="300"
-                    MouseLeftButtonUp="NavItem_Games_Click">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="Transparent"/>
+                        <Button
+                            Click="NavItem_Games_Click"
+                            ToolTip="Jogos (Ctrl+2)"
+                            ToolTipService.InitialShowDelay="300"
+                            AutomationProperties.Name="Jogos">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NexusNavButton}">
                                     <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
-                                        </Trigger>
                                         <DataTrigger Binding="{Binding ActivePage}" Value="Games">
-                                            <Setter Property="Background" Value="{DynamicResource AppAccentBrush}"/>
+                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <ui:SymbolIcon Symbol="XboxController24" FontSize="18"
-    HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <ui:SymbolIcon.Style>
-                                    <Style TargetType="ui:SymbolIcon">
-                                        <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.ActivePage,
-                    RelativeSource={RelativeSource AncestorType=Window}}" Value="Games">
-                                                <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ui:SymbolIcon.Style>
-                            </ui:SymbolIcon>
-                        </Border>
+                            </Button.Style>
+                            <Grid Width="40" Height="40">
+                                <Border Width="3" Height="18" CornerRadius="1.5"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                        Margin="-6,0,0,0"
+                                        Background="{DynamicResource AppAccentBrush}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.ActivePage, RelativeSource={RelativeSource AncestorType=Window}}" Value="Games">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                                <ui:SymbolIcon Symbol="XboxController24" FontSize="18"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            </Grid>
+                        </Button>
 
-                        <Button Margin="8,2" Click="Activity_Click" ToolTip="Atividade recente"
+                        <!-- Atividade recente -->
+                        <Button Margin="8,2" Click="Activity_Click" ToolTip="Atividade recente (Ctrl+3)"
+                                ToolTipService.InitialShowDelay="300"
                                 AutomationProperties.Name="Atividade recente">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource NexusSidebarAction}">
@@ -294,96 +295,115 @@
                                     <Style.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" /></Trigger>
                                         <DataTrigger Binding="{Binding ActivePage}" Value="Activity">
-                                            <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" />
                                             <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
-                            <ui:SymbolIcon Symbol="History24" FontSize="18" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            <Grid Width="40" Height="40">
+                                <Border Width="3" Height="18" CornerRadius="1.5"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                        Margin="-6,0,0,0"
+                                        Background="{DynamicResource AppAccentBrush}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.ActivePage, RelativeSource={RelativeSource AncestorType=Window}}" Value="Activity">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                                <ui:SymbolIcon Symbol="History24" FontSize="18"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Grid>
                         </Button>
 
                         <!-- Diagnóstico -->
-                        <Border
-                    Width="40" Height="40"
-                    CornerRadius="10"
-                    Margin="8,2"
-                    Cursor="Hand"
-                    ToolTip="{Binding DiagnosticsTooltip}"
-                    ToolTipService.InitialShowDelay="300"
-                    MouseLeftButtonUp="NavItem_Diagnostics_Click">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="Transparent"/>
+                        <Button
+                            Click="NavItem_Diagnostics_Click"
+                            ToolTip="{Binding DiagnosticsTooltip}"
+                            ToolTipService.InitialShowDelay="300"
+                            AutomationProperties.Name="Diagnóstico">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NexusNavButton}">
                                     <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
-                                        </Trigger>
                                         <DataTrigger Binding="{Binding ActivePage}" Value="Diagnostics">
-                                            <Setter Property="Background" Value="{DynamicResource AppAccentBrush}"/>
+                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <Grid><ui:SymbolIcon Symbol="Wrench24" FontSize="18"
-                                HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <ui:SymbolIcon.Style>
-                                    <Style TargetType="ui:SymbolIcon">
-                                        <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.ActivePage,
-                    RelativeSource={RelativeSource AncestorType=Window}}" Value="Diagnostics">
-                                                <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ui:SymbolIcon.Style>
-                            </ui:SymbolIcon>
-                                <Border Width="14" Height="14" CornerRadius="7" HorizontalAlignment="Right" VerticalAlignment="Top"
+                            </Button.Style>
+                            <Grid Width="40" Height="40">
+                                <Border Width="3" Height="18" CornerRadius="1.5"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                        Margin="-6,0,0,0"
+                                        Background="{DynamicResource AppAccentBrush}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.ActivePage, RelativeSource={RelativeSource AncestorType=Window}}" Value="Diagnostics">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                                <ui:SymbolIcon Symbol="Wrench24" FontSize="18"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                                <Border Width="14" Height="14" CornerRadius="7" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0"
                                     Background="{DynamicResource AppWarningBrush}" Visibility="{Binding HasDiagnosticIssues, Converter={StaticResource BoolToVisibility}}">
                                     <TextBlock Text="!" FontSize="11" FontWeight="Bold" Foreground="#141414" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
                             </Grid>
-                        </Border>
+                        </Button>
+
                         <!-- Modificações — reativar: FeatureFlags.Mods = true -->
-                        <Border
-                    x:Name="NavItemMods"
-                    Width="40" Height="40"
-                    CornerRadius="10"
-                    Margin="8,2"
-                    Cursor="Hand"
-                    ToolTip="Modificações"
-                    ToolTipService.InitialShowDelay="300"
-                    Visibility="Collapsed"
-                    MouseLeftButtonUp="NavItem_Mods_Click">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="Transparent"/>
+                        <Button
+                            x:Name="NavItemMods"
+                            Click="NavItem_Mods_Click"
+                            ToolTip="Modificações"
+                            ToolTipService.InitialShowDelay="300"
+                            Visibility="Collapsed"
+                            AutomationProperties.Name="Modificações">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NexusNavButton}">
                                     <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
-                                        </Trigger>
                                         <DataTrigger Binding="{Binding ActivePage}" Value="Mods">
-                                            <Setter Property="Background" Value="{DynamicResource AppAccentBrush}"/>
+                                            <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Border.Style>
-                            <ui:SymbolIcon Symbol="PuzzlePiece24" FontSize="18"
-                                HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <ui:SymbolIcon.Style>
-                                    <Style TargetType="ui:SymbolIcon">
-                                        <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.ActivePage,
-                                                RelativeSource={RelativeSource AncestorType=Window}}" Value="Mods">
-                                                <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ui:SymbolIcon.Style>
-                            </ui:SymbolIcon>
-                        </Border>
+                            </Button.Style>
+                            <Grid Width="40" Height="40">
+                                <Border Width="3" Height="18" CornerRadius="1.5"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                        Margin="-6,0,0,0"
+                                        Background="{DynamicResource AppAccentBrush}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.ActivePage, RelativeSource={RelativeSource AncestorType=Window}}" Value="Mods">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                                <ui:SymbolIcon Symbol="PuzzlePiece24" FontSize="18"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            </Grid>
+                        </Button>
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -790,18 +810,21 @@
 
                     <Border
                         VerticalAlignment="Center"
-                        CornerRadius="6"
+                        CornerRadius="12"
                         Padding="10,4"
                         Cursor="Hand"
-                        ToolTip="Estado de login na próxima abertura da Steam. Clique para alternar."
+                        Background="{DynamicResource AppSurfaceBrush}"
+                        BorderBrush="{DynamicResource AppBorderBrush}"
+                        BorderThickness="1"
+                        ToolTip="Modo de inicialização da Steam: Online / Offline. Clique para alternar."
                         ToolTipService.InitialShowDelay="300"
                         Visibility="{Binding ShowLoginToggle, Converter={StaticResource BoolToVisibility}}">
                         <Border.Style>
                             <Style TargetType="Border">
-                                <Setter Property="Background" Value="Transparent" />
                                 <Style.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>
@@ -809,11 +832,11 @@
                         <Border.InputBindings>
                             <MouseBinding MouseAction="LeftClick" Command="{Binding ToggleLoginStateCommand}" />
                         </Border.InputBindings>
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Ellipse
-                        Width="7" Height="7"
-                        VerticalAlignment="Center"
-                        Margin="0,0,6,0">
+                                Width="7" Height="7"
+                                VerticalAlignment="Center"
+                                Margin="0,0,6,0">
                                 <Ellipse.Style>
                                     <Style TargetType="Ellipse">
                                         <Setter Property="Fill" Value="{DynamicResource AppTextMutedBrush}" />
@@ -827,14 +850,15 @@
                             </Ellipse>
                             <TextBlock
                                 Text="Login Steam:"
-                                FontSize="12"
+                                FontSize="11"
                                 Margin="0,0,4,0"
                                 VerticalAlignment="Center"
                                 Foreground="{DynamicResource AppTextSecondaryBrush}" />
                             <TextBlock
-                        Text="{Binding DefaultLoginStateText}"
-                        FontSize="12"
-                        VerticalAlignment="Center">
+                                Text="{Binding DefaultLoginStateText}"
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                VerticalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
@@ -846,6 +870,8 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
+                            <ic:SymbolIcon Symbol="ArrowSwap" FontSize="11" Margin="6,0,0,0"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
                 </StackPanel>

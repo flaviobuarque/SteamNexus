@@ -15,6 +15,33 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <Style x:Key="NexusNavButton" TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource NexusKeyboardFocus}" />
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Margin" Value="8,2" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="ToolTipService.InitialShowDelay" Value="300" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Surface" Background="{TemplateBinding Background}" CornerRadius="10">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Surface" Property="Background" Value="{DynamicResource AppSurfaceHoverBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True"><Setter TargetName="Surface" Property="Opacity" Value="0.75" /></Trigger>
+                        <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Opacity" Value="0.45" /></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
     <Style x:Key="NexusSidebarAction" TargetType="Button">
         <Setter Property="FocusVisualStyle" Value="{StaticResource NexusKeyboardFocus}" />
         <Setter Property="Width" Value="40" />

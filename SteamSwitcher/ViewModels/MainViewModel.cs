@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using SteamSwitcher.Core.Models;
@@ -321,6 +321,8 @@ public partial class MainViewModel(
         {
             active.CustomDisplayName = known.CustomDisplayName;
             active.CustomAvatarPath = known.CustomAvatarPath;
+            active.LoginStateOverride = known.LoginStateOverride;
+            active.IsFavorite = known.IsFavorite;
         }
 
         System.Diagnostics.Debug.WriteLine(
@@ -372,7 +374,8 @@ public partial class MainViewModel(
             sameAccount,
             ActiveAccountAvatarPath);
 
-        StatusLoginState = active.WantsOfflineMode
+        var isOffline = active.WantsOfflineMode || active.LoginStateOverride == LoginState.Offline;
+        StatusLoginState = isOffline
             ? "Offline"
             : "Online";
 

@@ -256,14 +256,16 @@
                                 Panel.ZIndex="2"
                                 ToolTip="{Binding InstallationRootPath}"
                                 Visibility="{Binding ShowInstallationBadge, Converter={StaticResource BoolToVisibility}}">
-                                <StackPanel Orientation="Horizontal">
-                                    <ic:SymbolIcon Symbol="HardDrive" FontSize="10" Margin="0,0,4,0"
-                                                   Foreground="{DynamicResource AppAccentBrush}" />
-                                    <TextBlock Text="{Binding InstallationName}" FontSize="9"
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <ic:SymbolIcon Symbol="HardDrive" FontSize="13" Margin="0,0,5,0"
+                                                   Foreground="{DynamicResource AppAccentBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding InstallationName}" FontSize="9.5"
                                                MaxWidth="92" TextTrimming="CharacterEllipsis"
-                                               Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                                               Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
+
+
 
                             <!-- Avatar centralizado -->
                             <Grid
@@ -305,14 +307,26 @@
                     Visibility="{Binding HasAvatar,
                         Converter={StaticResource InverseBoolToVisibility}}" />
 
-                                <!-- Badge online -->
+                                <!-- Badge presença (Online / Offline) -->
                                 <Ellipse
                                     Width="14" Height="14"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Bottom"
                                     Margin="0,0,1,1"
-                                    Fill="{DynamicResource OnlineBrush}"
-                                    Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibility}}" />
+                                    Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibility}}">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="{DynamicResource OnlineBrush}" />
+                                            <Setter Property="ToolTip" Value="Sessão ativa (Online)" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsOffline}" Value="True">
+                                                    <Setter Property="Fill" Value="{DynamicResource AppTextMutedBrush}" />
+                                                    <Setter Property="ToolTip" Value="Sessão ativa (Offline)" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
                             </Grid>
                         </Grid>
                     </Border>
@@ -363,30 +377,141 @@
             Background="{DynamicResource AccountCardSeparatorBrush}"
             Margin="0,14,0,14" />
 
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" ToolTip="{Binding LastLoginExactTooltip}">
-                            <ic:SymbolIcon
-                Symbol="Clock"
-                FontSize="11"
-                Foreground="{DynamicResource AppTextSecondaryBrush}"
-                Margin="0,0,4,0"
-                VerticalAlignment="Center" />
-                            <TextBlock
-                Text="{Binding LastUsageText}" ToolTip="{Binding LastLoginExactTooltip}"
-                MaxWidth="150" TextTrimming="CharacterEllipsis"
-                FontSize="11"
-                VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
+                        <!-- Footer: Último uso normal VS Botão Entrar no Hover -->
+                        <Grid Margin="0,0,0,2">
+                            <!-- Indicador de Conta Ativa no Rodapé -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                        Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibility}}">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="ToolTip" Value="Esta conta está atualmente ativa na Steam (Online)" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsLastUsed}" Value="True">
-                                                <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
+                                            <DataTrigger Binding="{Binding IsOffline}" Value="True">
+                                                <Setter Property="ToolTip" Value="Esta conta está atualmente ativa na Steam (Offline)" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </StackPanel>
+                                </StackPanel.Style>
+                                <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="{DynamicResource AppSuccessBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsOffline}" Value="True">
+                                                    <Setter Property="Fill" Value="{DynamicResource AppTextMutedBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                                <TextBlock FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="Conta Ativa" />
+                                            <Setter Property="Foreground" Value="{DynamicResource AppSuccessBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsOffline}" Value="True">
+                                                    <Setter Property="Text" Value="Conta Ativa (Offline)" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!-- Modo normal (conta inativa): Mostra relógio e Último uso -->
+                            <StackPanel x:Name="LastUsagePanel" Orientation="Horizontal" HorizontalAlignment="Center" ToolTip="{Binding LastLoginExactTooltip}">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsMouseOver, ElementName=CardBorder}" Value="True" />
+                                                    <Condition Binding="{Binding IsActive}" Value="False" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <ic:SymbolIcon
+                                    Symbol="Clock"
+                                    FontSize="11"
+                                    Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                    Margin="0,0,4,0"
+                                    VerticalAlignment="Center" />
+                                <TextBlock
+                                    Text="{Binding LastUsageText}" ToolTip="{Binding LastLoginExactTooltip}"
+                                    MaxWidth="140" TextTrimming="CharacterEllipsis"
+                                    FontSize="11"
+                                    VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsLastUsed}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!-- Modo Hover (quando NÃO é a conta ativa): Botão de clique direto "Entrar" -->
+                            <Button x:Name="QuickSwitchButton"
+                                    Command="{Binding SwitchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"
+                                    Cursor="Hand"
+                                    Height="24"
+                                    Padding="10,0"
+                                    HorizontalAlignment="Center"
+                                    ToolTip="Entrar diretamente nesta conta">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Opacity" Value="0.9" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter Property="Opacity" Value="0.75" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsMouseOver, ElementName=CardBorder}" Value="True" />
+                                                    <Condition Binding="{Binding IsActive}" Value="False" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <ic:SymbolIcon Symbol="ArrowSwap" FontSize="11" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="Entrar" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
 
                     </StackPanel>
                 </StackPanel>
