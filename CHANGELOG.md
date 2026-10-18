@@ -4,6 +4,46 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.35] - 2026-10-18
+
+### Novidades
+
+- **Cards de Jogos Redesenhados:**
+  - **Ficha Técnica Integrada:** Caixinha moderna na base do card dividida lado a lado exibindo a unidade de disco e tamanho em disco (ex.: `C: 22,1 GB`) à esquerda e tempo de jogo formatado ou status atenuado de nunca jogado (`Nunca`) à direita, com tooltips informativos e caminho completo de instalação.
+  - **Badges Empilhados na Capa:** Indicador proeminente da conta proprietária com ícone de usuário em destaque e alto contraste no topo esquerdo da capa, empilhado acima do badge de status de login customizado (`OFFLINE` / `ONLINE`).
+  - **Slot Fixo de Título (34px):** Padronização rigorosa da altura do título centralizado em até 2 linhas, garantindo alinhamento horizontal uniforme de todos os cards da grade, independentemente do comprimento do nome do jogo.
+  - **Botão de Opções Discreto:** Reposicionamento do menu de opções (`⋯`) para o canto inferior direito da capa durante o hover, liberando o rodapé para metadados e melhorando a usabilidade.
+
+- **Status Padrão de Login com Suporte Nativo:**
+  - Adição da opção **Padrão da Steam** ao status padrão global de login, permitindo preservar o comportamento original gravado pelo cliente Steam sem forçar Online ou Offline.
+  - Controle integrado via `ComboBox` compacto (`MinWidth="180"`), padronizado com os demais controles de comportamento da seção.
+
+- **Barra de Salvar Flutuante (Floating Action Bar):**
+  - Redesenho da barra de alterações pendentes nas Configurações como um card flutuante elevado (`CornerRadius="12"`, sombra projetada), centralizado com a largura do conteúdo, ícone de informação acolhedor e botões de ação rápida (*Desfazer* e *Salvar alterações*).
+
+### Melhorias
+
+- **Navegação Lateral das Configurações (Fluent Design):**
+  - Botão ativo da sidebar agora utiliza destaque sutil translúcido em `AppAccentSurfaceBrush` com borda de realce `AppAccentBrush` e tipografia `SemiBold` (estilo Windows 11 Settings), substituindo o preenchimento sólido pesado anterior.
+  - Alinhamento textual exato entre itens da barra lateral e os cabeçalhos de seção (*Troca de conta* e *Instalações Steam*).
+- **Gerenciamento de Instalações da Steam:**
+  - Padronização dimensional dos botões de ação para **36x36px** com ícones vetoriais perfeitamente centralizados (`FolderOpen` e `MoreHorizontal`).
+  - Agrupamento de ações secundárias e destrutivas (*Renomear*, *Localizar novamente* e *Remover*) em menu suspenso `⋯`, mantendo a interface limpa e segura contra cliques acidentais.
+- **Painel de Temas Customizados:**
+  - Substituição da grade de largura fixa por alinhamento dinâmico em `StackPanel`, eliminando espaços vazios quando temas oficiais estão ativos.
+  - Inclusão de tag visual `[BETA]` estilizada no aviso de personalização de temas.
+- **Campos de API Key com Revelação de Senha:**
+  - Habilitação dos botões nativos de mostrar/ocultar senha (`RevealButtonEnabled`) e limpar campo (`ClearButtonEnabled`) nos campos de chaves SteamGridDB e Steam Web API.
+- **Página Sobre (AboutPage):**
+  - Botão de ação rápida para copiar informações completas de diagnóstico e sistema operacional para a área de transferência.
+  - Atalho direto para abertura de issues no repositório GitHub.
+
+### Correções
+
+- **Formatação de Armazenamento nos Jogos:** Eliminação de duplicidade de dois pontos (`E:: 53,5 GB` ➔ `E: 53,5 GB`) ao obter a letra da unidade da biblioteca Steam.
+- **Quebra de Linha em Configurações:** Correção de corte no texto explicativo do status de login, com inclusão de `TextWrapping="Wrap"` e margens adequadas.
+- **Conversor EnumToBool com Suporte a Nulo:** Ajuste no `EnumToBoolConverter` para comparar e propagar corretamente valores nulos em seleções de estado padrão.
+
 ## [1.0.34] - 2026-10-18
 
 ### Correções
