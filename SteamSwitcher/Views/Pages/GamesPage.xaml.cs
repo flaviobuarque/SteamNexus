@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 
 namespace SteamSwitcher.Views.Pages;
 
@@ -73,6 +74,16 @@ public partial class GamesPage : Page,
                 return;
             }
             current = System.Windows.Media.VisualTreeHelper.GetParent(current);
+        }
+    }
+
+    private void GameLoginBadge_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: GameCardViewModel cardVm } &&
+            ViewModel.ChangeGameLoginStateCommand.CanExecute(cardVm))
+        {
+            e.Handled = true;
+            ViewModel.ChangeGameLoginStateCommand.Execute(cardVm);
         }
     }
 }

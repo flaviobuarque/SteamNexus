@@ -4,6 +4,15 @@ Todas as mudanças relevantes do SteamNexus são registradas neste arquivo.
 
 ## [Unreleased]
 
+## [1.0.36] - 2026-10-18
+
+### Melhorias
+
+- **Diferenciação Visual de Status de Login nos Cards de Jogos:**
+  - **Modo Online Padronizado:** Badge estilizado com as cores e ícones padrão da página de contas — fundo verde floresta (`#123C2B`), borda esmeralda (`#22C55E`), tipografia e ícone em verde claro (`#86EFAC`) e ícone de globo ativo (`Globe`).
+  - **Modo Offline Padronizado:** Badge estilizado com fundo âmbar escuro (`#492B13`), borda laranja vibrante (`#FB923C`), tipografia e ícone em âmbar claro (`#FED7AA`) e ícone de globo desativado (`GlobeOff`).
+  - **Interatividade no Badge de Status:** Adição de feedback visual no hover (`Opacity="0.85"`), cursor `Hand` e suporte a clique direto com botão esquerdo para abrir a janela de seleção de status de login (`ChangeGameLoginStateCommand`), alinhando o comportamento ao tooltip (*Clique para alterar*).
+
 ## [1.0.35] - 2026-10-18
 
 ### Novidades

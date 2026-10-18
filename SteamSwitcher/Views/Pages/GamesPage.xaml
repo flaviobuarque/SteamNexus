@@ -788,19 +788,52 @@
                                         <!-- Badge 2: Modo Offline / Online (Empilhado logo abaixo) -->
                                         <Border Margin="0,4,0,0" Padding="7,2" CornerRadius="6"
                                                 HorizontalAlignment="Left"
-                                                Background="{DynamicResource AppAccentSurfaceBrush}"
-                                                BorderBrush="{DynamicResource AppAccentBrush}" BorderThickness="1"
+                                                BorderThickness="1"
+                                                Cursor="Hand"
+                                                MouseLeftButtonUp="GameLoginBadge_MouseLeftButtonUp"
                                                 Visibility="{Binding HasCustomLoginPreference, Converter={StaticResource BoolToVisibility}}"
                                                 ToolTip="{Binding LoginPreferenceTooltip}">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#123C2B" />
+                                                    <Setter Property="BorderBrush" Value="#22C55E" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsCustomOffline}" Value="True">
+                                                            <Setter Property="Background" Value="#492B13" />
+                                                            <Setter Property="BorderBrush" Value="#FB923C" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsCustomOnline}" Value="True">
+                                                            <Setter Property="Background" Value="#123C2B" />
+                                                            <Setter Property="BorderBrush" Value="#22C55E" />
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Opacity" Value="0.85" />
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ic:SymbolIcon Symbol="CloudOff" FontSize="10" Margin="0,0,3,0" VerticalAlignment="Center"
-                                                               Foreground="{DynamicResource AppAccentBrush}"
+                                                <ic:SymbolIcon Symbol="GlobeOff" FontSize="10" Margin="0,0,3,0" VerticalAlignment="Center"
+                                                               Foreground="#FED7AA"
                                                                Visibility="{Binding IsCustomOffline, Converter={StaticResource BoolToVisibility}}" />
-                                                <ic:SymbolIcon Symbol="Cloud" FontSize="10" Margin="0,0,3,0" VerticalAlignment="Center"
-                                                               Foreground="{DynamicResource AppAccentBrush}"
+                                                <ic:SymbolIcon Symbol="Globe" FontSize="10" Margin="0,0,3,0" VerticalAlignment="Center"
+                                                               Foreground="#86EFAC"
                                                                Visibility="{Binding IsCustomOnline, Converter={StaticResource BoolToVisibility}}" />
-                                                <TextBlock Text="{Binding CustomLoginBadgeLabel}" FontSize="9.5" FontWeight="Bold" VerticalAlignment="Center"
-                                                           Foreground="{DynamicResource AppAccentBrush}" />
+                                                <TextBlock Text="{Binding CustomLoginBadgeLabel}" FontSize="9.5" FontWeight="Bold" VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#86EFAC" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsCustomOffline}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#FED7AA" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsCustomOnline}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#86EFAC" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
